@@ -9,7 +9,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="App\Repository\ProjectRepository")
  */
 class Project
 {
@@ -42,5 +42,23 @@ class Project
         $this->name = $name;
         $this->url = $url;
         $this->libraries = new ArrayCollection();
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function getUrl(): string
+    {
+        return $this->url;
+    }
+
+    /**
+     * @return Library[]
+     */
+    public function getLibraries(): array
+    {
+        return $this->libraries->toArray();
     }
 }
