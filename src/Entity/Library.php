@@ -23,7 +23,7 @@ class Library
     private int $id;
 
     /**
-     * @ORM\Column
+     * @ORM\Column(unique=true)
      */
     private string $name;
 

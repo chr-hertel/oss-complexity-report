@@ -31,16 +31,22 @@ class Project
     private string $url;
 
     /**
+     * @ORM\Column(unique=true)
+     */
+    private string $vendor;
+
+    /**
      * @var Library[]|Collection
      *
      * @ORM\OneToMany(targetEntity="Library", mappedBy="project")
      */
     private $libraries;
 
-    public function __construct(string $name, string $url)
+    public function __construct(string $name, string $url, string $vendor)
     {
         $this->name = $name;
         $this->url = $url;
+        $this->vendor = $vendor;
         $this->libraries = new ArrayCollection();
     }
 
@@ -52,6 +58,11 @@ class Project
     public function getUrl(): string
     {
         return $this->url;
+    }
+
+    public function getVendor(): string
+    {
+        return $this->vendor;
     }
 
     /**

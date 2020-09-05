@@ -9,12 +9,14 @@ use App\Entity\Library;
 use App\Entity\Project;
 use App\Repository\ProjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 
 class DataAggregator
 {
     private ProjectRepository $projectRepository;
     private GitController $gitController;
+    private CacheItemPoolInterface $cache;
     private CodeAnalyser $codeAnalyser;
     private EntityManagerInterface $entityManager;
     private LoggerInterface $logger;
@@ -22,15 +24,17 @@ class DataAggregator
     public function __construct(
         ProjectRepository $projectRepository,
         GitController $gitController,
+        CacheItemPoolInterface $cache,
         CodeAnalyser $codeAnalyser,
         EntityManagerInterface $entityManager,
         LoggerInterface $logger
     ) {
         $this->projectRepository = $projectRepository;
         $this->gitController = $gitController;
+        $this->cache = $cache;
         $this->codeAnalyser = $codeAnalyser;
-        $this->logger = $logger;
         $this->entityManager = $entityManager;
+        $this->logger = $logger;
     }
 
     public function aggregate(): void
@@ -55,15 +59,25 @@ class DataAggregator
                     continue;
                 }
 
-                $this->gitController->checkoutTag($library, $tag->getName());
-                $this->collectTagData($library, $tag);
+                $analysis = $this->collectTagData($library, $tag);
+                $library->addTag($tag, $analysis);
             }
         }
     }
 
-    private function collectTagData(Library $library, Tag $tag): void
+    private function collectTagData(Library $library, Tag $tag): Analysis
     {
-        $analysis = $this->codeAnalyser->analyse($library);
-        $library->addTag($tag, $analysis);
+        $key = sprintf('%s_%s_analysis', str_replace('/', '_', $library->getName()), $tag->getName());
+        $item = $this->cache->getItem($key);
+
+        if (!$item->isHit()) {
+            $this->gitController->checkoutTag($library, $tag->getName());
+            $analysis = $this->codeAnalyser->analyse($library);
+
+            $item->set($analysis);
+            $this->cache->save($item);
+        }
+
+        return $item->get();
     }
 }
