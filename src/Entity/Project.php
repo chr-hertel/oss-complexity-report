@@ -18,20 +18,20 @@ class Project
      * @ORM\Column(type="integer")
      * @ORM\GeneratedValue
      */
-    private $id;
+    private int $id;
 
     /**
      * @ORM\Column(unique=true)
      */
-    private $name;
+    private string $name;
 
     /**
      * @ORM\Column
      */
-    private $url;
+    private string $url;
 
     /**
-     * @var Library[]&Collection
+     * @var Library[]|Collection
      *
      * @ORM\OneToMany(targetEntity="Library", mappedBy="project")
      */

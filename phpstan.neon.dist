@@ -10,3 +10,4 @@ parameters:
     excludes_analyse:
         - tests/bootstrap.php
     checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false

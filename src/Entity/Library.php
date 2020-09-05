@@ -37,7 +37,7 @@ class Library
     private Project $project;
 
     /**
-     * @var Tag[]&Collection
+     * @var Tag[]|Collection
      *
      * @ORM\OneToMany(targetEntity="Tag", mappedBy="library", cascade={"persist"})
      */
