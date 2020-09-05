@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\ComplexityReport\Analysis;
+use App\ComplexityReport\Git\Tag as GitTag;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -79,10 +80,10 @@ class Library
         return sprintf('%s/%s', mb_strtolower($this->getProject()->getName()), mb_strtolower($this->getName()));
     }
 
-    public function addTag(string $tag, Analysis $analysis): void
+    public function addTag(GitTag $tag, Analysis $analysis): void
     {
         $this->tags->add(
-            new Tag($tag, new \DateTimeImmutable(), $analysis->getLinesOfCode(), $analysis->getAverageComplexity(), $this)
+            new Tag($tag->getName(), $analysis->getCreated(), $analysis->getLinesOfCode(), $analysis->getAverageComplexity(), $this)
         );
     }
 }

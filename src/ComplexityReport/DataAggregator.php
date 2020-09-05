@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport;
 
+use App\ComplexityReport\Git\Tag;
 use App\Entity\Library;
 use App\Entity\Project;
 use App\Repository\ProjectRepository;
@@ -49,17 +50,18 @@ class DataAggregator
             $tags = $this->gitController->loadTags($library);
 
             foreach ($tags as $tag) {
-                if (false !== strpos($tag, '-')) {
-                    $this->logger->info(sprintf('Skipping tag "%s"', $tag));
+                if ($tag->isPreRelease() || $tag->isPatchRelease()) {
+                    $this->logger->debug(sprintf('Skipping tag "%s"', $tag->getName()));
                     continue;
                 }
-                $this->gitController->checkoutTag($library, $tag);
+
+                $this->gitController->checkoutTag($library, $tag->getName());
                 $this->collectTagData($library, $tag);
             }
         }
     }
 
-    private function collectTagData(Library $library, string $tag): void
+    private function collectTagData(Library $library, Tag $tag): void
     {
         $analysis = $this->codeAnalyser->analyse($library);
         $library->addTag($tag, $analysis);

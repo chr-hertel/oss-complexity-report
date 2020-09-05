@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport;
 
+use App\ComplexityReport\Git\Tag;
 use App\Entity\Library;
-use GitWrapper\GitTags;
 use GitWrapper\GitWorkingCopy;
 use GitWrapper\GitWrapper;
 
@@ -20,11 +20,14 @@ class GitController
         $this->repositoryPath = $repositoryPath;
     }
 
-    public function loadTags(Library $library): GitTags
+    /**
+     * @return Tag[]
+     */
+    public function loadTags(Library $library): array
     {
         $repository = $this->getRepository($library);
 
-        return $repository->tags();
+        return Tag::fromGitTags($repository->tags());
     }
 
     public function checkoutTag(Library $library, string $name): void

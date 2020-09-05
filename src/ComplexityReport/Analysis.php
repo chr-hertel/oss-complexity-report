@@ -8,11 +8,13 @@ class Analysis
 {
     private int $linesOfCode;
     private float $averageComplexity;
+    private \DateTimeImmutable $created;
 
-    public function __construct(int $linesOfCode, float $averageComplexity)
+    public function __construct(int $linesOfCode, float $averageComplexity, \DateTimeImmutable $created)
     {
         $this->linesOfCode = $linesOfCode;
         $this->averageComplexity = $averageComplexity;
+        $this->created = $created;
     }
 
     public function getLinesOfCode(): int
@@ -23,5 +25,10 @@ class Analysis
     public function getAverageComplexity(): float
     {
         return $this->averageComplexity;
+    }
+
+    public function getCreated(): \DateTimeImmutable
+    {
+        return $this->created;
     }
 }
