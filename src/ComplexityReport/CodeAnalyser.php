@@ -27,6 +27,7 @@ class CodeAnalyser
     {
         $localPath = $this->repositoryPath.'/'.$library->getRepositoryPath();
         $finder = (new Finder())
+            ->files()
             ->in($localPath)
             ->name('*.php');
 
