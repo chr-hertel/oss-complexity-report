@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Controller;
+namespace App\Command;
 
 use App\ComplexityReport\DataAggregator;
 use Symfony\Component\Console\Command\Command;
