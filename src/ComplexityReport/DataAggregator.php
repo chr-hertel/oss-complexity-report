@@ -59,6 +59,7 @@ class DataAggregator
                     continue;
                 }
 
+                $this->logger->info(sprintf('Collecting data for %s tag %s', $library->getName(), $tag->getName()));
                 $analysis = $this->collectTagData($library, $tag);
                 $library->addTag($tag, $analysis);
             }

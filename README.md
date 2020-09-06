@@ -27,11 +27,11 @@ $ bin/console doctrine:schema:create
 $ bin/console cache:pool:clear cache.app
 
 # loads projects to analyse from fixtures to database
-$ bin/console doctrine:fixtures:load
+$ bin/console doctrine:fixtures:load -n
 
 # fetches project libraries from packagist.org and stores them in database
-$ bin/console app:libraries:load
+$ bin/console app:libraries:load -vv
 
 # clones repositories and analyses code base of every major and minor release
-$ bin/console app:data:aggregate
+$ bin/console app:data:aggregate -vv
 ```

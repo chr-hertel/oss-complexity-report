@@ -16,6 +16,7 @@ class Client
         'laravel/dbfactory',
         'laravel/liferaft',
         'symfony/annotations-pack',
+        'typo3/cms',
         'typo3/expose',
         'typo3/formexample',
         'typo3/sitekickstarter',
