@@ -20,7 +20,7 @@ class ReportController extends AbstractController
     }
 
     /**
-     * @Route("{name}", name="project", methods={"GET"})
+     * @Route("{vendor}", name="project", methods={"GET"})
      */
     public function project(Project $project): Response
     {

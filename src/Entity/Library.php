@@ -41,6 +41,7 @@ class Library
      * @var Tag[]|Collection
      *
      * @ORM\OneToMany(targetEntity="Tag", mappedBy="library", cascade={"persist"})
+     * @ORM\OrderBy({"created" = "ASC"})
      */
     private $tags;
 
@@ -73,6 +74,20 @@ class Library
     public function getTags(): array
     {
         return $this->tags->toArray();
+    }
+
+    public function getTagLabels(): array
+    {
+        return array_map(static function (Tag $tag) {
+            return $tag->getName();
+        }, $this->getTags());
+    }
+
+    public function getTagComplexities(): array
+    {
+        return array_map(static function (Tag $tag) {
+            return $tag->getAverageComplexity();
+        }, $this->getTags());
     }
 
     public function getRepositoryPath(): string

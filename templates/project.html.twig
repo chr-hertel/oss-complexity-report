@@ -1,5 +1,46 @@
 {% extends 'base.html.twig' %}
 
-{% block body %}
-    PROJECT: {{ project.name }}
+{% block content %}
+    <div class="logo position-absolute pl-3 mt-3">
+        <a href="{{ path('start') }}">
+            <h2 class="mb-0">Open Source Software</h2>
+            <h1>Complexity Report</h1>
+        </a>
+    </div>
+    <div class="bg-white text-center p-3 shadow-lg">
+        <div class="btn-group-lg">
+            <a href="{{ path('project', {'vendor': 'doctrine'}) }}" class="{{ project.vendor == 'doctrine' ? 'active'}} mx-2 my-2 btn btn-lg btn-secondary">Doctrine</a>
+            <a href="{{ path('project', {'vendor': 'laravel'}) }}" class="{{ project.vendor == 'laravel' ? 'active'}} mx-2 my-2 btn btn-lg btn-secondary">Laravel</a>
+            <a href="{{ path('project', {'vendor': 'phpunit'}) }}" class="{{ project.vendor == 'phpunit' ? 'active'}} mx-2 my-2 btn btn-lg btn-secondary">PHPUnit</a>
+            <a href="{{ path('project', {'vendor': 'symfony'}) }}" class="{{ project.vendor == 'symfony' ? 'active'}} mx-2 my-2 btn btn-lg btn-secondary">Symfony</a>
+            <a href="{{ path('project', {'vendor': 'typo3'}) }}" class="{{ project.vendor == 'typo3' ? 'active'}} mx-2 my-2 btn btn-lg btn-secondary">TYPO3</a>
+        </div>
+    </div>
+    <div class="container mt-5">
+        <canvas id="canvas" style="width: 100%"></canvas>
+        {% set mainLibrary = project.mainLibrary %}
+        <script type="text/javascript">
+            const ctx = document.getElementById('canvas');
+            const lineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: {{ mainLibrary.tagLabels|json_encode|raw }},
+                    datasets: [{
+                        label: 'Average Complexity per Class',
+                        data: {{ mainLibrary.tagComplexities|json_encode }},
+                        fill: false,
+                    }]
+                },
+                options: {
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true
+                            }
+                        }]
+                    }
+                }
+            });
+        </script>
+    </div>
 {% endblock %}

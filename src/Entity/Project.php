@@ -6,6 +6,8 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -13,6 +15,14 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Project
 {
+    private const MAIN_LIBRARIES = [
+        'doctrine' => 'doctrine/orm',
+        'laravel' => 'laravel/framework',
+        'phpunit' => 'phpunit/phpunit',
+        'symfony' => 'symfony/symfony',
+        'typo3' => 'typo3/cms-core',
+    ];
+
     /**
      * @ORM\Id
      * @ORM\Column(type="integer")
@@ -71,5 +81,12 @@ class Project
     public function getLibraries(): array
     {
         return $this->libraries->toArray();
+    }
+
+    public function getMainLibrary(): Library
+    {
+        return $this->libraries->matching(
+            new Criteria(new Comparison('name', '=', self::MAIN_LIBRARIES[$this->getVendor()]))
+        )->first();
     }
 }

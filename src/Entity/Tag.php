@@ -59,4 +59,29 @@ class Tag
         $this->averageComplexity = $averageComplexity;
         $this->library = $library;
     }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function getCreated(): \DateTimeImmutable
+    {
+        return $this->created;
+    }
+
+    public function getLinesOfCode(): int
+    {
+        return $this->linesOfCode;
+    }
+
+    public function getAverageComplexity(): float
+    {
+        return $this->averageComplexity;
+    }
+
+    public function getLibrary(): Library
+    {
+        return $this->library;
+    }
 }
