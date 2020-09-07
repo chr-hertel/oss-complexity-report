@@ -12,13 +12,11 @@ use Symfony\Component\Finder\SplFileInfo;
 
 class CodeAnalyser
 {
-    private Analyser $analyser;
     private GitWrapper $gitWrapper;
     private string $repositoryPath;
 
-    public function __construct(Analyser $analyser, GitWrapper $gitWrapper, string $repositoryPath)
+    public function __construct(GitWrapper $gitWrapper, string $repositoryPath)
     {
-        $this->analyser = $analyser;
         $this->gitWrapper = $gitWrapper;
         $this->repositoryPath = $repositoryPath;
     }
@@ -35,7 +33,7 @@ class CodeAnalyser
             return $file->getRealPath();
         }, iterator_to_array($finder));
 
-        $analysis = $this->analyser->countFiles($files, false);
+        $analysis = (new Analyser())->countFiles($files, false);
 
         $repository = $this->gitWrapper->workingCopy($localPath);
         $created = new \DateTimeImmutable($repository->log('-1', '--format=%ai'));

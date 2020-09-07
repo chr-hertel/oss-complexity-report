@@ -39,5 +39,3 @@ services:
     GitWrapper\GitWrapper:
         calls:
             - addLoggerEventSubscriber: ['@GitWrapper\EventSubscriber\GitLoggerEventSubscriber']
-
-    SebastianBergmann\PHPLOC\Analyser: ~
