@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport;
 
-use App\ComplexityReport\Git\Tag;
 use App\Entity\Library;
 use App\Entity\Project;
 use App\Repository\ProjectRepository;
@@ -66,7 +65,7 @@ class DataAggregator
         }
     }
 
-    private function collectTagData(Library $library, Tag $tag): Analysis
+    private function collectTagData(Library $library, GitTag $tag): Analysis
     {
         $key = sprintf('%s_%s_analysis', str_replace('/', '_', $library->getName()), $tag->getName());
         $item = $this->cache->getItem($key);

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\ComplexityReport\Packagist;
+namespace App\ComplexityReport;
 
 use App\Entity\Library;
 use App\Entity\Project;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-class Client
+class PackagistClient
 {
     private const PACKAGE_DENY_LIST = [
         'doctrine/orm-g2s',

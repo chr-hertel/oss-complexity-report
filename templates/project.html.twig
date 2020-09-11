@@ -1,9 +1,16 @@
 {% extends 'base.html.twig' %}
 
+{% block title parent() ~ ' - Project: ' ~ project.name %}
+
+{# @var mainLibrary \App\Entity\Library #}
+{% set mainLibrary = project.mainLibrary %}
+{# @var libraryGraph \App\ComplexityReport\GraphData #}
+{% set libraryGraph = mainLibrary.asGraph %}
+
 {% block content %}
     <div class="logo position-absolute pl-3 mt-3">
         <a href="{{ path('start') }}">
-            <h2 class="mb-0">Open Source Software</h2>
+            <h2 class="mb-0">Open Source PHP Software</h2>
             <h1>Complexity Report</h1>
         </a>
     </div>
@@ -17,30 +24,113 @@
         </div>
     </div>
     <div class="container mt-5">
-        <canvas id="canvas" style="width: 100%"></canvas>
-        {% set mainLibrary = project.mainLibrary %}
+        <h2>Project: {{ project.name }}</h2>
+        <canvas id="canvas" class="img-fluid"></canvas>
+        <div class="form-group mx-3 my-4">
+            <h3>Libraries</h3>
+            <select class="js-library-select form-control" name="libraries[]" multiple="multiple">
+                {% for library in project.libraries %}
+                    <option value="{{ library.id }}" {{ library.id == mainLibrary.id ? 'selected="selected"' }}>{{ library.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <script type="text/javascript">
+            window.chartColors = {
+                red: 'rgb(255, 99, 132)',
+                orange: 'rgb(255, 159, 64)',
+                yellow: 'rgb(255, 205, 86)',
+                green: 'rgb(75, 192, 192)',
+                blue: 'rgb(54, 162, 235)',
+                purple: 'rgb(153, 102, 255)',
+                grey: 'rgb(201, 203, 207)'
+            };
+            const colorNames = Object.keys(window.chartColors);
+
+            $(document).ready(function() {
+                $select = $('.js-library-select');
+                $select.select2();
+
+                $select.on('select2:select', function (e) {
+                    const data = e.params.data;
+                    const colorName = colorNames[config.data.datasets.length % colorNames.length];
+                    const newColor = window.chartColors[colorName];
+                    $.ajax('/'+data.id)
+                        .done(function (response) {
+                            const newDataset = {
+                                label: data.text,
+                                data: response,
+                                fill: false,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                borderColor: newColor,
+                            };
+
+                            config.data.datasets.push(newDataset);
+                            lineChart.update();
+                        }
+                    );
+                });
+
+                $select.on('select2:unselect', function (e) {
+                    const data = e.params.data;
+
+                    for (let index = 0; index < config.data.datasets.length; ++index) {
+                        if (data.text === config.data.datasets[index].label) {
+                            config.data.datasets.splice(index, 1);
+                            break;
+                        }
+                    }
+
+                    lineChart.update();
+                });
+            });
+
+            const tagData = {{ libraryGraph.tagData|json_encode|raw }}
             const ctx = document.getElementById('canvas');
-            const lineChart = new Chart(ctx, {
+            const config = {
                 type: 'line',
                 data: {
-                    labels: {{ mainLibrary.tagLabels|json_encode|raw }},
+                    labels: [
+                        {% for tagLabel in libraryGraph.labels %}
+                        moment('{{ tagLabel }}', 'MM-DD-YY'),
+                        {% endfor -%}
+                    ],
                     datasets: [{
-                        label: 'Average Complexity per Class',
-                        data: {{ mainLibrary.tagComplexities|json_encode }},
+                        label: '{{ mainLibrary.name }}',
+                        data: tagData,
                         fill: false,
+                        borderColor: 'rgb(45,45,45)',
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
                     }]
                 },
                 options: {
+                    tooltips: {
+                        callbacks: {
+                            title: function (tooltipItem) {
+                                return tagData[tooltipItem[0].index].name;
+                            },
+                            label: function (tooltipItem) {
+                                return 'Ø Complexity: '+tooltipItem.value;
+                            }
+                        }
+                    },
                     scales: {
+                        xAxes: [{
+                            type: 'time',
+                            time: {
+                                tooltipFormat: 'll',
+                            },
+                        }],
                         yAxes: [{
                             ticks: {
-                                beginAtZero: true
+                                beginAtZero: true,
                             }
                         }]
-                    }
+                    },
                 }
-            });
+            };
+            const lineChart = new Chart(ctx, config);
         </script>
     </div>
 {% endblock %}

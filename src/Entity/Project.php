@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\PersistentCollection;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\ProjectRepository")
@@ -46,7 +46,7 @@ class Project
     private string $vendor;
 
     /**
-     * @var Library[]|Collection
+     * @var Library[]|ArrayCollection|PersistentCollection
      *
      * @ORM\OneToMany(targetEntity="Library", mappedBy="project")
      */
@@ -85,8 +85,14 @@ class Project
 
     public function getMainLibrary(): Library
     {
-        return $this->libraries->matching(
+        $mainLibrary = $this->libraries->matching(
             new Criteria(new Comparison('name', '=', self::MAIN_LIBRARIES[$this->getVendor()]))
         )->first();
+
+        if (false === $mainLibrary) {
+            throw new \DomainException(sprintf('Cannot load main library of project "%s"', $this->getName()));
+        }
+
+        return $mainLibrary;
     }
 }

@@ -2,10 +2,14 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>{% block title 'Open Source Software Complexity Report' %}</title>
+        <title>{% block title 'Open Source PHP Software - Complexity Report' %}</title>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
         <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Rokkitt&display=swap" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js" integrity="sha512-s+xg36jbIujB2S2VKfpGmlC3T5V2TF3lY48DX7u2r9XzGzgPsa6wTpOQA7J9iffvdeBN0q9tKzRxVxw1JviZPg==" crossorigin="anonymous"></script>
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
         <style>
             body { font-family: 'Rokkitt', serif; color: rgba(63,76,107,1); }
             h1 { font-family: 'Baloo 2', cursive; }
@@ -18,7 +22,8 @@
             .headline h1 { font-size: 48pt; }
             .headline h2 { font-size: 32pt; }
             .logo a { color: rgba(63,76,107,1); }
-            .logo h2 { font-size: 18pt; }
+            .logo a:hover { text-decoration: none; }
+            .logo h2 { font-size: 16pt; }
             .logo h1 { font-size: 24pt; }
         </style>
     </head>

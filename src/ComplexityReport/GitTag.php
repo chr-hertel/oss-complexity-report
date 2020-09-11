@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\ComplexityReport\Git;
+namespace App\ComplexityReport;
 
 use GitWrapper\GitTags;
 
-class Tag
+class GitTag
 {
     private string $name;
 

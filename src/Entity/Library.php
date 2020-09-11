@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\ComplexityReport\Analysis;
-use App\ComplexityReport\Git\Tag as GitTag;
+use App\ComplexityReport\GitTag;
+use App\ComplexityReport\GraphData;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -53,6 +54,11 @@ class Library
         $this->tags = new ArrayCollection();
     }
 
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
     public function getName(): string
     {
         return $this->name;
@@ -76,20 +82,6 @@ class Library
         return $this->tags->toArray();
     }
 
-    public function getTagLabels(): array
-    {
-        return array_map(static function (Tag $tag) {
-            return $tag->getName();
-        }, $this->getTags());
-    }
-
-    public function getTagComplexities(): array
-    {
-        return array_map(static function (Tag $tag) {
-            return $tag->getAverageComplexity();
-        }, $this->getTags());
-    }
-
     public function getRepositoryPath(): string
     {
         return sprintf('%s/%s', mb_strtolower($this->getProject()->getName()), mb_strtolower($this->getName()));
@@ -100,5 +92,10 @@ class Library
         $this->tags->add(
             new Tag($tag->getName(), $analysis->getCreated(), $analysis->getLinesOfCode(), $analysis->getAverageComplexity(), $this)
         );
+    }
+
+    public function asGraph(): GraphData
+    {
+        return new GraphData($this);
     }
 }
