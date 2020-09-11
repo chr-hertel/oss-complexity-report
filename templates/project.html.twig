@@ -54,7 +54,7 @@
                     const data = e.params.data;
                     const colorName = colorNames[config.data.datasets.length % colorNames.length];
                     const newColor = window.chartColors[colorName];
-                    $.ajax('/'+data.id)
+                    $.ajax(data.id)
                         .done(function (response) {
                             const newDataset = {
                                 label: data.text,
