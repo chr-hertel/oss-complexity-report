@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\Library;
 use App\Entity\Project;
+use App\Repository\ProjectRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,17 +17,22 @@ class ReportController extends AbstractController
     /**
      * @Route("", name="start", methods={"GET"})
      */
-    public function start(): Response
+    public function start(ProjectRepository $projectRepository): Response
     {
-        return $this->render('start.html.twig');
+        return $this->render('start.html.twig', [
+            'projects' => $projectRepository->findAll(),
+        ]);
     }
 
     /**
      * @Route("{vendor}", name="project", methods={"GET"}, priority=1)
      */
-    public function project(Project $project): Response
+    public function project(Project $project, ProjectRepository $projectRepository): Response
     {
-        return $this->render('project.html.twig', ['project' => $project]);
+        return $this->render('project.html.twig', [
+            'project' => $project,
+            'projects' => $projectRepository->findAll(),
+        ]);
     }
 
     /**

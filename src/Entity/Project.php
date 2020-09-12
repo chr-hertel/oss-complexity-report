@@ -16,8 +16,12 @@ use Doctrine\ORM\PersistentCollection;
 class Project
 {
     private const MAIN_LIBRARIES = [
+        'composer' => 'composer/composer',
         'doctrine' => 'doctrine/orm',
+        'laminas' => 'laminas/laminas-mvc',
         'laravel' => 'laravel/framework',
+        'league' => 'league/flysystem',
+        'magento' => 'magento/core',
         'phpunit' => 'phpunit/phpunit',
         'symfony' => 'symfony/symfony',
         'typo3' => 'typo3/cms-core',
@@ -85,6 +89,10 @@ class Project
 
     public function getMainLibrary(): Library
     {
+        if (!array_key_exists($this->getVendor(), self::MAIN_LIBRARIES)) {
+            throw new \DomainException(sprintf('Cannot determine main library of project "%s"', $this->getName()));
+        }
+
         $mainLibrary = $this->libraries->matching(
             new Criteria(new Comparison('name', '=', self::MAIN_LIBRARIES[$this->getVendor()]))
         )->first();

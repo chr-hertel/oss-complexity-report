@@ -5,13 +5,5 @@
         <h2>Open Source PHP Software</h2>
         <h1>Complexity Report</h1>
     </div>
-    <div class="bg-white text-center p-3 shadow-lg">
-        <div class="btn-group-lg">
-            <a href="{{ path('project', {'vendor': 'doctrine'}) }}" class="mx-2 my-2 btn btn-lg btn-secondary">Doctrine</a>
-            <a href="{{ path('project', {'vendor': 'laravel'}) }}" class="mx-2 my-2 btn btn-lg btn-secondary">Laravel</a>
-            <a href="{{ path('project', {'vendor': 'phpunit'}) }}" class="mx-2 my-2 btn btn-lg btn-secondary">PHPUnit</a>
-            <a href="{{ path('project', {'vendor': 'symfony'}) }}" class="mx-2 my-2 btn btn-lg btn-secondary">Symfony</a>
-            <a href="{{ path('project', {'vendor': 'typo3'}) }}" class="mx-2 my-2 btn btn-lg btn-secondary">TYPO3</a>
-        </div>
-    </div>
+    {{ include('_project_bar.html.twig') }}
 {% endblock %}
