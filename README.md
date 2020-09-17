@@ -34,4 +34,7 @@ $ bin/console app:libraries:load -vv
 
 # clones repositories and analyses code base of every major and minor release
 $ bin/console app:data:aggregate -vv
+
+# fix some data issues
+$ bin/console app:data:fix -vv
 ```

@@ -13,6 +13,10 @@ services:
         bind:
             string $repositoryPath: '%kernel.project_dir%/repositories'
 
+    _instanceof:
+        App\ComplexityReport\DataFixer\FixerInterface:
+            tags: ['complexity_report.data_fixer']
+
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
     App\:
@@ -31,6 +35,9 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    App\ComplexityReport\DataFixer:
+        $fixers: !tagged 'complexity_report.data_fixer'
 
     GitWrapper\EventSubscriber\GitLoggerEventSubscriber:
         calls:

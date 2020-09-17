@@ -70,6 +70,11 @@ class Tag
         return $this->created;
     }
 
+    public function setCreated(\DateTimeImmutable $created): void
+    {
+        $this->created = $created;
+    }
+
     public function getLinesOfCode(): int
     {
         return $this->linesOfCode;
