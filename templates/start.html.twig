@@ -5,5 +5,15 @@
         <h2>Open Source PHP Software</h2>
         <h1>Complexity Report</h1>
     </div>
-    {{ include('_project_bar.html.twig') }}
+    <div class="bg-white text-center p-3 shadow-lg">
+        <div class="btn-group-lg">
+            {% for project in projects %}
+                <a href="{{ path('project', {'vendor': project.vendor}) }}"
+                   class="mx-2 my-2 btn btn-lg btn-secondary">
+                    {{ project.name }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
 {% endblock %}

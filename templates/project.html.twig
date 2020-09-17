@@ -8,13 +8,27 @@
 {% set libraryGraph = mainLibrary.asGraph %}
 
 {% block content %}
-    <div class="logo position-absolute pl-3 mt-3">
-        <a href="{{ path('start') }}">
-            <h2 class="mb-0">Open Source PHP Software</h2>
-            <h1>Complexity Report</h1>
-        </a>
+    <div class="bg-white p-3 shadow-lg">
+        <div class="container d-flex justify-content-between">
+            <a class="logo" href="{{ path('start') }}">
+                <h2 class="mb-0">Open Source PHP Software</h2>
+                <h1 class="mb-0">Complexity Report</h1>
+            </a>
+            <div class="btn-group-lg mt-2">
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    {{ project.name }}
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    {% for project in projects %}
+                        <a class="dropdown-item {{ project.name == loop.parent.project.name ? 'disabled' }}"
+                           href="{{ path('project', {'vendor': project.vendor}) }}">
+                            {{ project.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
-    {{ include('_project_bar.html.twig') }}
     <div class="container mt-5">
         <h2>Project: {{ project.name }}</h2>
         <canvas id="canvas" class="img-fluid"></canvas>
