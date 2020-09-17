@@ -7,8 +7,12 @@ symfony console lint:yaml config
 symfony console lint:twig templates
 symfony console lint:container
 
+symfony console doctrine:schema:validate
+
 symfony php vendor/bin/php-cs-fixer fix --dry-run
 symfony php vendor/bin/phpstan analyse
 symfony php vendor/bin/psalm
+
+symfony php vendor/bin/security-checker security:check
 
 symfony php bin/phpunit
