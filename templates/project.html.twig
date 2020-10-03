@@ -30,7 +30,12 @@
         </div>
     </div>
     <div class="container mt-5">
-        <h2>Project: {{ project.name }}</h2>
+        <h2 class="mb-0">Project: {{ project.name }}
+            <a href="{{ project.url }}" target="_blank" class="text-secondary"
+               title="{{ project.url|replace({'https://':'', '/':''}) }}">
+                <i class="fas fa-external-link-square-alt h6"></i>
+            </a>
+        </h2>
         <canvas id="canvas" class="img-fluid"></canvas>
         <div class="form-group mx-3 my-4">
             <h3>Libraries</h3>
