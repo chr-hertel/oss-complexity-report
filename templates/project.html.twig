@@ -56,6 +56,16 @@
                 $select = $('.js-library-select');
                 $select.select2();
 
+                // prevent sorting by name
+                $select.on('select2:select', function (e) {
+                    const $element = $(e.params.data.element);
+
+                    $element.detach();
+                    $(this).append($element);
+                    $(this).trigger('change');
+                });
+
+                // load lib data and render in graph
                 $select.on('select2:select', function (e) {
                     const data = e.params.data;
                     const colorName = colorNames[config.data.datasets.length % colorNames.length];
@@ -77,6 +87,7 @@
                     );
                 });
 
+                // remove graph data
                 $select.on('select2:unselect', function (e) {
                     const data = e.params.data;
 
