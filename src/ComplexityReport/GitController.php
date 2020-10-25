@@ -25,6 +25,7 @@ class GitController
     public function loadTags(Library $library): array
     {
         $repository = $this->getRepository($library);
+        $repository->fetchAll(['tags' => true]);
 
         return GitTag::fromGitTags($repository->tags());
     }

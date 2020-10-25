@@ -50,7 +50,7 @@ class DataAggregator
     private function aggregateProject(Project $project): void
     {
         foreach ($project->getLibraries() as $library) {
-            $tags = $this->gitController->loadTags($library);
+            $tags = $this->getTags($library);
 
             foreach ($tags as $tag) {
                 if ($tag->isPreRelease() || $tag->isPatchRelease()) {
@@ -63,6 +63,25 @@ class DataAggregator
                 $library->addTag($tag, $analysis);
             }
         }
+    }
+
+    /**
+     * @return GitTag[]
+     */
+    private function getTags(Library $library): array
+    {
+        $key = sprintf('%s_tags', str_replace('/', '_', $library->getName()));
+        $item = $this->cache->getItem($key);
+
+        if (!$item->isHit()) {
+            $tags = $this->gitController->loadTags($library);
+
+            $item->set($tags);
+            $item->expiresAfter(3600);
+            $this->cache->save($item);
+        }
+
+        return $item->get();
     }
 
     private function collectTagData(Library $library, GitTag $tag): Analysis
