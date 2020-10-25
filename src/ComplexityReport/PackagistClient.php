@@ -6,6 +6,7 @@ namespace App\ComplexityReport;
 
 use App\Entity\Library;
 use App\Entity\Project;
+use App\Repository\LibraryRepository;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -23,32 +24,34 @@ class PackagistClient
     ];
 
     private HttpClientInterface $httpClient;
+    private LibraryRepository $repository;
     private CacheItemPoolInterface $cache;
 
-    public function __construct(HttpClientInterface $httpClient, CacheItemPoolInterface $cache)
-    {
+    public function __construct(
+        HttpClientInterface $httpClient,
+        LibraryRepository $repository,
+        CacheItemPoolInterface $cache
+    ) {
         $this->httpClient = $httpClient;
+        $this->repository = $repository;
         $this->cache = $cache;
     }
 
-    public function fetchLibraries(Project $project): array
+    public function fetchNewLibraries(Project $project): array
     {
-        $packages = $this->fetchPackages($project);
+        $libraries = $this->fetchLibraries($project);
+        $librariesToLoad = $this->filterNewLibraries($libraries);
 
-        $libraries = [];
-        foreach ($packages as $package) {
-            if (in_array($package, self::PACKAGE_DENY_LIST, true)) {
-                continue;
-            }
-
-            $data = $this->fetchPackageData($package);
-            $libraries[] = new Library($package, $data['package']['repository'], $project);
+        $newLibraries = [];
+        foreach ($librariesToLoad as $library) {
+            $data = $this->fetchLibraryData($library);
+            $newLibraries[] = new Library($library, $data['package']['repository'], $project);
         }
 
-        return $libraries;
+        return $newLibraries;
     }
 
-    private function fetchPackages(Project $project): array
+    private function fetchLibraries(Project $project): array
     {
         $item = $this->cache->getItem(sprintf('packages_%s', $project->getVendor()));
 
@@ -64,7 +67,19 @@ class PackagistClient
         return $item->get();
     }
 
-    private function fetchPackageData(string $package): array
+    private function filterNewLibraries(array $libraries): array
+    {
+        $existing = array_map(static function (Library $library) {
+            return $library->getName();
+        }, $this->repository->findAll());
+
+        return array_filter($libraries, static function (string $library) use ($existing) {
+            return !in_array($library, self::PACKAGE_DENY_LIST, true)
+                && !in_array($library, $existing, true);
+        });
+    }
+
+    private function fetchLibraryData(string $package): array
     {
         $item = $this->cache->getItem(sprintf('package_data_%s', str_replace('/', '_', $package)));
 

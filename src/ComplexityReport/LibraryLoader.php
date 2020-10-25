@@ -25,7 +25,7 @@ class LibraryLoader
         $projects = $this->repository->findAll();
 
         foreach ($projects as $project) {
-            $libraries = $this->client->fetchLibraries($project);
+            $libraries = $this->client->fetchNewLibraries($project);
             array_map([$this->entityManager, 'persist'], $libraries);
         }
 
