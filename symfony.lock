@@ -74,19 +74,6 @@
             "src/DataFixtures/AppFixtures.php"
         ]
     },
-    "doctrine/doctrine-migrations-bundle": {
-        "version": "2.2",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "master",
-            "version": "2.2",
-            "ref": "baaa439e3e3179e69e3da84b671f0a3e4a2f56ad"
-        },
-        "files": [
-            "config/packages/doctrine_migrations.yaml",
-            "migrations/.gitignore"
-        ]
-    },
     "doctrine/event-manager": {
         "version": "1.1.1"
     },
@@ -98,9 +85,6 @@
     },
     "doctrine/lexer": {
         "version": "1.2.1"
-    },
-    "doctrine/migrations": {
-        "version": "3.0.1"
     },
     "doctrine/orm": {
         "version": "v2.7.3"
@@ -132,15 +116,6 @@
             ".php_cs.dist"
         ]
     },
-    "laminas/laminas-code": {
-        "version": "3.4.1"
-    },
-    "laminas/laminas-eventmanager": {
-        "version": "3.3.0"
-    },
-    "laminas/laminas-zendframework-bridge": {
-        "version": "1.1.0"
-    },
     "monolog/monolog": {
         "version": "2.1.1"
     },
@@ -152,9 +127,6 @@
     },
     "nikic/php-parser": {
         "version": "v4.9.1"
-    },
-    "ocramius/proxy-manager": {
-        "version": "2.8.0"
     },
     "openlss/lib-array2xml": {
         "version": "1.0.0"
@@ -493,9 +465,6 @@
     },
     "vimeo/psalm": {
         "version": "3.15"
-    },
-    "webimpress/safe-writer": {
-        "version": "2.1.0"
     },
     "webmozart/assert": {
         "version": "1.9.1"

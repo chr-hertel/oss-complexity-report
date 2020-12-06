@@ -11,7 +11,6 @@
         "cpliakas/git-wrapper": "^3.0",
         "doctrine/doctrine-bundle": "^2.1",
         "doctrine/doctrine-fixtures-bundle": "^3.4",
-        "doctrine/doctrine-migrations-bundle": "^3.0",
         "doctrine/orm": "^2.8",
         "phploc/phploc": "^7.0",
         "sensio/framework-extra-bundle": "^5.6",
@@ -42,9 +41,9 @@
     },
     "config": {
         "optimize-autoloader": true,
-	"platform": {
+	    "platform": {
             "php": "7.4.6"
-	},
+	    },
         "preferred-install": {
             "*": "dist"
         },
