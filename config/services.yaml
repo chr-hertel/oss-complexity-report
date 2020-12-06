@@ -38,11 +38,3 @@ services:
 
     App\ComplexityReport\DataFixer:
         $fixers: !tagged 'complexity_report.data_fixer'
-
-    GitWrapper\EventSubscriber\GitLoggerEventSubscriber:
-        calls:
-            - setLogger: ['@monolog.logger.git']
-
-    GitWrapper\GitWrapper:
-        calls:
-            - addLoggerEventSubscriber: ['@GitWrapper\EventSubscriber\GitLoggerEventSubscriber']
