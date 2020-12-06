@@ -1,11 +1,5 @@
 {
     "controllers": {
-        "@symfony/ux-chartjs": {
-            "chart": {
-                "enabled": true,
-                "webpackMode": "eager"
-            }
-        },
         "@symfony/ux-swup": {
             "swup": {
                 "enabled": true,
