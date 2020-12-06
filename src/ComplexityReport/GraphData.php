@@ -20,9 +20,9 @@ class GraphData
 
     public function getLabels(): array
     {
-        return array_unique(array_map(static function (Tag $tag) {
+        return array_values(array_unique(array_map(static function (Tag $tag) {
             return $tag->getCreated()->format(self::DATE_FORMAT);
-        }, $this->library->getTags()));
+        }, $this->library->getTags())));
     }
 
     public function getTagData(): array

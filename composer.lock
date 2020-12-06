@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "75323b5122af27ca43a765a29bd86816",
+    "content-hash": "b9b84b2289659445434219934cc20df0",
     "packages": [
         {
             "name": "composer/package-versions-deprecated",
@@ -4968,91 +4968,17 @@
             "time": "2020-10-24T12:08:07+00:00"
         },
         {
-            "name": "symfony/ux-chartjs",
-            "version": "v1.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/symfony/ux-chartjs.git",
-                "reference": "b1e816b3b22be90f3c6e06c48c169636f0cd96dc"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/symfony/ux-chartjs/zipball/b1e816b3b22be90f3c6e06c48c169636f0cd96dc",
-                "reference": "b1e816b3b22be90f3c6e06c48c169636f0cd96dc",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=7.2.5",
-                "symfony/config": "^4.4.17|^5.0",
-                "symfony/dependency-injection": "^4.4.17|^5.0",
-                "symfony/http-kernel": "^4.4.17|^5.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^8.5",
-                "symfony/framework-bundle": "^4.4.17|^5.0",
-                "symfony/twig-bundle": "^4.4.17|^5.0",
-                "symfony/var-dumper": "^4.4.17|^5.0"
-            },
-            "type": "symfony-bundle",
-            "autoload": {
-                "psr-4": {
-                    "Symfony\\UX\\Chartjs\\": "."
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Titouan Galopin",
-                    "email": "galopintitouan@gmail.com"
-                },
-                {
-                    "name": "Symfony Community",
-                    "homepage": "https://symfony.com/contributors"
-                }
-            ],
-            "description": "Chart.js integration for Symfony",
-            "homepage": "https://symfony.com",
-            "keywords": [
-                "Chart.js",
-                "chart",
-                "chartjs",
-                "symfony",
-                "ux"
-            ],
-            "support": {
-                "source": "https://github.com/symfony/ux-chartjs/tree/v1.0.0"
-            },
-            "funding": [
-                {
-                    "url": "https://symfony.com/sponsor",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://github.com/fabpot",
-                    "type": "github"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
-                    "type": "tidelift"
-                }
-            ],
-            "time": "2020-12-03T08:51:08+00:00"
-        },
-        {
             "name": "symfony/ux-swup",
-            "version": "v1.0.0",
+            "version": "v1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/ux-swup.git",
-                "reference": "b218b74bdc50fc3b19fa39e0116e107e3820a817"
+                "reference": "d3464c1aad1b70f739c3511945ded98789645a59"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/ux-swup/zipball/b218b74bdc50fc3b19fa39e0116e107e3820a817",
-                "reference": "b218b74bdc50fc3b19fa39e0116e107e3820a817",
+                "url": "https://api.github.com/repos/symfony/ux-swup/zipball/d3464c1aad1b70f739c3511945ded98789645a59",
+                "reference": "d3464c1aad1b70f739c3511945ded98789645a59",
                 "shasum": ""
             },
             "type": "symfony-bundle",
@@ -5078,7 +5004,7 @@
                 "ux"
             ],
             "support": {
-                "source": "https://github.com/symfony/ux-swup/tree/v1.0.0"
+                "source": "https://github.com/symfony/ux-swup/tree/v1.1.0"
             },
             "funding": [
                 {
@@ -5094,7 +5020,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2020-12-03T08:51:08+00:00"
+            "time": "2020-12-05T18:44:30+00:00"
         },
         {
             "name": "symfony/var-dumper",
