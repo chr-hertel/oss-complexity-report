@@ -5,6 +5,8 @@ Requirements
 ------------
 
 * PHP 7.4
+* Node & Yarn
+* Some database (eg. Sqlite)
 
 Setup
 -----
