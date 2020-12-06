@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\Comparison;
+use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\PersistentCollection;
+use DomainException;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\ProjectRepository")
@@ -31,6 +33,8 @@ class Project
      * @ORM\Id
      * @ORM\Column(type="integer")
      * @ORM\GeneratedValue
+     *
+     * @psalm-suppress PropertyNotSetInConstructor
      */
     private int $id;
 
@@ -50,7 +54,8 @@ class Project
     private string $vendor;
 
     /**
-     * @var Library[]|ArrayCollection|PersistentCollection
+     * @var Library[]|Collection|Selectable
+     * @psalm-var Selectable&Collection<int, Library>
      *
      * @ORM\OneToMany(targetEntity="Library", mappedBy="project")
      */
@@ -90,7 +95,7 @@ class Project
     public function getMainLibrary(): Library
     {
         if (!array_key_exists($this->getVendor(), self::MAIN_LIBRARIES)) {
-            throw new \DomainException(sprintf('Cannot determine main library of project "%s"', $this->getName()));
+            throw new DomainException(sprintf('Cannot determine main library of project "%s"', $this->getName()));
         }
 
         $mainLibrary = $this->libraries->matching(
@@ -98,7 +103,7 @@ class Project
         )->first();
 
         if (false === $mainLibrary) {
-            throw new \DomainException(sprintf('Cannot load main library of project "%s"', $this->getName()));
+            throw new DomainException(sprintf('Cannot load main library of project "%s"', $this->getName()));
         }
 
         return $mainLibrary;

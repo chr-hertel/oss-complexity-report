@@ -6,5 +6,5 @@ namespace App\ComplexityReport\DataFixer;
 
 interface FixerInterface
 {
-    public function fixData();
+    public function fixData(): void;
 }

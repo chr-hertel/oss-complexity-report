@@ -18,6 +18,8 @@ class Tag
      * @ORM\Id
      * @ORM\Column(type="integer")
      * @ORM\GeneratedValue
+     *
+     * @psalm-suppress PropertyNotSetInConstructor
      */
     private int $id;
 

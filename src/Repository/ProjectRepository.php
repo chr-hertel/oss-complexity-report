@@ -9,7 +9,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @method Project[] findAll()
+ * @method list<Project> findAll()
  */
 class ProjectRepository extends ServiceEntityRepository
 {

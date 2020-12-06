@@ -3,7 +3,7 @@
 symfony composer validate
 symfony composer check-platform-reqs
 
-symfony console lint:yaml config
+symfony console lint:yaml config --parse-tags
 symfony console lint:twig templates
 symfony console lint:container
 

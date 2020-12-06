@@ -9,7 +9,9 @@
     <projectFiles>
         <directory name="src" />
         <ignoreFiles>
+            <directory name="var" />
             <directory name="vendor" />
+            <file name="src/Kernel.php" />
         </ignoreFiles>
     </projectFiles>
 </psalm>

@@ -12,7 +12,7 @@ class DataFixer
     private iterable $fixers;
 
     /**
-     * @param FixerInterface[]|iterable
+     * @param FixerInterface[]|iterable $fixers
      */
     public function __construct(iterable $fixers)
     {

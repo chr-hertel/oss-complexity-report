@@ -20,6 +20,8 @@ class Library
      * @ORM\Id
      * @ORM\Column(type="integer")
      * @ORM\GeneratedValue
+     *
+     * @psalm-suppress PropertyNotSetInConstructor
      */
     private int $id;
 
@@ -40,6 +42,7 @@ class Library
 
     /**
      * @var Tag[]|Collection
+     * @psalm-var Collection<int, Tag>
      *
      * @ORM\OneToMany(targetEntity="Tag", mappedBy="library", cascade={"persist"})
      * @ORM\OrderBy({"created" = "ASC"})
@@ -75,7 +78,7 @@ class Library
     }
 
     /**
-     * @return Tag[]
+     * @return array<int, Tag>
      */
     public function getTags(): array
     {

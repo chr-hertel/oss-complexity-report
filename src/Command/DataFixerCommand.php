@@ -34,6 +34,4 @@ class DataFixerCommand extends Command
 
         return 0;
     }
-
-
 }
