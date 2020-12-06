@@ -6,7 +6,8 @@ if (!Encore.isRuntimeEnvironmentConfigured()) {
 
 Encore
     .setOutputPath('public/build/')
-    .setPublicPath('/build')
+    .setPublicPath(Encore.isProduction() ? '/oss-complexity-report/build' : '/build')
+    .setManifestKeyPrefix('build/')
     .addEntry('app', './assets/app.js')
     .enableStimulusBridge('./assets/controllers.json')
     .splitEntryChunks()
