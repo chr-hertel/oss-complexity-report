@@ -1,0 +1,46 @@
+body {
+    font-family: 'Rokkitt', serif;
+    color: rgba(63, 76, 107, 1);
+}
+
+h1 {
+    font-family: 'Baloo 2', cursive;
+}
+
+.headline {
+    padding: 10rem 0 7rem;
+    background: -moz-linear-gradient(top, rgba(63, 76, 107, 0) 0%, rgba(63, 76, 107, 0.35) 100%); /* FF3.6-15 */
+    background: -webkit-linear-gradient(
+        top,
+        rgba(63, 76, 107, 0) 0%,
+        rgba(63, 76, 107, 0.35) 100%
+    ); /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(
+        to bottom,
+        rgba(63, 76, 107, 0) 0%,
+        rgba(63, 76, 107, 0.35) 100%
+    ); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+
+    h1 {
+        font-size: 48pt;
+    }
+
+    h2 {
+        font-size: 32pt;
+    }
+}
+
+a.logo {
+    color: rgba(63, 76, 107, 1);
+
+    &:hover {
+        text-decoration: none;
+    }
+
+    h1 {
+        font-size: 24pt;
+    }
+    h2 {
+        font-size: 16pt;
+    }
+}

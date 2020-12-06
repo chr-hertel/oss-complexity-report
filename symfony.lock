@@ -212,6 +212,9 @@
             "config/packages/security_checker.yaml"
         ]
     },
+    "symfony/asset": {
+        "version": "v5.2.0"
+    },
     "symfony/browser-kit": {
         "version": "v5.1.5"
     },
@@ -443,6 +446,12 @@
     "symfony/twig-pack": {
         "version": "v1.0.0"
     },
+    "symfony/ux-chartjs": {
+        "version": "v1.0.0"
+    },
+    "symfony/ux-swup": {
+        "version": "v1.0.0"
+    },
     "symfony/var-dumper": {
         "version": "v5.1.5"
     },
@@ -461,6 +470,28 @@
             "config/packages/dev/web_profiler.yaml",
             "config/packages/test/web_profiler.yaml",
             "config/routes/dev/web_profiler.yaml"
+        ]
+    },
+    "symfony/webpack-encore-bundle": {
+        "version": "1.6",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "master",
+            "version": "1.6",
+            "ref": "f362ed8e8aa99a8cb216e6bdb2ac833dfb7643dd"
+        },
+        "files": [
+            "assets/app.js",
+            "assets/bootstrap.js",
+            "assets/controllers.json",
+            "assets/controllers/hello_controller.js",
+            "assets/styles/app.css",
+            "config/packages/assets.yaml",
+            "config/packages/prod/webpack_encore.yaml",
+            "config/packages/test/webpack_encore.yaml",
+            "config/packages/webpack_encore.yaml",
+            "package.json",
+            "webpack.config.js"
         ]
     },
     "symfony/yaml": {

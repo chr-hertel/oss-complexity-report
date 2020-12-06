@@ -13,6 +13,8 @@ Setup
 $ git clone git@github.com:chr-hertel/oss-complexity-report
 $ cd oss-complexity-report
 $ composer install
+$ yarn install
+$ yarn encore dev
 $ symfony serve -d
 ```
 
