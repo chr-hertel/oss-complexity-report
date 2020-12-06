@@ -21,6 +21,9 @@
         "symfony/http-client": "5.2.*",
         "symfony/monolog-bundle": "^3.6",
         "symfony/twig-bundle": "5.2.*",
+        "symfony/ux-chartjs": "^1.0",
+        "symfony/ux-swup": "^1.0",
+        "symfony/webpack-encore-bundle": "^1.8",
         "symfony/yaml": "5.2.*",
         "twig/extra-bundle": "^3.1",
         "twig/twig": "^3.1"
