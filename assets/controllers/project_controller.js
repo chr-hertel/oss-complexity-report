@@ -1,5 +1,5 @@
 import { Controller } from 'stimulus';
-import 'chartjs';
+import 'chart.js';
 import moment from 'moment';
 import 'select2';
 const $ = require('jquery');
@@ -25,8 +25,6 @@ export default class extends Controller {
             this.element.dataset.mainLib
         );
         this.initSelectBox();
-
-        console.log(this.chartConfig);
     }
 
     initChart(labels, tagData, mainLib) {
