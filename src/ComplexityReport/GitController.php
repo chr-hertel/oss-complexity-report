@@ -10,13 +10,8 @@ use GitWrapper\GitWrapper;
 
 class GitController
 {
-    private GitWrapper $gitWrapper;
-    private string $repositoryPath;
-
-    public function __construct(GitWrapper $gitWrapper, string $repositoryPath)
+    public function __construct(private GitWrapper $gitWrapper, private string $repositoryPath)
     {
-        $this->gitWrapper = $gitWrapper;
-        $this->repositoryPath = $repositoryPath;
     }
 
     /**

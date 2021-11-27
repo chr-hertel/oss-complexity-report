@@ -14,24 +14,13 @@ use RuntimeException;
 
 class LaminasVersionFixer implements FixerInterface
 {
-    private ProjectRepository $repository;
-    private GitWrapper $gitWrapper;
-    private LoggerInterface $logger;
-    private EntityManagerInterface $entityManager;
-    private string $repositoryPath;
-
     public function __construct(
-        ProjectRepository $repository,
-        GitWrapper $gitWrapper,
-        LoggerInterface $logger,
-        EntityManagerInterface $entityManager,
-        string $repositoryPath
+        private ProjectRepository $repository,
+        private GitWrapper $gitWrapper,
+        private LoggerInterface $logger,
+        private EntityManagerInterface $entityManager,
+        private string $repositoryPath,
     ) {
-        $this->repository = $repository;
-        $this->gitWrapper = $gitWrapper;
-        $this->logger = $logger;
-        $this->entityManager = $entityManager;
-        $this->repositoryPath = $repositoryPath;
     }
 
     public function fixData(): void

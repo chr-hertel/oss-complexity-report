@@ -11,11 +11,8 @@ class GraphData
 {
     private const DATE_FORMAT = 'm-d-y';
 
-    private Library $library;
-
-    public function __construct(Library $library)
+    public function __construct(private Library $library)
     {
-        $this->library = $library;
     }
 
     public function getLabels(): array

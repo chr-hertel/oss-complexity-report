@@ -14,9 +14,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ReportController extends AbstractController
 {
-    /**
-     * @Route("", name="start", methods={"GET"})
-     */
+    #[Route('', name: 'start', methods: 'GET')]
     public function start(ProjectRepository $projectRepository): Response
     {
         return $this->render('start.html.twig', [
@@ -24,9 +22,7 @@ class ReportController extends AbstractController
         ]);
     }
 
-    /**
-     * @Route("{vendor}", name="project", methods={"GET"}, priority=1)
-     */
+    #[Route('{vendor}', name: 'project', methods: 'GET', priority: 1)]
     public function project(Project $project, ProjectRepository $projectRepository): Response
     {
         return $this->render('project.html.twig', [
@@ -35,9 +31,7 @@ class ReportController extends AbstractController
         ]);
     }
 
-    /**
-     * @Route("{id}", name="library", methods={"GET"}, requirements={"id": "\d+"}, priority=2)
-     */
+    #[Route('{id}', name: 'library', requirements: ['id' => '\d+'], methods: 'GET', priority: 2)]
     public function library(Library $library): JsonResponse
     {
         return new JsonResponse($library->asGraph()->getTagData());

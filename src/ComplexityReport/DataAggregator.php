@@ -13,27 +13,14 @@ use Psr\Log\LoggerInterface;
 
 class DataAggregator
 {
-    private ProjectRepository $projectRepository;
-    private GitController $gitController;
-    private CacheItemPoolInterface $cache;
-    private CodeAnalyser $codeAnalyser;
-    private EntityManagerInterface $entityManager;
-    private LoggerInterface $logger;
-
     public function __construct(
-        ProjectRepository $projectRepository,
-        GitController $gitController,
-        CacheItemPoolInterface $cache,
-        CodeAnalyser $codeAnalyser,
-        EntityManagerInterface $entityManager,
-        LoggerInterface $logger
+        private ProjectRepository $projectRepository,
+        private GitController $gitController,
+        private CacheItemPoolInterface $cache,
+        private CodeAnalyser $codeAnalyser,
+        private EntityManagerInterface $entityManager,
+        private LoggerInterface $logger,
     ) {
-        $this->projectRepository = $projectRepository;
-        $this->gitController = $gitController;
-        $this->cache = $cache;
-        $this->codeAnalyser = $codeAnalyser;
-        $this->entityManager = $entityManager;
-        $this->logger = $logger;
     }
 
     public function aggregate(): void

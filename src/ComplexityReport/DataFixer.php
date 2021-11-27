@@ -8,15 +8,11 @@ use App\ComplexityReport\DataFixer\FixerInterface;
 
 class DataFixer
 {
-    /** @var FixerInterface[]|iterable */
-    private iterable $fixers;
-
     /**
      * @param FixerInterface[]|iterable $fixers
      */
-    public function __construct(iterable $fixers)
+    public function __construct(private iterable $fixers)
     {
-        $this->fixers = $fixers;
     }
 
     public function fixData(): void

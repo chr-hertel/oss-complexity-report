@@ -23,18 +23,11 @@ class PackagistClient
         'typo3/sitekickstarter',
     ];
 
-    private HttpClientInterface $httpClient;
-    private LibraryRepository $repository;
-    private CacheItemPoolInterface $cache;
-
     public function __construct(
-        HttpClientInterface $httpClient,
-        LibraryRepository $repository,
-        CacheItemPoolInterface $cache
+        private HttpClientInterface $httpClient,
+        private LibraryRepository $repository,
+        private CacheItemPoolInterface $cache,
     ) {
-        $this->httpClient = $httpClient;
-        $this->repository = $repository;
-        $this->cache = $cache;
     }
 
     public function fetchNewLibraries(Project $project): array

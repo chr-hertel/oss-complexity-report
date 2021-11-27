@@ -6,13 +6,10 @@ namespace App\ComplexityReport;
 
 use GitWrapper\GitTags;
 
-class GitTag
+final class GitTag
 {
-    private string $name;
-
-    public function __construct(string $name)
+    public function __construct(private string $name)
     {
-        $this->name = $name;
     }
 
     /**

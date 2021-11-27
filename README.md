@@ -4,7 +4,7 @@ Open Source Software Complexity Report
 Requirements
 ------------
 
-* PHP 7.4
+* PHP 8.1
 * Node & Yarn
 * Some database (eg. Sqlite)
 

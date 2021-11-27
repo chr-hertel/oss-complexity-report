@@ -10,50 +10,30 @@ use App\ComplexityReport\GraphData;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use JetBrains\PhpStorm\Pure;
 
-/**
- * @ORM\Entity
- */
+#[ORM\Entity]
 class Library
 {
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     *
-     * @psalm-suppress PropertyNotSetInConstructor
-     */
+    /** @psalm-suppress PropertyNotSetInConstructor */
+    #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
     private int $id;
 
     /**
-     * @ORM\Column(unique=true)
-     */
-    private string $name;
-
-    /**
-     * @ORM\Column
-     */
-    private string $repositoryUrl;
-
-    /**
-     * @ORM\ManyToOne(targetEntity="Project", inversedBy="libraries")
-     */
-    private Project $project;
-
-    /**
-     * @var Tag[]|Collection
+     * @var Tag[]&Collection
      * @psalm-var Collection<int, Tag>
-     *
-     * @ORM\OneToMany(targetEntity="Tag", mappedBy="library", cascade={"persist"})
-     * @ORM\OrderBy({"created" = "ASC"})
      */
-    private $tags;
+    #[ORM\OneToMany(targetEntity: Tag::class, mappedBy: 'library', cascade: ['persist']), ORM\OrderBy(['created' => 'ASC'])]
+    private Collection $tags;
 
-    public function __construct(string $name, string $repositoryUrl, Project $project)
-    {
-        $this->name = $name;
-        $this->repositoryUrl = $repositoryUrl;
-        $this->project = $project;
+    public function __construct(
+        #[ORM\Column(unique: true)]
+        private string $name,
+        #[ORM\Column]
+        private string $repositoryUrl,
+        #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'libraries')]
+        private Project $project,
+    ) {
         $this->tags = new ArrayCollection();
     }
 
@@ -93,7 +73,7 @@ class Library
     public function addTag(GitTag $tag, Analysis $analysis): void
     {
         $this->tags->add(
-            new Tag($tag->getName(), $analysis->getCreated(), $analysis->getLinesOfCode(), $analysis->getAverageComplexity(), $this)
+            new Tag($tag->getName(), $analysis->created, $analysis->linesOfCode, $analysis->averageComplexity, $this)
         );
     }
 

@@ -12,13 +12,10 @@ use Symfony\Component\Finder\SplFileInfo;
 
 class CodeAnalyser
 {
-    private GitWrapper $gitWrapper;
-    private string $repositoryPath;
-
-    public function __construct(GitWrapper $gitWrapper, string $repositoryPath)
-    {
-        $this->gitWrapper = $gitWrapper;
-        $this->repositoryPath = $repositoryPath;
+    public function __construct(
+        private GitWrapper $gitWrapper,
+        private string $repositoryPath,
+    ) {
     }
 
     public function analyse(Library $library): Analysis
