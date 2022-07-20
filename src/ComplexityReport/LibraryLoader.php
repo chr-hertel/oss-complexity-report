@@ -7,7 +7,7 @@ namespace App\ComplexityReport;
 use App\Repository\ProjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
-class LibraryLoader
+final class LibraryLoader
 {
     public function __construct(
         private ProjectRepository $repository,

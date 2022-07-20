@@ -6,7 +6,7 @@ namespace App\ComplexityReport;
 
 use App\ComplexityReport\DataFixer\FixerInterface;
 
-class DataFixer
+final class DataFixer
 {
     /**
      * @param FixerInterface[]|iterable $fixers

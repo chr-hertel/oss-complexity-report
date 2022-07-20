@@ -11,7 +11,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 
-class DataAggregator
+final class DataAggregator
 {
     public function __construct(
         private ProjectRepository $projectRepository,
@@ -57,6 +57,7 @@ class DataAggregator
      */
     private function getTags(Library $library): array
     {
+        $this->logger->info(sprintf('Loading tags for library %s', $library->getName()));
         $key = sprintf('%s_tags', str_replace('/', '_', $library->getName()));
         $item = $this->cache->getItem($key);
 

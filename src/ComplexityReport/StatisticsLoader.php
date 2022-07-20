@@ -8,7 +8,7 @@ use App\Repository\LibraryRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\TagRepository;
 
-class StatisticsLoader
+final class StatisticsLoader
 {
     public function __construct(
         private ProjectRepository $projectRepository,

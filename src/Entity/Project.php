@@ -33,11 +33,10 @@ class Project
     private int $id;
 
     /**
-     * @var Library[]|Collection|Selectable
-     * @psalm-var Selectable&Collection<int, Library>
+     * @var Selectable&Collection<int, Library>
      */
     #[ORM\OneToMany(targetEntity: Library::class, mappedBy: 'project')]
-    private Selectable&Collection $libraries;
+    private Collection $libraries;
 
     public function __construct(
         #[ORM\Column(unique: true)]

@@ -29,7 +29,7 @@ final class GitTag
 
     public function isPreRelease(): bool
     {
-        return false !== strpos($this->name, '-');
+        return str_contains($this->name, '-');
     }
 
     public function isPatchRelease(): bool

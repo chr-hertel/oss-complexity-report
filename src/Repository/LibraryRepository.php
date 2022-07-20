@@ -8,7 +8,10 @@ use App\Entity\Library;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
-class LibraryRepository extends ServiceEntityRepository
+/**
+ * @extends ServiceEntityRepository<Library>
+ */
+final class LibraryRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {

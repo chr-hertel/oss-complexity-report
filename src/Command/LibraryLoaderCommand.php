@@ -12,7 +12,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand('app:libraries:load')]
-class LibraryLoaderCommand extends Command
+final class LibraryLoaderCommand extends Command
 {
     public function __construct(private LibraryLoader $libraryLoader)
     {

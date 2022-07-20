@@ -1,0 +1,6 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Property App\\Entity\\[a-zA-Z]+::\$id is (never written, only read|unused).$#'
+			count: 3
+			path: src/Entity/*

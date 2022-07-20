@@ -8,7 +8,7 @@ use App\Entity\Library;
 use GitWrapper\GitWorkingCopy;
 use GitWrapper\GitWrapper;
 
-class GitController
+final class GitController
 {
     public function __construct(private GitWrapper $gitWrapper, private string $repositoryPath)
     {
@@ -20,7 +20,7 @@ class GitController
     public function loadTags(Library $library): array
     {
         $repository = $this->getRepository($library);
-        $repository->fetchAll(['tags' => true]);
+        $repository->fetchAll(['tags' => true, 'force' => true]);
 
         return GitTag::fromGitTags($repository->tags());
     }
@@ -28,7 +28,7 @@ class GitController
     public function checkoutTag(Library $library, string $name): void
     {
         $repository = $this->getRepository($library);
-        $repository->checkout($name);
+        $repository->checkout($name, '--force');
     }
 
     private function getRepository(Library $library): GitWorkingCopy

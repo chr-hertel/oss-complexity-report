@@ -10,7 +10,7 @@ use SebastianBergmann\PHPLOC\Analyser;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
 
-class CodeAnalyser
+final class CodeAnalyser
 {
     public function __construct(
         private GitWrapper $gitWrapper,

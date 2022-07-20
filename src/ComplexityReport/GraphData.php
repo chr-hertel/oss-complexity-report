@@ -7,7 +7,7 @@ namespace App\ComplexityReport;
 use App\Entity\Library;
 use App\Entity\Tag;
 
-class GraphData
+final class GraphData
 {
     private const DATE_FORMAT = 'm-d-y';
 

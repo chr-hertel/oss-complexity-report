@@ -12,7 +12,7 @@ use GitWrapper\GitWrapper;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
-class LaminasVersionFixer implements FixerInterface
+final class LaminasVersionFixer implements FixerInterface
 {
     public function __construct(
         private ProjectRepository $repository,

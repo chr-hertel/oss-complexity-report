@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-class ReportController extends AbstractController
+final class ReportController extends AbstractController
 {
     #[Route('', name: 'start', methods: 'GET')]
     public function start(ProjectRepository $projectRepository): Response

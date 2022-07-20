@@ -10,7 +10,6 @@ use App\ComplexityReport\GraphData;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use JetBrains\PhpStorm\Pure;
 
 #[ORM\Entity]
 class Library
@@ -20,8 +19,7 @@ class Library
     private int $id;
 
     /**
-     * @var Tag[]&Collection
-     * @psalm-var Collection<int, Tag>
+     * @var Collection<int, Tag>
      */
     #[ORM\OneToMany(targetEntity: Tag::class, mappedBy: 'library', cascade: ['persist']), ORM\OrderBy(['created' => 'ASC'])]
     private Collection $tags;

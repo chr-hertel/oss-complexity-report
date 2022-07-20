@@ -1,8 +1,8 @@
-import { Controller } from 'stimulus';
-import 'chart.js';
+import { Controller } from '@hotwired/stimulus';
+import Chart from 'chart.js/auto';
 import moment from 'moment';
 import 'select2';
-const $ = require('jquery');
+import $ from 'jquery';
 
 export default class extends Controller {
     chartColors = {

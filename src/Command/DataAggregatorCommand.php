@@ -12,7 +12,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand('app:data:aggregate')]
-class DataAggregatorCommand extends Command
+final class DataAggregatorCommand extends Command
 {
     public function __construct(private DataAggregator $dataAggregator)
     {

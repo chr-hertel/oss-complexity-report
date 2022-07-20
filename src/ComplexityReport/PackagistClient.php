@@ -10,13 +10,14 @@ use App\Repository\LibraryRepository;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-class PackagistClient
+final class PackagistClient
 {
     private const PACKAGE_DENY_LIST = [
         'doctrine/orm-g2s',
         'laravel/dbfactory',
         'laravel/liferaft',
         'symfony/annotations-pack',
+        'symfony/webpack-encore-pack',
         'typo3/cms',
         'typo3/expose',
         'typo3/formexample',
