@@ -981,6 +981,11 @@
     error-stack-parser "^2.0.0"
     string-width "^4.2.3"
 
+"@popperjs/core@^2.11.5":
+  version "2.11.5"
+  resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.5.tgz#db5a11bf66bdab39569719555b0f76e138d7bd64"
+  integrity sha512-9X2obfABZuDVLCgPK9aX0a/x4jaOEweTTWE2+9sr0Qqqevj2Uv5XorvusThmc9XGYpS9yI+fhh8RTafBtGposw==
+
 "@stimulus/core@^2.0.0":
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/@stimulus/core/-/core-2.0.0.tgz#140c85318d6a8a8210c0faf182223b8459348877"
@@ -1717,6 +1722,11 @@ chart.js@^3.8.0:
   version "3.8.0"
   resolved "https://registry.yarnpkg.com/chart.js/-/chart.js-3.8.0.tgz#c6c14c457b9dc3ce7f1514a59e9b262afd6f1a94"
   integrity sha512-cr8xhrXjLIXVLOBZPkBZVF6NDeiVIrPLHcMhnON7UufudL+CNeRrD+wpYanswlm8NpudMdrt3CHoLMQMxJhHRg==
+
+chartjs-adapter-moment@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/chartjs-adapter-moment/-/chartjs-adapter-moment-1.0.0.tgz#9174b1093c68bcfe285aff24f7388ad60d44e8f7"
+  integrity sha512-PqlerEvQcc5hZLQ/NQWgBxgVQ4TRdvkW3c/t+SUEQSj78ia3hgLkf2VZ2yGJtltNbEEFyYGm+cA6XXevodYvWA==
 
 "chokidar@>=3.0.0 <4.0.0", chokidar@^3.5.3:
   version "3.5.3"
@@ -4080,10 +4090,18 @@ svgo@^2.7.0:
     picocolors "^1.0.0"
     stable "^0.1.8"
 
-swup@^2.0, swup@^2.0.13:
+swup@^2.0:
   version "2.0.16"
   resolved "https://registry.yarnpkg.com/swup/-/swup-2.0.16.tgz#8073c58dae9d8fe49d97042b35db1964cbd4075a"
   integrity sha512-ozh3DuDDa6l7ctZcQ36DNROPo5CyTHMj7ob31kUkCrCGX8SimdqB0uK7PZnlEl4x3lmY12+eIdHji11q8SA6Aw==
+  dependencies:
+    delegate-it "^3.0.1"
+    opencollective-postinstall "^2.0.2"
+
+swup@^2.0.13:
+  version "2.0.17"
+  resolved "https://registry.yarnpkg.com/swup/-/swup-2.0.17.tgz#e0d1ef53c76269241296194e44eeb73f5e037f87"
+  integrity sha512-CJ5olwQ7qDYNDBNaFv1us4M8BwI2HCqmZTWmSUb+HIUq3PnttdYPogQZnQbpFjqNS0/qOq1QOLK0wjMDlggPJQ==
   dependencies:
     delegate-it "^3.0.1"
     opencollective-postinstall "^2.0.2"

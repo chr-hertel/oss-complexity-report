@@ -5,12 +5,12 @@
         <title>{% block title 'Open Source PHP Software - Complexity Report' %}</title>
         <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Rokkitt&display=swap" rel="stylesheet">
         {{ encore_entry_link_tags('app') }}
+        {{ encore_entry_script_tags('app') }}
     </head>
     <body class="bg-light">
         {% block content %}{% endblock %}
         <footer class="text-center mt-3 mb-5 text-muted">
             Made with ♥ in Berlin by <a href="https://twitter.com/el_stoffel" target="_blank" class="text-muted"><u>@el_stoffel</u></a>
         </footer>
-        {{ encore_entry_script_tags('app') }}
     </body>
 </html>

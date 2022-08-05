@@ -1,6 +1,7 @@
 import { Controller } from '@hotwired/stimulus';
 import Chart from 'chart.js/auto';
 import moment from 'moment';
+import 'chartjs-adapter-moment';
 import 'select2';
 import $ from 'jquery';
 
@@ -47,33 +48,29 @@ export default class extends Controller {
                 ],
             },
             options: {
-                tooltips: {
-                    callbacks: {
-                        title: function (tooltipItem) {
-                            return tagData[tooltipItem[0].index].name;
-                        },
-                        label: function (tooltipItem) {
-                            return 'Ø Complexity: ' + tooltipItem.value;
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function (tooltipItem) {
+                                return tagData[tooltipItem[0].dataIndex].name;
+                            },
+                            label: function (tooltipItem) {
+                                return 'Ø Complexity: ' + tooltipItem.formattedValue;
+                            },
                         },
                     },
                 },
                 scales: {
-                    xAxes: [
-                        {
-                            type: 'time',
-                            time: {
-                                tooltipFormat: 'll',
-                                parser: 'MM-DD-YYYY',
-                            },
+                    x: {
+                        type: 'time',
+                        time: {
+                            tooltipFormat: 'll',
+                            parser: 'MM-DD-YYYY',
                         },
-                    ],
-                    yAxes: [
-                        {
-                            ticks: {
-                                beginAtZero: true,
-                            },
-                        },
-                    ],
+                    },
+                    y: {
+                        beginAtZero: true,
+                    },
                 },
             },
         };
