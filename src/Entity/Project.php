@@ -22,7 +22,6 @@ class Project
         'laminas' => 'laminas/laminas-mvc',
         'laravel' => 'laravel/framework',
         'league' => 'league/flysystem',
-        'magento' => 'magento/core',
         'phpunit' => 'phpunit/phpunit',
         'symfony' => 'symfony/symfony',
         'typo3' => 'typo3/cms-core',

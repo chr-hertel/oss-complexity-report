@@ -15,7 +15,6 @@ final class AppFixtures extends Fixture
             new Project('Doctrine', 'https://www.doctrine-project.org/', 'doctrine'),
             new Project('Laminas', 'https://getlaminas.org/', 'laminas'),
             new Project('Laravel', 'https://laravel.com/', 'laravel'),
-            new Project('Magento', 'https://magento.com/', 'magento'),
             new Project('PHPUnit', 'https://phpunit.de/', 'phpunit'),
             new Project('Symfony', 'https://symfony.com/', 'symfony'),
             new Project('The PHP League', 'https://thephpleague.com/', 'league'),
