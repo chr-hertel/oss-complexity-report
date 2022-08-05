@@ -52,7 +52,7 @@ export default class extends Controller {
                     tooltip: {
                         callbacks: {
                             title: function (tooltipItem) {
-                                return tagData[tooltipItem[0].dataIndex].name;
+                                return tooltipItem[0].raw.name;
                             },
                             label: function (tooltipItem) {
                                 return 'Ø Complexity: ' + tooltipItem.formattedValue;
