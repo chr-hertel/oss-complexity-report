@@ -19,4 +19,12 @@ final class ProjectRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Project::class);
     }
+
+    /**
+     * @return list<Project>
+     */
+    public function findAll(): array
+    {
+        return $this->findBy([], ['name' => 'asc']);
+    }
 }

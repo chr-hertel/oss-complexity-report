@@ -11,7 +11,7 @@ final class AppFixtures extends Fixture
     public function load(ObjectManager $manager): void
     {
         $projects = [
-            new Project('Composer', 'https://www.getcomposer.org/', 'composer'),
+            new Project('Composer', 'https://getcomposer.org/', 'composer'),
             new Project('Doctrine', 'https://www.doctrine-project.org/', 'doctrine'),
             new Project('Laminas', 'https://getlaminas.org/', 'laminas'),
             new Project('Laravel', 'https://laravel.com/', 'laravel'),

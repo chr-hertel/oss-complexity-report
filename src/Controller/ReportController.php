@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\Library;
 use App\Entity\Project;
+use App\Repository\LibraryRepository;
 use App\Repository\ProjectRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -15,19 +16,29 @@ use Symfony\Component\Routing\Annotation\Route;
 final class ReportController extends AbstractController
 {
     #[Route('', name: 'start', methods: 'GET')]
-    public function start(ProjectRepository $projectRepository): Response
+    public function start(): Response
     {
-        return $this->render('start.html.twig', [
-            'projects' => $projectRepository->findAll(),
+        return $this->render('start.html.twig');
+    }
+
+    #[Route('overview', name: 'overview', methods: 'GET', priority: 3)]
+    public function overview(LibraryRepository $repository): Response
+    {
+        return $this->render('chart.html.twig', [
+            'headline' => 'Overview',
+            'selectedLibraries' => $repository->findSelected(),
+            'libraries' => $repository->findAll(),
         ]);
     }
 
     #[Route('{vendor}', name: 'project', methods: 'GET', priority: 1)]
-    public function project(Project $project, ProjectRepository $projectRepository): Response
+    public function project(Project $project): Response
     {
-        return $this->render('project.html.twig', [
+        return $this->render('chart.html.twig', [
+            'headline' => sprintf('Project: %s', $project->getName()),
             'project' => $project,
-            'projects' => $projectRepository->findAll(),
+            'selectedLibraries' => [$project->getMainLibrary()],
+            'libraries' => $project->getLibraries(),
         ]);
     }
 

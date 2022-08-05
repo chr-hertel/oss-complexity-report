@@ -7,7 +7,8 @@
     </div>
     <div class="bg-white text-center p-3 shadow-lg">
         <div class="btn-group-lg">
-            {% for project in projects %}
+                <a href="{{ path('overview') }}" class="mx-2 my-2 btn btn-lg btn-dark">Overview</a>
+            {% for project in all_projects() %}
                 <a href="{{ path('project', {'vendor': project.vendor}) }}"
                    class="mx-2 my-2 btn btn-lg btn-secondary">
                     {{ project.name }}

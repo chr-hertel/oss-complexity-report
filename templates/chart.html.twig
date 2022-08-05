@@ -1,11 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title parent() ~ ' - Project: ' ~ project.name %}
-
-{# @var mainLibrary \App\Entity\Library #}
-{% set mainLibrary = project.mainLibrary %}
-{# @var libraryGraph \App\ComplexityReport\GraphData #}
-{% set libraryGraph = mainLibrary.asGraph %}
+{% block title parent() ~ ' - ' ~ headline %}
 
 {% block content %}
     <main {{ stimulus_controller('symfony/ux-swup/swup,', { containers: ['#nav', '#swup'] }) }}>
@@ -17,12 +12,15 @@
                 </a>
                 <div id="nav" class="dropdown btn-group-lg mt-2">
                     <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                        {{ project.name }}
+                        {{ project.name|default(headline) }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
-                        {% for project in projects %}
+                        <li>
+                            <a class="dropdown-item {{ headline == 'Overview' ? 'disabled' }}" href="{{ path('overview') }}">Overview</a>
+                        </li>
+                        {% for project in all_projects() %}
                             <li>
-                                <a class="dropdown-item {{ project.name == loop.parent.project.name ? 'disabled' }}"
+                                <a class="dropdown-item {{ project.name == loop.parent.project.name|default() ? 'disabled' }}"
                                    href="{{ path('project', {'vendor': project.vendor}) }}">
                                     {{ project.name }}
                                 </a>
@@ -33,22 +31,24 @@
             </div>
         </div>
         <div id="swup" class="js-project container mt-5">
-            <h2 class="mb-0">Project: {{ project.name }}
-                <a href="{{ project.url }}" target="_blank" class="text-secondary"
-                   title="{{ project.url|replace({'https://':'', '/':''}) }}">
-                    <i class="fas fa-external-link-square-alt h6"></i>
-                </a>
+            <h2 class="mb-0">{{ headline }}
+                {% if project is defined %}
+                    <a href="{{ project.url }}" target="_blank" class="text-secondary"
+                       title="{{ project.url|replace({'https://':'', '/':''}) }}">
+                        <i class="fas fa-external-link-square-alt h6"></i>
+                    </a>
+                {% endif %}
             </h2>
             <div data-controller="project"
-                 data-main-lib="{{ mainLibrary.name }}"
-                 data-labels="{{ libraryGraph.labels|json_encode|e('html_attr') }}"
-                 data-tag-data="{{ libraryGraph.tagData|json_encode|e('html_attr') }}">
+                 data-main-lib="{{ selectedLibraries|first.name }}"
+                 data-labels="{{ selectedLibraries|first.asGraph.labels|json_encode|e('html_attr') }}"
+                 data-tag-data="{{ selectedLibraries|first.asGraph.tagData|json_encode|e('html_attr') }}">
                 <canvas id="canvas" class="img-fluid"></canvas>
                 <div class="form-group mx-3 my-4">
                     <h3>Libraries</h3>
                     <select class="js-library-select form-control" name="libraries[]" multiple="multiple">
-                        {% for library in project.libraries %}
-                            <option value="{{ library.id }}" {{ library.id == mainLibrary.id ? 'selected="selected"' }}>{{ library.name }}</option>
+                        {% for library in libraries %}
+                            <option value="{{ library.id }}" {{ library in selectedLibraries ? 'selected="selected"' }}>{{ library.name }}</option>
                         {% endfor %}
                     </select>
                 </div>

@@ -37,6 +37,11 @@ class Project
     #[ORM\OneToMany(targetEntity: Library::class, mappedBy: 'project')]
     private Collection $libraries;
 
+    public static function getMainLibraries(): array
+    {
+        return array_values(self::MAIN_LIBRARIES);
+    }
+
     public function __construct(
         #[ORM\Column(unique: true)]
         private string $name,
