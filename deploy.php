@@ -8,6 +8,10 @@ require 'recipe/symfony.php';
 set('repository', 'git@github.com:chr-hertel/oss-complexity-report.git');
 set('composer_options', '--no-dev --verbose --prefer-dist --classmap-authoritative --no-progress --no-interaction --no-scripts');
 set('console_options', '--no-interaction --env=prod');
+set('shared_dirs', [
+    'var/log',
+    'repositories',
+]);
 
 // Hosts
 host('christopher-hertel.de')
