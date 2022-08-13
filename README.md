@@ -6,7 +6,7 @@ Requirements
 
 * PHP 8.1
 * Node & Yarn
-* Some database (eg. Sqlite)
+* A database (eg. PostgreSQL)
 
 Setup
 -----
