@@ -4,19 +4,14 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport;
 
-class Statistics
+final class Statistics
 {
-    private int $projectCount;
-    private int $libraryCount;
-    private int $tagCount;
-    private int $linesOfCode;
-
-    public function __construct(int $projectCount, int $libraryCount, int $tagCount, int $linesOfCode)
-    {
-        $this->projectCount = $projectCount;
-        $this->libraryCount = $libraryCount;
-        $this->tagCount = $tagCount;
-        $this->linesOfCode = $linesOfCode;
+    public function __construct(
+        public readonly int $projectCount,
+        public readonly int $libraryCount,
+        public readonly int $tagCount,
+        public readonly int $linesOfCode,
+    ) {
     }
 
     public function getProjectCount(): int

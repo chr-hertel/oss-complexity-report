@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Repository\ProjectRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
@@ -12,9 +13,7 @@ use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
 use DomainException;
 
-/**
- * @ORM\Entity(repositoryClass="App\Repository\ProjectRepository")
- */
+#[ORM\Entity(repositoryClass: ProjectRepository::class)]
 class Project
 {
     private const MAIN_LIBRARIES = [
@@ -23,49 +22,34 @@ class Project
         'laminas' => 'laminas/laminas-mvc',
         'laravel' => 'laravel/framework',
         'league' => 'league/flysystem',
-        'magento' => 'magento/core',
         'phpunit' => 'phpunit/phpunit',
         'symfony' => 'symfony/symfony',
         'typo3' => 'typo3/cms-core',
     ];
 
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue
-     *
-     * @psalm-suppress PropertyNotSetInConstructor
-     */
+    /** @psalm-suppress PropertyNotSetInConstructor */
+    #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
     private int $id;
 
     /**
-     * @ORM\Column(unique=true)
+     * @var Selectable&Collection<int, Library>
      */
-    private string $name;
+    #[ORM\OneToMany(targetEntity: Library::class, mappedBy: 'project')]
+    private Collection $libraries;
 
-    /**
-     * @ORM\Column
-     */
-    private string $url;
-
-    /**
-     * @ORM\Column(unique=true)
-     */
-    private string $vendor;
-
-    /**
-     * @var Library[]|Collection|Selectable
-     * @psalm-var Selectable&Collection<int, Library>
-     *
-     * @ORM\OneToMany(targetEntity="Library", mappedBy="project")
-     */
-    private $libraries;
-
-    public function __construct(string $name, string $url, string $vendor)
+    public static function getMainLibraries(): array
     {
-        $this->name = $name;
-        $this->url = $url;
-        $this->vendor = $vendor;
+        return array_values(self::MAIN_LIBRARIES);
+    }
+
+    public function __construct(
+        #[ORM\Column(unique: true)]
+        private readonly string $name,
+        #[ORM\Column]
+        private readonly string $url,
+        #[ORM\Column(unique: true)]
+        private readonly string $vendor,
+    ) {
         $this->libraries = new ArrayCollection();
     }
 

@@ -9,13 +9,22 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @method list<Project> findAll()
- * @method Project|null  findOneByName(string $name)
+ * @extends ServiceEntityRepository<Project>
+ *
+ * @method Project|null findOneByName(string $name)
  */
-class ProjectRepository extends ServiceEntityRepository
+final class ProjectRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Project::class);
+    }
+
+    /**
+     * @return list<Project>
+     */
+    public function findAll(): array
+    {
+        return $this->findBy([], ['name' => 'asc']);
     }
 }

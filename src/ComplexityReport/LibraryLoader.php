@@ -7,17 +7,13 @@ namespace App\ComplexityReport;
 use App\Repository\ProjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
-class LibraryLoader
+final class LibraryLoader
 {
-    private ProjectRepository $repository;
-    private PackagistClient $client;
-    private EntityManagerInterface $entityManager;
-
-    public function __construct(ProjectRepository $repository, PackagistClient $client, EntityManagerInterface $entityManager)
-    {
-        $this->repository = $repository;
-        $this->client = $client;
-        $this->entityManager = $entityManager;
+    public function __construct(
+        private ProjectRepository $repository,
+        private PackagistClient $client,
+        private EntityManagerInterface $entityManager,
+    ) {
     }
 
     public function load(): void

@@ -12,26 +12,18 @@ use GitWrapper\GitWrapper;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
-class LaminasVersionFixer implements FixerInterface
+/**
+ * Fixing tags that where originally Zend Framework release.
+ */
+final class LaminasVersionFixer implements FixerInterface
 {
-    private ProjectRepository $repository;
-    private GitWrapper $gitWrapper;
-    private LoggerInterface $logger;
-    private EntityManagerInterface $entityManager;
-    private string $repositoryPath;
-
     public function __construct(
-        ProjectRepository $repository,
-        GitWrapper $gitWrapper,
-        LoggerInterface $logger,
-        EntityManagerInterface $entityManager,
-        string $repositoryPath
+        private ProjectRepository $repository,
+        private GitWrapper $gitWrapper,
+        private LoggerInterface $logger,
+        private EntityManagerInterface $entityManager,
+        private string $repositoryPath,
     ) {
-        $this->repository = $repository;
-        $this->gitWrapper = $gitWrapper;
-        $this->logger = $logger;
-        $this->entityManager = $entityManager;
-        $this->repositoryPath = $repositoryPath;
     }
 
     public function fixData(): void
@@ -39,7 +31,7 @@ class LaminasVersionFixer implements FixerInterface
         $laminas = $this->repository->findOneByName('Laminas');
 
         if (null === $laminas) {
-            throw new RuntimeException('Cannot find library Laminas.');
+            throw new RuntimeException('Cannot find project Laminas.');
         }
 
         foreach ($laminas->getLibraries() as $library) {

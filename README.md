@@ -4,7 +4,7 @@ Open Source Software Complexity Report
 Requirements
 ------------
 
-* PHP 7.4
+* PHP 8.1
 * Node & Yarn
 * Some database (eg. Sqlite)
 
@@ -17,6 +17,7 @@ $ cd oss-complexity-report
 $ composer install
 $ yarn install
 $ yarn encore dev
+$ docker-compose up -d
 $ symfony serve -d
 ```
 
@@ -25,7 +26,7 @@ Recreate Dataset
 
 ```
 # resetting database and caches
-$ rm var/data.db
+$ bin/console doctrine:database:drop
 $ bin/console doctrine:database:create
 $ bin/console doctrine:schema:create
 $ bin/console cache:pool:clear cache.app

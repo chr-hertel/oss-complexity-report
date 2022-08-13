@@ -1,0 +1,56 @@
+{% extends 'base.html.twig' %}
+
+{% block title parent() ~ ' - ' ~ headline %}
+
+{% block content %}
+    <main {{ stimulus_controller('symfony/ux-swup/swup,', { containers: ['#nav', '#swup'] }) }}>
+        <div class="bg-white p-3 shadow-lg">
+            <div class="container d-flex justify-content-between">
+                <a class="logo" href="{{ path('start') }}">
+                    <h2 class="mb-0">Open Source PHP Software</h2>
+                    <h1 class="mb-0">Complexity Report</h1>
+                </a>
+                <div id="nav" class="dropdown btn-group-lg mt-2">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ project.name|default(headline) }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+                        <li>
+                            <a class="dropdown-item {{ headline == 'Overview' ? 'disabled' }}" href="{{ path('overview') }}">Overview</a>
+                        </li>
+                        {% for project in all_projects() %}
+                            <li>
+                                <a class="dropdown-item {{ project.name == loop.parent.project.name|default() ? 'disabled' }}"
+                                   href="{{ path('project', {'vendor': project.vendor}) }}">
+                                    {{ project.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div id="swup" class="js-project container mt-5">
+            <h2 class="mb-0">{{ headline }}
+                {% if project is defined %}
+                    <a href="{{ project.url }}" target="_blank" class="text-secondary"
+                       title="{{ project.url|replace({'https://':'', '/':''}) }}">
+                        <i class="fas fa-external-link-square-alt h6"></i>
+                    </a>
+                {% endif %}
+            </h2>
+            <div data-controller="chart"
+                 data-libraries="{{ selectedLibraries|map(library => library.asGraph)|json_encode|e('html_attr') }}">
+                <canvas id="canvas" class="img-fluid"></canvas>
+                <div class="form-group mx-3 my-4">
+                    <h3>Libraries</h3>
+                    <select class="js-library-select form-control" name="libraries[]" multiple="multiple">
+                        {% for library in libraries %}
+                            <option value="{{ library.id }}" {{ library in selectedLibraries ? 'selected="selected"' }}>{{ library.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </main>
+{% endblock %}

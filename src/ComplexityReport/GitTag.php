@@ -6,13 +6,10 @@ namespace App\ComplexityReport;
 
 use GitWrapper\GitTags;
 
-class GitTag
+final class GitTag
 {
-    private string $name;
-
-    public function __construct(string $name)
+    public function __construct(private string $name)
     {
-        $this->name = $name;
     }
 
     /**
@@ -32,7 +29,7 @@ class GitTag
 
     public function isPreRelease(): bool
     {
-        return false !== strpos($this->name, '-');
+        return str_contains($this->name, '-');
     }
 
     public function isPatchRelease(): bool

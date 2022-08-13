@@ -10,15 +10,12 @@ use SebastianBergmann\PHPLOC\Analyser;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
 
-class CodeAnalyser
+final class CodeAnalyser
 {
-    private GitWrapper $gitWrapper;
-    private string $repositoryPath;
-
-    public function __construct(GitWrapper $gitWrapper, string $repositoryPath)
-    {
-        $this->gitWrapper = $gitWrapper;
-        $this->repositoryPath = $repositoryPath;
+    public function __construct(
+        private GitWrapper $gitWrapper,
+        private string $repositoryPath,
+    ) {
     }
 
     public function analyse(Library $library): Analysis

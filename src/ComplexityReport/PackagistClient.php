@@ -10,31 +10,25 @@ use App\Repository\LibraryRepository;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-class PackagistClient
+final class PackagistClient
 {
     private const PACKAGE_DENY_LIST = [
         'doctrine/orm-g2s',
         'laravel/dbfactory',
         'laravel/liferaft',
         'symfony/annotations-pack',
+        'symfony/webpack-encore-pack',
         'typo3/cms',
         'typo3/expose',
         'typo3/formexample',
         'typo3/sitekickstarter',
     ];
 
-    private HttpClientInterface $httpClient;
-    private LibraryRepository $repository;
-    private CacheItemPoolInterface $cache;
-
     public function __construct(
-        HttpClientInterface $httpClient,
-        LibraryRepository $repository,
-        CacheItemPoolInterface $cache
+        private HttpClientInterface $httpClient,
+        private LibraryRepository $repository,
+        private CacheItemPoolInterface $cache,
     ) {
-        $this->httpClient = $httpClient;
-        $this->repository = $repository;
-        $this->cache = $cache;
     }
 
     public function fetchNewLibraries(Project $project): array
