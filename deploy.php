@@ -10,7 +10,7 @@ set('composer_options', '--no-dev --verbose --prefer-dist --classmap-authoritati
 set('console_options', '--no-interaction --env=prod');
 
 // Hosts
-host('decomplex.me')
+host('christopher-hertel.de')
     ->set('remote_user', 'deployer')
     ->set('deploy_path', '/var/www/oss-complexity-report');
 
