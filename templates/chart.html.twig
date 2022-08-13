@@ -39,10 +39,8 @@
                     </a>
                 {% endif %}
             </h2>
-            <div data-controller="project"
-                 data-main-lib="{{ selectedLibraries|first.name }}"
-                 data-labels="{{ selectedLibraries|first.asGraph.labels|json_encode|e('html_attr') }}"
-                 data-tag-data="{{ selectedLibraries|first.asGraph.tagData|json_encode|e('html_attr') }}">
+            <div data-controller="chart"
+                 data-libraries="{{ selectedLibraries|map(library => library.asGraph)|json_encode|e('html_attr') }}">
                 <canvas id="canvas" class="img-fluid"></canvas>
                 <div class="form-group mx-3 my-4">
                     <h3>Libraries</h3>

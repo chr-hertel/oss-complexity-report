@@ -44,11 +44,11 @@ class Project
 
     public function __construct(
         #[ORM\Column(unique: true)]
-        private string $name,
+        private readonly string $name,
         #[ORM\Column]
-        private string $url,
+        private readonly string $url,
         #[ORM\Column(unique: true)]
-        private string $vendor,
+        private readonly string $vendor,
     ) {
         $this->libraries = new ArrayCollection();
     }

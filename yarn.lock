@@ -1063,12 +1063,6 @@
 
 "@symfony/ux-swup@file:vendor/symfony/ux-swup/Resources/assets":
   version "1.1.0"
-  dependencies:
-    "@swup/debug-plugin" "^1.0"
-    "@swup/fade-theme" "^1.0"
-    "@swup/forms-plugin" "^1.0"
-    "@swup/slide-theme" "^1.0"
-    swup "^2.0"
 
 "@symfony/webpack-encore@^3.0.0":
   version "3.0.0"
@@ -1733,6 +1727,13 @@ chartjs-adapter-moment@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/chartjs-adapter-moment/-/chartjs-adapter-moment-1.0.0.tgz#9174b1093c68bcfe285aff24f7388ad60d44e8f7"
   integrity sha512-PqlerEvQcc5hZLQ/NQWgBxgVQ4TRdvkW3c/t+SUEQSj78ia3hgLkf2VZ2yGJtltNbEEFyYGm+cA6XXevodYvWA==
+
+chartjs-plugin-zoom@^1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/chartjs-plugin-zoom/-/chartjs-plugin-zoom-1.2.1.tgz#7e350ba20d907f397d0c055239dcc67d326df705"
+  integrity sha512-2zbWvw2pljrtMLMXkKw1uxYzAne5PtjJiOZftcut4Lo3Ee8qUt95RpMKDWrZ+pBZxZKQKOD/etdU4pN2jxZUmg==
+  dependencies:
+    hammerjs "^2.0.8"
 
 "chokidar@>=3.0.0 <4.0.0", chokidar@^3.5.3:
   version "3.5.3"
@@ -2507,6 +2508,11 @@ growly@^1.3.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/growly/-/growly-1.3.0.tgz#f10748cbe76af964b7c96c93c6bcc28af120c081"
   integrity sha512-+xGQY0YyAWCnqy7Cd++hc2JqMYzlm0dG30Jd0beaA64sROr8C4nt8Yc9V5Ro3avlSUDTN0ulqP/VBKi1/lLygw==
+
+hammerjs@^2.0.8:
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/hammerjs/-/hammerjs-2.0.8.tgz#04ef77862cff2bb79d30f7692095930222bf60f1"
+  integrity sha512-tSQXBXS/MWQOn/RKckawJ61vvsDpCom87JgxiYdGwHdOa0ht0vzUWDlfioofFCRU0L+6NGDt6XzbgoJvZkMeRQ==
 
 handle-thing@^2.0.0:
   version "2.0.1"

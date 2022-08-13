@@ -6,8 +6,9 @@ namespace App\ComplexityReport;
 
 use App\Entity\Library;
 use App\Entity\Tag;
+use JsonSerializable;
 
-final class GraphData
+final class GraphData implements JsonSerializable
 {
     private const DATE_FORMAT = 'm-d-y';
 
@@ -31,5 +32,14 @@ final class GraphData
                 'y' => round($tag->getAverageComplexity(), 2),
             ];
         }, $this->library->getTags());
+    }
+
+    public function jsonSerialize(): array
+    {
+        return [
+            'name' => $this->library->getName(),
+            'tags' => $this->getTagData(),
+            'labels' => $this->getLabels(),
+        ];
     }
 }
