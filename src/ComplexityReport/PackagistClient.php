@@ -12,11 +12,12 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class PackagistClient
 {
-    private const PACKAGE_DENY_LIST = [
+    private const PACKAGE_EXCLUDE_LIST = [
         'doctrine/orm-g2s',
         'laravel/dbfactory',
         'laravel/liferaft',
         'symfony/annotations-pack',
+        'symfony/image-fixtures',
         'symfony/webpack-encore-pack',
         'typo3/cms',
         'typo3/expose',
@@ -68,7 +69,7 @@ final class PackagistClient
         }, $this->repository->findAll());
 
         return array_filter($libraries, static function (string $library) use ($existing) {
-            return !in_array($library, self::PACKAGE_DENY_LIST, true)
+            return !in_array($library, self::PACKAGE_EXCLUDE_LIST, true)
                 && !in_array($library, $existing, true);
         });
     }
