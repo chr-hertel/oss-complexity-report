@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c2b8e84cde2ea75a12fcfb5b56072e74",
+    "content-hash": "7c002f35bfd79da1c736773bf1a8bf60",
     "packages": [
         {
             "name": "cpliakas/git-wrapper",
@@ -6183,6 +6183,49 @@
                 }
             ],
             "time": "2022-02-25T21:32:43+00:00"
+        },
+        {
+            "name": "deployer/deployer",
+            "version": "v7.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/deployphp/deployer.git",
+                "reference": "04788d6c8ccbd985534fee1705175ea44e4213dd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/deployphp/deployer/zipball/04788d6c8ccbd985534fee1705175ea44e4213dd",
+                "reference": "04788d6c8ccbd985534fee1705175ea44e4213dd",
+                "shasum": ""
+            },
+            "bin": [
+                "dep"
+            ],
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Anton Medvedev",
+                    "email": "anton@medv.io"
+                }
+            ],
+            "description": "Deployment Tool",
+            "homepage": "https://deployer.org",
+            "support": {
+                "docs": "https://deployer.org/docs",
+                "issues": "https://github.com/deployphp/deployer/issues",
+                "source": "https://github.com/deployphp/deployer"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sponsors/antonmedv",
+                    "type": "github"
+                }
+            ],
+            "time": "2022-07-26T22:25:15+00:00"
         },
         {
             "name": "dnoegel/php-xdg-base-dir",

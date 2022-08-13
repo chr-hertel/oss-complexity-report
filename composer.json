@@ -33,6 +33,7 @@
         "twig/twig": "^3.4"
     },
     "require-dev": {
+        "deployer/deployer": "^7.0",
         "friendsofphp/php-cs-fixer": "^3.9",
         "phpstan/phpstan": "^1.8",
         "phpstan/phpstan-phpunit": "^1.1",
