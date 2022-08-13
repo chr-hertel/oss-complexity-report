@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport\DataFixer;
 
-use App\Entity\Library;
 use App\Entity\Tag;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query\Expr\Join;
-use PhpParser\Node\Expr;
 
 /**
  * Removing PHPUnit tags that don't have correct dates.

@@ -7,7 +7,6 @@ namespace App\Controller;
 use App\Entity\Library;
 use App\Entity\Project;
 use App\Repository\LibraryRepository;
-use App\Repository\ProjectRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
