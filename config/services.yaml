@@ -31,3 +31,5 @@ services:
 
     App\ComplexityReport\DataFixer:
         $fixers: !tagged 'complexity_report.data_fixer'
+
+    Symfony\Component\Dotenv\Command\DotenvDumpCommand: ~
