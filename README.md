@@ -4,7 +4,7 @@ Open Source Software Complexity Report
 Requirements
 ------------
 
-* PHP 8.1
+* PHP 8.2
 * Node & Yarn
 * A database (eg. PostgreSQL)
 

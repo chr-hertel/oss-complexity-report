@@ -6,11 +6,9 @@ namespace App\ComplexityReport\DataFixer;
 
 use App\Entity\Library;
 use App\Repository\ProjectRepository;
-use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use GitWrapper\GitWrapper;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * Fixing tags that where originally Zend Framework release.
@@ -31,7 +29,7 @@ final class LaminasVersionFixer implements FixerInterface
         $laminas = $this->repository->findOneByName('Laminas');
 
         if (null === $laminas) {
-            throw new RuntimeException('Cannot find project Laminas.');
+            throw new \RuntimeException('Cannot find project Laminas.');
         }
 
         foreach ($laminas->getLibraries() as $library) {
@@ -53,7 +51,7 @@ final class LaminasVersionFixer implements FixerInterface
             }
 
             $repository->checkout($tag->getName());
-            $created = new DateTimeImmutable($repository->log('-1', '--format=%ai', '--skip=1'));
+            $created = new \DateTimeImmutable($repository->log('-1', '--format=%ai', '--skip=1'));
 
             $this->logger->info(sprintf(
                 'Moving tag %s from %s to %s',

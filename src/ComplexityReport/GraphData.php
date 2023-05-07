@@ -6,9 +6,8 @@ namespace App\ComplexityReport;
 
 use App\Entity\Library;
 use App\Entity\Tag;
-use JsonSerializable;
 
-final class GraphData implements JsonSerializable
+final class GraphData implements \JsonSerializable
 {
     private const DATE_FORMAT = 'm-d-y';
 

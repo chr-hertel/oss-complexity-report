@@ -11,7 +11,6 @@ use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
-use DomainException;
 
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
 class Project
@@ -79,7 +78,7 @@ class Project
     public function getMainLibrary(): Library
     {
         if (!array_key_exists($this->getVendor(), self::MAIN_LIBRARIES)) {
-            throw new DomainException(sprintf('Cannot determine main library of project "%s"', $this->getName()));
+            throw new \DomainException(sprintf('Cannot determine main library of project "%s"', $this->getName()));
         }
 
         $mainLibrary = $this->libraries->matching(
@@ -87,7 +86,7 @@ class Project
         )->first();
 
         if (false === $mainLibrary) {
-            throw new DomainException(sprintf('Cannot load main library of project "%s"', $this->getName()));
+            throw new \DomainException(sprintf('Cannot load main library of project "%s"', $this->getName()));
         }
 
         return $mainLibrary;
