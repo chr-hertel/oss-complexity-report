@@ -39,11 +39,5 @@ jobs:
         run: vendor/bin/phpstan analyse
       - name: Psalm
         run: vendor/bin/psalm
-      - name: Cache PHPUnit
-        uses: actions/cache@v1
-        id: cache-phpunit
-        with:
-          path: bin/.phpunit
-          key: ${{ runner.os }}-phpunit-${{ hashFiles('**/phpunit.xml.dist')}}
       - name: Tests
-        run: bin/phpunit
+        run: vendor/bin/phpunit
