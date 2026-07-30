@@ -15,7 +15,7 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method Library[]    findByName(string|array $name)
  * @method Library|null findOneByName(string $name)
  */
-final class LibraryRepository extends ServiceEntityRepository
+class LibraryRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
