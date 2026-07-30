@@ -5,16 +5,6 @@
     "composer/xdebug-handler": {
         "version": "2.0.2"
     },
-    "doctrine/annotations": {
-        "version": "1.13",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "main",
-            "version": "1.10",
-            "ref": "64d8583af5ea57b7afa4aba4b159907f3a148b05"
-        },
-        "files": []
-    },
     "doctrine/collections": {
         "version": "1.6.8"
     },
@@ -147,18 +137,6 @@
     },
     "sebastian/version": {
         "version": "3.0.2"
-    },
-    "sensiolabs/security-checker": {
-        "version": "4.0",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "master",
-            "version": "4.0",
-            "ref": "160c9b600564faa1224e8f387d49ef13ceb8b793"
-        },
-        "files": [
-            "config/packages/security_checker.yaml"
-        ]
     },
     "symfony/browser-kit": {
         "version": "v6.0.0-RC1"
