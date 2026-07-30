@@ -26,14 +26,11 @@ export default class extends Controller {
     chartConfig;
 
     connect() {
-        this.initChart(
-            JSON.parse(this.element.dataset.libraries),
-        );
+        this.initChart(JSON.parse(this.element.dataset.libraries));
         this.initSelectBox();
     }
 
     initChart(libraries) {
-
         const ctx = document.getElementById('canvas');
         this.chartConfig = {
             type: 'line',
@@ -58,11 +55,11 @@ export default class extends Controller {
                                 enabled: true,
                             },
                             pinch: {
-                                enabled: true
+                                enabled: true,
                             },
                             mode: 'xy',
-                        }
-                    }
+                        },
+                    },
                 },
                 scales: {
                     x: {
@@ -81,7 +78,7 @@ export default class extends Controller {
         Chart.register(zoomPlugin);
         this.chart = new Chart(ctx, this.chartConfig);
 
-        libraries.forEach(library => this.addLibrary(library['name'], library['tags']))
+        libraries.forEach((library) => this.addLibrary(library['name'], library['tags']));
 
         this.chart.update();
     }
