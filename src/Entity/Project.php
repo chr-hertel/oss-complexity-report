@@ -15,7 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
 class Project
 {
-    private const MAIN_LIBRARIES = [
+    private const array MAIN_LIBRARIES = [
         'composer' => 'composer/composer',
         'doctrine' => 'doctrine/orm',
         'laminas' => 'laminas/laminas-mvc',
@@ -26,7 +26,6 @@ class Project
         'typo3' => 'typo3/cms-core',
     ];
 
-    /** @psalm-suppress PropertyNotSetInConstructor */
     #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
     private int $id;
 

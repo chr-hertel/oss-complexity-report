@@ -14,8 +14,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand('app:data:fix')]
 final class DataFixerCommand extends Command
 {
-    public function __construct(private DataFixer $dataFixer)
-    {
+    public function __construct(
+        private DataFixer $dataFixer,
+    ) {
         parent::__construct();
     }
 

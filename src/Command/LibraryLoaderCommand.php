@@ -14,8 +14,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand('app:libraries:load')]
 final class LibraryLoaderCommand extends Command
 {
-    public function __construct(private LibraryLoader $libraryLoader)
-    {
+    public function __construct(
+        private LibraryLoader $libraryLoader,
+    ) {
         parent::__construct();
     }
 

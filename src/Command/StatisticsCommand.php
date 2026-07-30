@@ -14,8 +14,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand('app:statistics')]
 final class StatisticsCommand extends Command
 {
-    public function __construct(private StatisticsLoader $statistics)
-    {
+    public function __construct(
+        private StatisticsLoader $statistics,
+    ) {
         parent::__construct();
     }
 

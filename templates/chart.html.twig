@@ -3,7 +3,7 @@
 {% block title parent() ~ ' - ' ~ headline %}
 
 {% block content %}
-    <main {{ stimulus_controller('symfony/ux-swup/swup,', { containers: ['#nav', '#swup'] }) }}>
+    <main {{ stimulus_controller('symfony/ux-swup/swup', { containers: ['#nav', '#swup'] }) }}>
         <div class="bg-white p-3 shadow-lg">
             <div class="container d-flex justify-content-between">
                 <a class="logo" href="{{ path('start') }}">

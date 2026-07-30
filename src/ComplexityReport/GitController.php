@@ -8,10 +8,12 @@ use App\Entity\Library;
 use GitWrapper\GitWorkingCopy;
 use GitWrapper\GitWrapper;
 
-final class GitController
+final readonly class GitController
 {
-    public function __construct(private GitWrapper $gitWrapper, private string $repositoryPath)
-    {
+    public function __construct(
+        private GitWrapper $gitWrapper,
+        private string $repositoryPath,
+    ) {
     }
 
     /**

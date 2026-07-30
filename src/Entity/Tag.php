@@ -23,7 +23,7 @@ class Tag
         #[ORM\Column(type: 'float')]
         private float $averageComplexity,
         #[ORM\ManyToOne(targetEntity: Library::class, inversedBy: 'tags')]
-        private Library $library
+        private Library $library,
     ) {
     }
 

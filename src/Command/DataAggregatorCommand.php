@@ -14,8 +14,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand('app:data:aggregate')]
 final class DataAggregatorCommand extends Command
 {
-    public function __construct(private DataAggregator $dataAggregator)
-    {
+    public function __construct(
+        private DataAggregator $dataAggregator,
+    ) {
         parent::__construct();
     }
 
