@@ -6,23 +6,18 @@ namespace App\Command;
 
 use App\ComplexityReport\StatisticsLoader;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand('app:statistics')]
-final class StatisticsCommand extends Command
+final readonly class StatisticsCommand
 {
     public function __construct(
         private StatisticsLoader $statistics,
     ) {
-        parent::__construct();
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    public function __invoke(SymfonyStyle $io): int
     {
-        $io = new SymfonyStyle($input, $output);
         $io->title('Complexity Report Statistics');
 
         $io->text('Analysed complexity of ...');
