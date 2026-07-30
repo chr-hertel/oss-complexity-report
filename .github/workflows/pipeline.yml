@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
@@ -18,7 +18,7 @@ jobs:
           php-version: '8.4'
 
       - name: Cache Vendors
-        uses: actions/cache@v1
+        uses: actions/cache@v4
         id: cache-vendors
         with:
           path: vendor
@@ -50,3 +50,27 @@ jobs:
 
       - name: Tests
         run: vendor/bin/phpunit
+
+  assets:
+    name: Assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: yarn
+
+      - name: Install JS Dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Code Style JS
+        run: yarn check-style
+
+      - name: Build Assets
+        run: yarn build
