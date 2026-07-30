@@ -115,8 +115,8 @@ final class PackagistClientTest extends TestCase
     }
 
     /**
-     * @param array<string, array> $responses
-     * @param list<Library>        $storedLibraries
+     * @param array<string, array<string, mixed>> $responses
+     * @param list<Library>                       $storedLibraries
      */
     private function createClient(array $responses, array $storedLibraries = []): PackagistClient
     {
@@ -142,6 +142,9 @@ final class PackagistClientTest extends TestCase
         return new Project($name, sprintf('https://%s.com', $vendor), $vendor);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function packageMetadata(string $package, string $sourceUrl): array
     {
         return ['packages' => [$package => [

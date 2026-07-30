@@ -30,11 +30,14 @@ class Project
     private int $id;
 
     /**
-     * @var Selectable&Collection<int, Library>
+     * @var Selectable<int, Library>&Collection<int, Library>
      */
     #[ORM\OneToMany(targetEntity: Library::class, mappedBy: 'project')]
     private Collection $libraries;
 
+    /**
+     * @return list<string>
+     */
     public static function getMainLibraries(): array
     {
         return array_values(self::MAIN_LIBRARIES);

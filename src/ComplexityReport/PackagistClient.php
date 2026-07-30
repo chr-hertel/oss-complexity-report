@@ -32,6 +32,9 @@ final class PackagistClient
     ) {
     }
 
+    /**
+     * @return list<Library>
+     */
     public function fetchNewLibraries(Project $project): array
     {
         $libraries = $this->fetchLibraries($project);
@@ -52,6 +55,9 @@ final class PackagistClient
         return $newLibraries;
     }
 
+    /**
+     * @return list<string>
+     */
     private function fetchLibraries(Project $project): array
     {
         $item = $this->cache->getItem(sprintf('packages_%s', $project->getVendor()));
@@ -68,16 +74,21 @@ final class PackagistClient
         return $item->get();
     }
 
+    /**
+     * @param list<string> $libraries
+     *
+     * @return list<string>
+     */
     private function filterNewLibraries(array $libraries): array
     {
         $existing = array_map(static function (Library $library) {
             return $library->getName();
         }, $this->repository->findAll());
 
-        return array_filter($libraries, static function (string $library) use ($existing) {
+        return array_values(array_filter($libraries, static function (string $library) use ($existing) {
             return !in_array($library, self::PACKAGE_EXCLUDE_LIST, true)
                 && !in_array($library, $existing, true);
-        });
+        }));
     }
 
     private function fetchRepositoryUrl(string $package): ?string

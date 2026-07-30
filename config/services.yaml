@@ -30,6 +30,6 @@ services:
     # please note that last definitions always *replace* previous ones
 
     App\ComplexityReport\DataFixer:
-        $fixers: !tagged 'complexity_report.data_fixer'
+        $fixers: !tagged_iterator 'complexity_report.data_fixer'
 
     Symfony\Component\Dotenv\Command\DotenvDumpCommand: ~

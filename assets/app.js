@@ -11,4 +11,4 @@ import './styles/app.scss';
 import 'bootstrap/dist/js/bootstrap.min'
 
 // start the Stimulus application
-import './bootstrap';
+import './stimulus_bootstrap.js';
