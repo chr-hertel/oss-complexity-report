@@ -9,7 +9,6 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity, ORM\UniqueConstraint(name: 'lib_tag', columns: ['library_id', 'name'])]
 class Tag
 {
-    /** @psalm-suppress PropertyNotSetInConstructor */
     #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
     private int $id;
 

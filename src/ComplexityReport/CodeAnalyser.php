@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\ComplexityReport;
 
 use App\Entity\Library;
-use GitWrapper\GitWrapper;
 use SebastianBergmann\PHPLOC\Analyser;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
@@ -13,7 +12,7 @@ use Symfony\Component\Finder\SplFileInfo;
 final class CodeAnalyser
 {
     public function __construct(
-        private GitWrapper $gitWrapper,
+        private GitController $gitController,
         private string $repositoryPath,
     ) {
     }
@@ -32,9 +31,6 @@ final class CodeAnalyser
 
         $analysis = (new Analyser())->countFiles($files, false);
 
-        $repository = $this->gitWrapper->workingCopy($localPath);
-        $created = new \DateTimeImmutable($repository->log('-1', '--format=%ai'));
-
-        return new Analysis($analysis['loc'], $analysis['classCcnAvg'], $created);
+        return new Analysis($analysis['loc'], $analysis['classCcnAvg'], $this->gitController->getLastCommitDate($library));
     }
 }

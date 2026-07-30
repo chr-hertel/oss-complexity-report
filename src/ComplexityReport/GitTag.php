@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport;
 
-use GitWrapper\GitTags;
-
 final class GitTag
 {
     public function __construct(private string $name)
@@ -13,13 +11,15 @@ final class GitTag
     }
 
     /**
+     * @param list<string> $names
+     *
      * @return self[]
      */
-    public static function fromGitTags(GitTags $tags): array
+    public static function fromNames(array $names): array
     {
-        return array_map(static function (string $tagName) {
-            return new self($tagName);
-        }, iterator_to_array($tags));
+        return array_map(static function (string $name) {
+            return new self($name);
+        }, $names);
     }
 
     public function getName(): string

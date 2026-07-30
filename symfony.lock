@@ -1,33 +1,9 @@
 {
-    "amphp/amp": {
-        "version": "v2.6.1"
-    },
-    "amphp/byte-stream": {
-        "version": "v1.8.1"
-    },
-    "composer/package-versions-deprecated": {
-        "version": "1.11.99.4"
-    },
     "composer/semver": {
         "version": "3.2.6"
     },
     "composer/xdebug-handler": {
         "version": "2.0.2"
-    },
-    "cpliakas/git-wrapper": {
-        "version": "3.1",
-        "recipe": {
-            "repo": "github.com/symfony/recipes-contrib",
-            "branch": "master",
-            "version": "3.0",
-            "ref": "e66e45db95fc7d7702ee76c592965c204c9739ff"
-        },
-        "files": [
-            "config/packages/cpliakas_git_wrapper.yaml"
-        ]
-    },
-    "dnoegel/php-xdg-base-dir": {
-        "version": "v0.1.1"
     },
     "doctrine/annotations": {
         "version": "1.13",
@@ -107,12 +83,6 @@
     "doctrine/sql-formatter": {
         "version": "1.1.2"
     },
-    "felixfbecker/advanced-json-rpc": {
-        "version": "v3.2.1"
-    },
-    "felixfbecker/language-server-protocol": {
-        "version": "1.5.1"
-    },
     "friendsofphp/php-cs-fixer": {
         "version": "3.3",
         "recipe": {
@@ -128,32 +98,14 @@
     "monolog/monolog": {
         "version": "2.3.5"
     },
-    "netresearch/jsonmapper": {
-        "version": "v4.0.0"
-    },
-    "nette/utils": {
-        "version": "v3.2.6"
-    },
     "nikic/php-parser": {
         "version": "v4.13.1"
-    },
-    "openlss/lib-array2xml": {
-        "version": "1.0.0"
     },
     "php": {
         "version": "7.4.6"
     },
     "php-cs-fixer/diff": {
         "version": "v2.0.2"
-    },
-    "phpdocumentor/reflection-common": {
-        "version": "2.2.0"
-    },
-    "phpdocumentor/reflection-docblock": {
-        "version": "5.3.0"
-    },
-    "phpdocumentor/type-resolver": {
-        "version": "1.5.1"
     },
     "phploc/phploc": {
         "version": "7.0.2"
@@ -479,14 +431,5 @@
     },
     "twig/twig": {
         "version": "v3.3.4"
-    },
-    "vimeo/psalm": {
-        "version": "4.13.1"
-    },
-    "webmozart/assert": {
-        "version": "1.10.0"
-    },
-    "webmozart/path-util": {
-        "version": "2.3.0"
     }
 }
