@@ -9,7 +9,6 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity, ORM\UniqueConstraint(name: 'lib_tag', columns: ['library_id', 'name'])]
 class Tag
 {
-    /** @psalm-suppress PropertyNotSetInConstructor */
     #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
     private int $id;
 
@@ -23,7 +22,7 @@ class Tag
         #[ORM\Column(type: 'float')]
         private float $averageComplexity,
         #[ORM\ManyToOne(targetEntity: Library::class, inversedBy: 'tags')]
-        private Library $library
+        private Library $library,
     ) {
     }
 

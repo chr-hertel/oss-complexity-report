@@ -12,10 +12,10 @@ use Doctrine\Persistence\ManagerRegistry;
 /**
  * @extends ServiceEntityRepository<Library>
  *
- * @method Library[]    findByName(string|array $name)
- * @method Library|null findOneByName(string $name)
+ * @method list<Library> findByName(string|list<string> $name)
+ * @method Library|null  findOneByName(string $name)
  */
-final class LibraryRepository extends ServiceEntityRepository
+class LibraryRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {

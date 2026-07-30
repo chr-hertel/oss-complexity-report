@@ -4,3 +4,10 @@ parameters:
 			message: '#^Property App\\Entity\\[a-zA-Z]+::\$id is (never written, only read|unused).$#'
 			count: 3
 			path: src/Entity/*
+		# Called by Symfony's KernelTrait to validate APP_ENV: the trait declares the
+		# method private and calls it on $this, so this override is what runs. PHPStan
+		# does not follow that from the trait into the class.
+		-
+			message: '#^Method App\\Kernel::getAllowedEnvs\(\) is unused.$#'
+			count: 1
+			path: src/Kernel.php

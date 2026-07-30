@@ -2,8 +2,13 @@ import { Controller } from '@hotwired/stimulus';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-moment';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import 'select2';
+import select2 from 'select2';
 import $ from 'jquery';
+
+// select2's CommonJS build exports a factory rather than registering itself on
+// jQuery. Webpack's interop happened to call it; Vite's does not, so importing
+// it for its side effect alone leaves $.fn.select2 undefined.
+select2(window, $);
 
 export default class extends Controller {
     chartColors = {
@@ -21,14 +26,11 @@ export default class extends Controller {
     chartConfig;
 
     connect() {
-        this.initChart(
-            JSON.parse(this.element.dataset.libraries),
-        );
+        this.initChart(JSON.parse(this.element.dataset.libraries));
         this.initSelectBox();
     }
 
     initChart(libraries) {
-
         const ctx = document.getElementById('canvas');
         this.chartConfig = {
             type: 'line',
@@ -53,11 +55,11 @@ export default class extends Controller {
                                 enabled: true,
                             },
                             pinch: {
-                                enabled: true
+                                enabled: true,
                             },
                             mode: 'xy',
-                        }
-                    }
+                        },
+                    },
                 },
                 scales: {
                     x: {
@@ -76,7 +78,7 @@ export default class extends Controller {
         Chart.register(zoomPlugin);
         this.chart = new Chart(ctx, this.chartConfig);
 
-        libraries.forEach(library => this.addLibrary(library['name'], library['tags']))
+        libraries.forEach((library) => this.addLibrary(library['name'], library['tags']));
 
         this.chart.update();
     }

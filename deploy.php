@@ -22,7 +22,7 @@ host('christopher-hertel.de')
 task('build', function () {
     cd('{{release_path}}');
     run('yarn install --frozen-lockfile');
-    run('yarn build');
+    run('ASSET_BASE=/oss-complexity-report/build/ yarn build');
     run('{{bin/console}} dotenv:dump {{console_options}}');
 });
 

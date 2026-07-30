@@ -14,7 +14,6 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 class Library
 {
-    /** @psalm-suppress PropertyNotSetInConstructor */
     #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
     private int $id;
 

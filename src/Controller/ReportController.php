@@ -7,10 +7,11 @@ namespace App\Controller;
 use App\Entity\Library;
 use App\Entity\Project;
 use App\Repository\LibraryRepository;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 final class ReportController extends AbstractController
 {
@@ -31,7 +32,7 @@ final class ReportController extends AbstractController
     }
 
     #[Route('{vendor}', name: 'project', methods: 'GET', priority: 1)]
-    public function project(Project $project): Response
+    public function project(#[MapEntity(mapping: ['vendor' => 'vendor'])] Project $project): Response
     {
         return $this->render('chart.html.twig', [
             'headline' => sprintf('Project: %s', $project->getName()),
@@ -42,7 +43,7 @@ final class ReportController extends AbstractController
     }
 
     #[Route('{id}', name: 'library', requirements: ['id' => '\d+'], methods: 'GET', priority: 2)]
-    public function library(Library $library): JsonResponse
+    public function library(#[MapEntity(mapping: ['id' => 'id'])] Library $library): JsonResponse
     {
         return new JsonResponse($library->asGraph()->getTagData());
     }

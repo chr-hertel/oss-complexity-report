@@ -32,6 +32,9 @@ final class PackagistClient
     ) {
     }
 
+    /**
+     * @return list<Library>
+     */
     public function fetchNewLibraries(Project $project): array
     {
         $libraries = $this->fetchLibraries($project);
@@ -39,13 +42,22 @@ final class PackagistClient
 
         $newLibraries = [];
         foreach ($librariesToLoad as $library) {
-            $data = $this->fetchLibraryData($library);
-            $newLibraries[] = new Library($library, $data['package']['repository'], $project);
+            $repositoryUrl = $this->fetchRepositoryUrl($library);
+
+            // packages without a tagged release have nothing to analyse
+            if (null === $repositoryUrl) {
+                continue;
+            }
+
+            $newLibraries[] = new Library($library, $repositoryUrl, $project);
         }
 
         return $newLibraries;
     }
 
+    /**
+     * @return list<string>
+     */
     private function fetchLibraries(Project $project): array
     {
         $item = $this->cache->getItem(sprintf('packages_%s', $project->getVendor()));
@@ -62,27 +74,35 @@ final class PackagistClient
         return $item->get();
     }
 
+    /**
+     * @param list<string> $libraries
+     *
+     * @return list<string>
+     */
     private function filterNewLibraries(array $libraries): array
     {
         $existing = array_map(static function (Library $library) {
             return $library->getName();
         }, $this->repository->findAll());
 
-        return array_filter($libraries, static function (string $library) use ($existing) {
+        return array_values(array_filter($libraries, static function (string $library) use ($existing) {
             return !in_array($library, self::PACKAGE_EXCLUDE_LIST, true)
                 && !in_array($library, $existing, true);
-        });
+        }));
     }
 
-    private function fetchLibraryData(string $package): array
+    private function fetchRepositoryUrl(string $package): ?string
     {
-        $item = $this->cache->getItem(sprintf('package_data_%s', str_replace('/', '_', $package)));
+        $item = $this->cache->getItem(sprintf('package_repository_%s', str_replace('/', '_', $package)));
 
         if (!$item->isHit()) {
-            $url = sprintf('https://repo.packagist.org/packages/%s.json', $package);
+            $url = sprintf('https://repo.packagist.org/p2/%s.json', $package);
             $response = $this->httpClient->request('GET', $url);
 
-            $item->set($response->toArray());
+            $versions = $response->toArray()['packages'][$package] ?? [];
+            $repositoryUrl = $versions[0]['source']['url'] ?? null;
+
+            $item->set(null === $repositoryUrl ? null : preg_replace('/\.git$/', '', $repositoryUrl));
             $item->expiresAfter(3600);
             $this->cache->save($item);
         }

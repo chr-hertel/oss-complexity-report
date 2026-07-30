@@ -15,6 +15,9 @@ final class GraphData implements \JsonSerializable
     {
     }
 
+    /**
+     * @return list<string>
+     */
     public function getLabels(): array
     {
         return array_values(array_unique(array_map(static function (Tag $tag) {
@@ -22,17 +25,23 @@ final class GraphData implements \JsonSerializable
         }, $this->library->getTags())));
     }
 
+    /**
+     * @return list<array{name: string, x: string, y: float}>
+     */
     public function getTagData(): array
     {
-        return array_map(static function (Tag $tag) {
+        return array_values(array_map(static function (Tag $tag) {
             return [
                 'name' => $tag->getName(),
                 'x' => $tag->getCreated()->format(self::DATE_FORMAT),
                 'y' => round($tag->getAverageComplexity(), 2),
             ];
-        }, $this->library->getTags());
+        }, $this->library->getTags()));
     }
 
+    /**
+     * @return array{name: string, tags: list<array{name: string, x: string, y: float}>, labels: list<string>}
+     */
     public function jsonSerialize(): array
     {
         return [

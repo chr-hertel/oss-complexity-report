@@ -4,42 +4,48 @@ Open Source Software Complexity Report
 Requirements
 ------------
 
-* PHP 8.2
-* Node & Yarn
-* A database (eg. PostgreSQL)
+* PHP 8.4
+* Node 26 (see .nvmrc) & Yarn
+* A database (e.g. PostgreSQL)
 
 Setup
 -----
 
+```bash
+git clone git@github.com:chr-hertel/oss-complexity-report
+cd oss-complexity-report
+composer install
+yarn install
+yarn build
+docker-compose up -d
+symfony serve -d
 ```
-$ git clone git@github.com:chr-hertel/oss-complexity-report
-$ cd oss-complexity-report
-$ composer install
-$ yarn install
-$ yarn encore dev
-$ docker-compose up -d
-$ symfony serve -d
-```
+
+Assets are bundled by Vite and wired into Twig by [symfony/reprise][reprise].
+Run `yarn build` for a one-off build, or `yarn dev` to start the Vite dev
+server with hot module replacement - reprise picks it up automatically.
+
+[reprise]: https://github.com/symfony/reprise
 
 Recreate Dataset
 ----------------
 
-```
+```bash
 # resetting database and caches
-$ bin/console doctrine:database:drop
-$ bin/console doctrine:database:create
-$ bin/console doctrine:schema:create
-$ bin/console cache:pool:clear cache.app
+symfony console doctrine:database:drop --force
+symfony console doctrine:database:create
+symfony console doctrine:schema:create
+symfony console cache:pool:clear cache.app
 
 # loads projects to analyse from fixtures to database
-$ bin/console doctrine:fixtures:load -n
+symfony console doctrine:fixtures:load -n
 
 # fetches project libraries from packagist.org and stores them in database
-$ bin/console app:libraries:load -vv
+symfony console app:libraries:load -vv
 
 # clones repositories and analyses code base of every major and minor release
-$ bin/console app:data:aggregate -vv
+symfony console app:data:aggregate -vv
 
 # fix some data issues
-$ bin/console app:data:fix -vv
+symfony console app:data:fix -vv
 ```

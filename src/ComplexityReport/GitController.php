@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\ComplexityReport;
 
 use App\Entity\Library;
-use GitWrapper\GitWorkingCopy;
-use GitWrapper\GitWrapper;
 
-final class GitController
+final readonly class GitController
 {
-    public function __construct(private GitWrapper $gitWrapper, private string $repositoryPath)
-    {
+    public function __construct(
+        private Git $git,
+        private string $repositoryPath,
+    ) {
     }
 
     /**
@@ -20,25 +20,31 @@ final class GitController
     public function loadTags(Library $library): array
     {
         $repository = $this->getRepository($library);
-        $repository->fetchAll(['tags' => true, 'force' => true]);
+        $this->git->run($repository, 'fetch', '--all', '--tags', '--force');
 
-        return GitTag::fromGitTags($repository->tags());
+        return GitTag::fromNames($this->git->listTags($repository));
     }
 
     public function checkoutTag(Library $library, string $name): void
     {
-        $repository = $this->getRepository($library);
-        $repository->checkout($name, '--force');
+        $this->git->run($this->getRepository($library), 'checkout', '--force', $name);
     }
 
-    private function getRepository(Library $library): GitWorkingCopy
+    public function getLastCommitDate(Library $library): \DateTimeImmutable
+    {
+        $date = $this->git->run($this->getRepository($library), 'log', '-1', '--format=%aI');
+
+        return new \DateTimeImmutable(trim($date));
+    }
+
+    private function getRepository(Library $library): string
     {
         $localPath = $this->repositoryPath.'/'.$library->getRepositoryPath();
 
-        if (is_dir($localPath)) {
-            return $this->gitWrapper->workingCopy($localPath);
+        if (!is_dir($localPath)) {
+            $this->git->cloneRepository($library->getRepositoryUrl(), $localPath);
         }
 
-        return $this->gitWrapper->cloneRepository($library->getRepositoryUrl(), $localPath);
+        return $localPath;
     }
 }

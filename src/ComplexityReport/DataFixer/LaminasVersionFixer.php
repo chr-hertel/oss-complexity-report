@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport\DataFixer;
 
+use App\ComplexityReport\Git;
 use App\Entity\Library;
 use App\Repository\ProjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use GitWrapper\GitWrapper;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -17,7 +17,7 @@ final class LaminasVersionFixer implements FixerInterface
 {
     public function __construct(
         private ProjectRepository $repository,
-        private GitWrapper $gitWrapper,
+        private Git $git,
         private LoggerInterface $logger,
         private EntityManagerInterface $entityManager,
         private string $repositoryPath,
@@ -42,7 +42,7 @@ final class LaminasVersionFixer implements FixerInterface
 
     private function shiftLibraryReleases(Library $library): void
     {
-        $repository = $this->gitWrapper->workingCopy($this->repositoryPath.'/'.$library->getRepositoryPath());
+        $repository = $this->repositoryPath.'/'.$library->getRepositoryPath();
 
         foreach ($library->getTags() as $tag) {
             if ('2019-12-31' !== $tag->getCreated()->format('Y-m-d')) {
@@ -50,8 +50,8 @@ final class LaminasVersionFixer implements FixerInterface
                 continue;
             }
 
-            $repository->checkout($tag->getName());
-            $created = new \DateTimeImmutable($repository->log('-1', '--format=%ai', '--skip=1'));
+            $this->git->run($repository, 'checkout', $tag->getName());
+            $created = new \DateTimeImmutable(trim($this->git->run($repository, 'log', '-1', '--format=%aI', '--skip=1')));
 
             $this->logger->info(sprintf(
                 'Moving tag %s from %s to %s',
