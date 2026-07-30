@@ -39,8 +39,14 @@ final class PackagistClient
 
         $newLibraries = [];
         foreach ($librariesToLoad as $library) {
-            $data = $this->fetchLibraryData($library);
-            $newLibraries[] = new Library($library, $data['package']['repository'], $project);
+            $repositoryUrl = $this->fetchRepositoryUrl($library);
+
+            // packages without a tagged release have nothing to analyse
+            if (null === $repositoryUrl) {
+                continue;
+            }
+
+            $newLibraries[] = new Library($library, $repositoryUrl, $project);
         }
 
         return $newLibraries;
@@ -74,15 +80,18 @@ final class PackagistClient
         });
     }
 
-    private function fetchLibraryData(string $package): array
+    private function fetchRepositoryUrl(string $package): ?string
     {
-        $item = $this->cache->getItem(sprintf('package_data_%s', str_replace('/', '_', $package)));
+        $item = $this->cache->getItem(sprintf('package_repository_%s', str_replace('/', '_', $package)));
 
         if (!$item->isHit()) {
-            $url = sprintf('https://repo.packagist.org/packages/%s.json', $package);
+            $url = sprintf('https://repo.packagist.org/p2/%s.json', $package);
             $response = $this->httpClient->request('GET', $url);
 
-            $item->set($response->toArray());
+            $versions = $response->toArray()['packages'][$package] ?? [];
+            $repositoryUrl = $versions[0]['source']['url'] ?? null;
+
+            $item->set(null === $repositoryUrl ? null : preg_replace('/\.git$/', '', $repositoryUrl));
             $item->expiresAfter(3600);
             $this->cache->save($item);
         }
