@@ -306,6 +306,20 @@
     "symfony/profiler-pack": {
         "version": "v1.0.5"
     },
+    "symfony/reprise": {
+        "version": "0.6",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "0.1",
+            "ref": "21dd404be875f26b8384e81a3764e9bd02381e33"
+        },
+        "files": [
+            "assets/app.js",
+            "assets/styles/app.css",
+            "config/packages/reprise.yaml"
+        ]
+    },
     "symfony/routing": {
         "version": "8.1",
         "recipe": {
@@ -371,9 +385,6 @@
     "symfony/twig-pack": {
         "version": "v1.0.0"
     },
-    "symfony/ux-swup": {
-        "version": "v1.3.0"
-    },
     "symfony/var-dumper": {
         "version": "v6.0.0-RC1"
     },
@@ -391,25 +402,6 @@
         "files": [
             "config/packages/web_profiler.yaml",
             "config/routes/web_profiler.yaml"
-        ]
-    },
-    "symfony/webpack-encore-bundle": {
-        "version": "1.16",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "main",
-            "version": "1.10",
-            "ref": "f8fc53f1942f76679e9ee3c25fd44865355707b5"
-        },
-        "files": [
-            "assets/app.js",
-            "assets/bootstrap.js",
-            "assets/controllers.json",
-            "assets/controllers/hello_controller.js",
-            "assets/styles/app.css",
-            "config/packages/webpack_encore.yaml",
-            "package.json",
-            "webpack.config.js"
         ]
     },
     "symfony/yaml": {

@@ -2,8 +2,13 @@ import { Controller } from '@hotwired/stimulus';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-moment';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import 'select2';
+import select2 from 'select2';
 import $ from 'jquery';
+
+// select2's CommonJS build exports a factory rather than registering itself on
+// jQuery. Webpack's interop happened to call it; Vite's does not, so importing
+// it for its side effect alone leaves $.fn.select2 undefined.
+select2(window, $);
 
 export default class extends Controller {
     chartColors = {

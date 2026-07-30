@@ -5,7 +5,7 @@ Requirements
 ------------
 
 * PHP 8.4
-* Node & Yarn
+* Node 26 (see .nvmrc) & Yarn
 * A database (e.g. PostgreSQL)
 
 Setup
@@ -16,10 +16,16 @@ git clone git@github.com:chr-hertel/oss-complexity-report
 cd oss-complexity-report
 composer install
 yarn install
-yarn encore dev
+yarn build
 docker-compose up -d
 symfony serve -d
 ```
+
+Assets are bundled by Vite and wired into Twig by [symfony/reprise][reprise].
+Run `yarn build` for a one-off build, or `yarn dev` to start the Vite dev
+server with hot module replacement - reprise picks it up automatically.
+
+[reprise]: https://github.com/symfony/reprise
 
 Recreate Dataset
 ----------------

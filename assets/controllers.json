@@ -1,11 +1,4 @@
 {
-    "controllers": {
-        "@symfony/ux-swup": {
-            "swup": {
-                "enabled": true,
-                "fetch": "eager"
-            }
-        }
-    },
+    "controllers": [],
     "entrypoints": []
 }
