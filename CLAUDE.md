@@ -191,7 +191,9 @@ an unknown repository, a fork, too little PHP - stays a flash on the start page,
 ends on the page of its repository, whether it was just queued or has been in the report for years.
 
 **Web** (`src/Controller/ReportController`) — two screens: `start` renders the trend in the hero, the
-submit form, the rankings, a line of GitHub owners and what is still queued, and `chart` is everything
+submit form, the rankings, a line of GitHub owners (only those grouping more than one measured
+repository - a single one is the repository the rankings already link to) and what is still queued, and
+`chart` is everything
 else. There is **one** chart page, not one per organization: `?repositories=symfony/console,nikic/iter`
 says which repositories it draws, in that order, up to `CHART_LIMIT` (the chart has eight colours), and
 anything the report carries can be added to them. Without a selection it opens on the most starred.

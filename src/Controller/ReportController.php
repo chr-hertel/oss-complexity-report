@@ -57,7 +57,7 @@ final class ReportController extends AbstractController
         return $this->render('start.html.twig', [
             'rankings' => $rankings,
             'hasData' => [] !== $analysed,
-            'organizations' => $organizationRepository->findWithData(),
+            'organizations' => $organizationRepository->findWithSeveralRepositories(),
             'pending' => $repositoryRepository->findPending(),
             'statistics' => $statisticsLoader->load(),
             'trends' => $trendLoader->load(),

@@ -42,11 +42,13 @@ final class OrganizationRepository extends ServiceEntityRepository
     }
 
     /**
-     * Only the organizations that have something to chart - everything else links to an empty report.
+     * The organizations that group something: they need more than one repository to chart, and every one
+     * of those needs releases - an owner of a single repository is that repository, which the rankings
+     * already link to, and an owner without measured releases links to an empty report.
      *
      * @return list<Organization>
      */
-    public function findWithData(): array
+    public function findWithSeveralRepositories(): array
     {
         $queryBuilder = $this->createQueryBuilder('o');
 
@@ -58,6 +60,7 @@ final class OrganizationRepository extends ServiceEntityRepository
                 sprintf('SELECT t.id FROM %s t WHERE t.repository = r', Tag::class)
             ))
             ->groupBy('o.id')
+            ->having('COUNT(r.id) > 1')
             ->orderBy('stars', 'DESC')
             ->addOrderBy('o.login', 'ASC')
             ->getQuery()

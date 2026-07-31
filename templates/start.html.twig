@@ -261,7 +261,9 @@
 
                 {#
                  # The GitHub accounts behind the repositories are a lens on the same list, not a place of
-                 # their own: every one of them opens the chart with what was submitted for it.
+                 # their own: every one of them opens the chart with what was submitted for it. Which is
+                 # why only accounts with more than one repository are listed - a single one is a link to
+                 # that repository under another name.
                  #}
                 {% if organizations is not empty %}
                     <p class="owner-line">
