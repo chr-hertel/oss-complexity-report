@@ -107,14 +107,36 @@
                      # what is picked ends up in the query string. The headline says what it is, so the
                      # box needs no second one.
                      #}
-                    <div class="repository-picker">
-                        <select class="js-repository-select" name="repositories[]" multiple="multiple"
-                                aria-label="Repositories in this chart" data-chart-target="select">
-                            {# no whitespace around the name: select2 renders the raw text into its chips #}
+                    <div class="repository-picker" {{ stimulus_controller('repository-picker', {limit: chartLimit}) }}>
+                        {#
+                         # The state the box is a widget for: what is in the chart, and in which order it
+                         # is drawn. The chart reads this and redraws on its `change`, so it does not
+                         # care how a repository got in or out.
+                         #}
+                        <select name="repositories[]" multiple="multiple" hidden
+                                data-chart-target="select" data-repository-picker-target="select"
+                                data-action="change->chart#repick">
                             {% for repository in selection.options %}
                                 <option value="{{ repository.name }}" {{ repository in series ? 'selected="selected"' }}>{{ repository.name }}</option>
                             {% endfor %}
                         </select>
+                        {# the same box as the search on the start page, with room for more than one answer #}
+                        <div class="combobox">
+                            <div class="combobox__control" data-action="click->repository-picker#focus">
+                                <ul class="combobox__chips" data-repository-picker-target="chips"></ul>
+                                <input type="text" class="combobox__input"
+                                       placeholder="Search the report"
+                                       aria-label="Repositories in this chart"
+                                       autocomplete="off" autocapitalize="off" spellcheck="false"
+                                       role="combobox" aria-expanded="false" aria-autocomplete="list"
+                                       aria-controls="repository-suggestions"
+                                       data-repository-picker-target="input"
+                                       data-action="input->repository-picker#query focus->repository-picker#query keydown->repository-picker#navigate blur->repository-picker#close">
+                            </div>
+                            <ul class="combobox__menu" id="repository-suggestions" role="listbox"
+                                aria-label="Repositories the report carries"
+                                data-repository-picker-target="menu" hidden></ul>
+                        </div>
                         <p class="repository-picker__hint">
                             Up to {{ chartLimit }} at a time, one colour each.
                             <a href="{{ path('start') }}">Add a repository</a> the report does not carry yet.

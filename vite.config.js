@@ -15,9 +15,9 @@ export default defineConfig({
     css: {
         preprocessorOptions: {
             scss: {
-                // Bootstrap 5.3, Font Awesome and select2 are all still written against the
-                // @import based Sass, so their own deprecation warnings say nothing about this
-                // codebase - hundreds of lines of them per build, none of them actionable here.
+                // Font Awesome is still written against the @import based Sass, so its own
+                // deprecation warnings say nothing about this codebase - hundreds of lines of
+                // them per build, none of them actionable here.
                 quietDeps: true,
             },
         },

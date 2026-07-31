@@ -397,11 +397,105 @@ a.chip:hover {
 }
 
 // --- Combobox ---------------------------------------------------------------------------------
-// The search box on the start page: the design system's field over a menu of suggestions.
+// A field over a menu of suggestions: the search on the start page, and the repository box above the
+// chart - which is the same box with room for more than one answer, so the chips and the field they
+// sit in are the only part it adds.
 .combobox {
     position: relative;
     flex: 1 1 auto;
     min-width: 0;
+
+    // the chips and the input read as one field, so the border is around all of them
+    &__control {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        align-items: center;
+        min-height: 42px;
+        padding: calc(var(--space-2) - 2px) var(--space-3);
+        background: var(--surface-input);
+        border: var(--border-width) solid var(--input-border-color);
+        border-radius: var(--radius);
+        cursor: text;
+        transition:
+            border-color var(--transition),
+            box-shadow var(--transition);
+
+        &:focus-within {
+            border-color: var(--brand);
+            box-shadow: var(--focus-ring);
+        }
+    }
+
+    &__chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    &__chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: 3px var(--space-2) 3px 6px;
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-body);
+        background: var(--sunken);
+        border: var(--border-width) solid var(--line);
+        border-radius: var(--radius-sm);
+    }
+
+    // the swatch matches the series colour, which the chart assigns by the same position
+    &__swatch {
+        flex: 0 0 auto;
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        background: var(--chart-8);
+    }
+
+    @for $index from 1 through 8 {
+        &__chip:nth-child(#{$index}) &__swatch {
+            background: var(--chart-#{$index});
+        }
+    }
+
+    &__chip-remove {
+        padding: 0;
+        font-size: 13px;
+        line-height: 1;
+        color: var(--text-faint);
+        background: none;
+        border: 0;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            color: var(--text-body);
+        }
+    }
+
+    // what is typed is the rest of the field, and drops to its own line once the chips fill one
+    &__input {
+        flex: 1 1 12rem;
+        min-width: 0;
+        padding: 0;
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        line-height: 1.4;
+        color: var(--text-heading);
+        background: none;
+        border: 0;
+        outline: none;
+
+        &::placeholder {
+            color: var(--text-faint);
+        }
+    }
 
     &__menu {
         position: absolute;
@@ -740,153 +834,5 @@ a.chip:hover {
 
     &__dot {
         color: var(--text-faint);
-    }
-}
-
-// --- RepositorySelect -------------------------------------------------------------------------
-// select2 dressed as the design system's multi-select: each pick adds a chart series, and the swatch
-// on its chip carries the colour that series is drawn in.
-//
-// select2 ships its default theme inside `core`, and those rules are one class more specific than a
-// plain `.select2-container--default .thing`. Every override below therefore goes through
-// `.select2-selection--multiple` (or matches the theme's own compound selector) to reach it.
-.select2-container--default {
-    width: 100% !important;
-
-    .select2-selection--multiple {
-        min-height: 42px;
-        padding: calc(var(--space-2) - 2px) var(--space-3);
-        background-color: var(--surface-input);
-        border: var(--border-width) solid var(--input-border-color);
-        border-radius: var(--radius);
-        transition:
-            border-color var(--transition),
-            box-shadow var(--transition);
-
-        .select2-selection__rendered {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--space-2);
-            align-items: center;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-
-        .select2-selection__choice {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--space-2);
-            // the theme positions the remove button absolutely over a 20px inset; the chip lays its
-            // three parts out in a row instead
-            position: static;
-            max-width: none;
-            overflow: visible;
-            margin: 0;
-            padding: 3px var(--space-2) 3px 6px;
-            font-family: var(--font-mono);
-            font-size: var(--text-xs);
-            color: var(--text-body);
-            background-color: var(--sunken);
-            border: var(--border-width) solid var(--line);
-            border-radius: var(--radius-sm);
-
-            // the swatch matches the series colour, which the chart assigns by selection order
-            &::before {
-                content: '';
-                flex: 0 0 auto;
-                width: 8px;
-                height: 8px;
-                border-radius: 2px;
-                background: var(--chart-8);
-            }
-
-            @for $index from 1 through 8 {
-                &:nth-child(#{$index})::before {
-                    background: var(--chart-#{$index});
-                }
-            }
-        }
-
-        .select2-selection__choice__display {
-            padding: 0;
-            cursor: pointer;
-        }
-
-        .select2-selection__choice__remove {
-            order: 2;
-            position: static;
-            margin: 0;
-            padding: 0;
-            font-size: 13px;
-            font-weight: var(--weight-body);
-            line-height: 1;
-            color: var(--text-faint);
-            background-color: transparent;
-            border: 0;
-            border-radius: 0;
-            cursor: pointer;
-
-            &:hover,
-            &:focus {
-                color: var(--text-body);
-                background-color: transparent;
-            }
-        }
-    }
-
-    &.select2-container--focus .select2-selection--multiple,
-    &.select2-container--open .select2-selection--multiple {
-        border-color: var(--brand);
-        box-shadow: var(--focus-ring);
-    }
-
-    .select2-search--inline .select2-search__field {
-        margin: 0;
-        font-family: var(--font-sans);
-        font-size: var(--text-sm);
-        line-height: 1.4;
-        color: var(--text-heading);
-
-        &::placeholder {
-            color: var(--text-faint);
-        }
-    }
-
-    .select2-dropdown {
-        background: var(--surface-card);
-        border: var(--border-width) solid var(--line);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow-overlay);
-    }
-
-    .select2-search--dropdown .select2-search__field {
-        padding: var(--control-pad-y) var(--control-pad-x);
-        font-family: var(--font-sans);
-        font-size: var(--text-sm);
-        color: var(--text-heading);
-        border: var(--border-width) solid var(--input-border-color);
-        border-radius: var(--radius);
-        outline: none;
-    }
-
-    .select2-results__option {
-        padding: var(--space-2) var(--space-4);
-        font-family: var(--font-mono);
-        font-size: var(--text-sm);
-        color: var(--text-body);
-    }
-
-    // the menu is the list of what can be added, so what is in the chart already is not on it - the
-    // chips above it are where a repository is removed again
-    .select2-results__option--selected,
-    .select2-results__option[aria-selected='true'] {
-        display: none;
-    }
-
-    .select2-results__option--highlighted,
-    .select2-results__option--highlighted.select2-results__option--selectable {
-        color: var(--text-body);
-        background-color: var(--sunken);
     }
 }
