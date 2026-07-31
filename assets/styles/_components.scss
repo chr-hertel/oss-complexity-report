@@ -335,8 +335,8 @@
     &--hero {
         grid-template-columns: repeat(3, minmax(0, 1fr));
         max-width: 34rem;
-        margin-top: var(--space-7);
-        padding-bottom: 0;
+        margin-top: var(--space-5);
+        padding: var(--space-4) 0 0;
         border-top-color: var(--hero-line);
     }
 
@@ -353,10 +353,6 @@
     // Two columns is as far as the labels go before they collide - the hero row wraps with them.
     .stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .stats--hero {
-        margin-top: var(--space-6);
     }
 }
 
