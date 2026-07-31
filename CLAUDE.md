@@ -163,8 +163,10 @@ JSON-serializes into what the chart expects.
 
 **Frontend** — Vite + symfony/reprise + StimulusBundle. `assets/controllers/chart_controller.js` reads the
 preselected repositories from a `data-repositories` attribute rendered by `templates/chart.html.twig`, and
-lazily fetches additional ones from the `repository` JSON route when picked in the select2 box. Page
-transitions use symfony/ux-swup. `vite.config.js` takes the public path from `ASSET_BASE` (set by the build
+lazily fetches additional ones from the `repository` JSON route when picked in the select2 box.
+`refresh_controller.js` reloads the page every 30s while the status above the chart says a repository is
+queued or being measured - it is only rendered in that state, so the reloading stops by itself once the
+data is there, and a backgrounded tab skips its turn. Page transitions use symfony/ux-swup. `vite.config.js` takes the public path from `ASSET_BASE` (set by the build
 task in `deploy.php`) rather than the build mode, so local production builds keep working.
 
 ## Conventions
