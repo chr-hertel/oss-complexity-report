@@ -723,9 +723,23 @@ a.chip:hover {
         font-size: var(--text-h3);
     }
 
+    // the repository is a link to github.com, so it carries the same arrow the chart headline does
     &__name {
         font-family: var(--font-mono);
         font-weight: var(--weight-medium);
+        color: inherit;
+        text-decoration: none;
+
+        .fas {
+            margin-left: var(--space-2);
+            font-size: 13px;
+            color: var(--text-faint);
+        }
+
+        // only the name is underlined on hover, the arrow behind it is not part of it
+        &:hover span {
+            text-decoration: underline;
+        }
     }
 
     &__meta {

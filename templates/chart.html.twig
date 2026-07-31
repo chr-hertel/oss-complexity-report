@@ -97,7 +97,8 @@
             {% elseif series is not empty %}
                 <div>
                     <p class="chart-lead">
-                        Average cyclomatic complexity per analysed release. Scroll to zoom, drag to pan,
+                        Average cyclomatic complexity per analysed release, measured with phploc. Scroll
+                        to zoom, drag to pan,
                         and click a release to read it below.
                     </p>
 
@@ -148,7 +149,9 @@
                         <div class="release-head">
                             <div>
                                 <h2>
-                                    <span class="release-head__name" data-chart-target="releaseRepository"></span>
+                                    {# the repository being read is where it is read on github.com #}
+                                    <a class="release-head__name" target="_blank" rel="noreferrer"
+                                       data-chart-target="releaseRepository"></a>
                                     <span class="badge" data-chart-target="releaseName"></span>
                                 </h2>
                                 <div class="release-head__meta" data-chart-target="releaseMeta"></div>
