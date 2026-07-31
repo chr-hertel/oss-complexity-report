@@ -176,11 +176,13 @@ canvas {
     background: var(--hero-bg);
     color: var(--hero-muted);
 
+    // stretched, not centred: the figure on the right is meant to stand as tall as the intro next
+    // to it, which it does by growing its own figure block rather than by being given a height.
     &__inner {
         display: flex;
         flex-wrap: wrap;
         gap: var(--space-7);
-        align-items: center;
+        align-items: stretch;
         justify-content: space-between;
     }
 
@@ -190,13 +192,15 @@ canvas {
 
     &__subline {
         max-width: 52ch;
-        margin-top: var(--space-5);
+        margin-top: var(--space-4);
         font-size: var(--text-lg);
         color: var(--hero-muted);
     }
 
+    // the mark has no height of its own to stretch, so it stays centred against the intro
     &__mark {
         flex: 0 0 auto;
+        align-self: center;
         width: clamp(104px, 16vw, 168px);
         height: auto;
     }
@@ -214,7 +218,9 @@ canvas {
 // be read in. The trend tones of the design system are ink on white and would sink into the brand
 // ground, so the number borrows the lightened bars of the mark instead.
 .hero-trend {
+    display: flex;
     flex: 0 0 auto;
+    flex-direction: column;
     width: clamp(260px, 26vw, 320px);
     padding: var(--space-5);
     background: rgba(255, 255, 255, 0.06);
@@ -230,7 +236,10 @@ canvas {
         color: var(--hero-faint);
     }
 
+    // the one visible figure takes whatever height the intro gives the card, so the time frames
+    // stay on its bottom edge without being pinned there
     &__figure {
+        flex: 1 1 auto;
         margin-top: var(--space-4);
 
         &[hidden] {
@@ -310,10 +319,12 @@ canvas {
     }
 }
 
-// The wordmark: a tracked-out mono kicker over the semibold product name. There is no logo file in
-// the repository - this lockup is the brand.
+// The wordmark: the semibold product name with a tracked-out mono kicker under it. There is no logo
+// file in the repository - this lockup is the brand. The two lines are set as tight as their leading
+// allows and ordered by the markup, which is why the hero can put the kicker on top instead.
 .logo {
     display: block;
+    line-height: var(--leading-lockup);
     color: inherit;
 
     &:hover {
@@ -322,7 +333,6 @@ canvas {
 
     &__kicker {
         display: block;
-        margin-bottom: 2px;
         font-family: var(--font-mono);
         font-size: var(--logo-kicker);
         font-weight: var(--weight-medium);
@@ -341,7 +351,7 @@ canvas {
     }
 
     &--hero &__kicker {
-        margin-bottom: var(--space-4);
+        margin-bottom: var(--space-2);
         font-size: var(--text-eyebrow);
     }
 
