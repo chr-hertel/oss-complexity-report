@@ -30,10 +30,10 @@ final class RepositorySubmitter
      * Largest repository that is still worth cloning, in kilobytes - the unit github.com reports.
      *
      * Analysing means cloning the full history into a shared directory, and the submitter picks what
-     * lands there. Two gigabytes is far above what the source of a PHP project weighs and still bounds
+     * lands there. Ten gigabytes is far above what the source of a PHP project weighs and still bounds
      * what a single submission can cost the disk.
      */
-    private const int MAX_SIZE = 2 * 1024 * 1024;
+    private const int MAX_SIZE = 10 * 1024 * 1024;
 
     /**
      * How many repositories may wait for their first analysis at once.
