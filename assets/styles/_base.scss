@@ -1,4 +1,5 @@
-// Reset, page frame and the brand primitives - Band, Hero, Logo, SiteFooter from the design system.
+// Reset, page frame and the brand primitives - Band, Hero, Logo, SiteHeader, SiteFooter from the
+// design system.
 
 *,
 *::before,
@@ -86,17 +87,104 @@ canvas {
     padding: 0 var(--gutter);
 }
 
-// Start-page header: quiet, left-aligned, closed by a hairline.
-.hero {
-    padding: var(--hero-pad-top) 0 var(--hero-pad-bottom);
+// The top band of every page: the mark next to the wordmark on the left, a mono nav on the right,
+// one trailing control after it. A hairline is the only separation, there is no shadow.
+.site-header {
     background: var(--surface-band);
     border-bottom: var(--border-width) solid var(--line);
+
+    &__inner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-4) var(--space-5);
+        align-items: center;
+        justify-content: space-between;
+        padding-top: var(--space-4);
+        padding-bottom: var(--space-4);
+    }
+
+    &__brand {
+        display: flex;
+        gap: var(--space-3);
+        align-items: center;
+        color: inherit;
+    }
+
+    &__right {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-5);
+        align-items: center;
+    }
+
+    &__nav {
+        display: flex;
+        gap: var(--space-5);
+        align-items: center;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    // Muted by default, the page you are on carries the brand rule.
+    &__link {
+        padding-bottom: 4px;
+        font-family: var(--font-mono);
+        font-size: var(--text-eyebrow);
+        font-weight: var(--weight-medium);
+        letter-spacing: var(--tracking-eyebrow);
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: var(--text-muted);
+        border-bottom: 2px solid transparent;
+
+        &:hover {
+            color: var(--text-heading);
+        }
+
+        &.is-active {
+            color: var(--text-heading);
+            border-bottom-color: var(--brand);
+        }
+    }
+}
+
+// Start page opening: the wordmark and the size of the dataset on the brand ground, closed by the
+// mark the report is stamped with. The colour is the separation, so it carries no hairline.
+.hero {
+    padding: var(--hero-pad-top) 0 var(--hero-pad-bottom);
+    background: var(--hero-bg);
+    color: var(--hero-muted);
+
+    &__inner {
+        display: flex;
+        gap: var(--space-7);
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    &__intro {
+        min-width: 0;
+    }
 
     &__subline {
         max-width: 52ch;
         margin-top: var(--space-5);
         font-size: var(--text-lg);
-        color: var(--text-muted);
+        color: var(--hero-muted);
+    }
+
+    &__mark {
+        flex: 0 0 auto;
+        width: clamp(104px, 16vw, 168px);
+        height: auto;
+    }
+
+    .logo__kicker {
+        color: var(--hero-faint);
+    }
+
+    .logo__title {
+        color: var(--hero-fg);
     }
 }
 
@@ -111,6 +199,7 @@ canvas {
     }
 
     &__kicker {
+        display: block;
         margin-bottom: 2px;
         font-family: var(--font-mono);
         font-size: var(--logo-kicker);
@@ -121,6 +210,7 @@ canvas {
     }
 
     &__title {
+        display: block;
         font-size: var(--logo-title);
         font-weight: var(--weight-semibold);
         letter-spacing: var(--tracking-heading);
@@ -189,9 +279,23 @@ canvas {
     }
 }
 
+// Under 720px the lockup stacks above the nav row, which scrolls sideways instead of wrapping.
+@media (max-width: 720px) {
+    .site-header__inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+}
+
 @media (max-width: 640px) {
     :root {
         --text-hero: 38px;
         --hero-pad-top: var(--space-8);
+    }
+
+    // Too small to read as the mark, and the header carries it two rows further up anyway.
+    .hero__mark {
+        display: none;
     }
 }

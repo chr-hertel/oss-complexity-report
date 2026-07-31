@@ -52,6 +52,11 @@
     // Accent used for the star metric
     --accent-star: #b58a3c;
 
+    // The brand mark - three ascending bars, lightened so they carry on the slate ground they sit on
+    --mark-low: #4e8c7d;
+    --mark-mid: #c9a24d;
+    --mark-high: #d06a5a;
+
     // Chart series - eight muted, evenly-weighted lines, assigned by position
     --chart-1: #2f3a49;
     --chart-2: #c05b4d;
@@ -157,6 +162,14 @@
     --trend-regressing: var(--trend-bad);
     --trend-regressing-bg: var(--trend-bad-bg);
     --trend-unchanged: var(--trend-flat);
+
+    // Not in the design system either: its Hero is a white band, while the start page opens on the
+    // brand ground. Ink on that ground is white, everything quiet a wash of it.
+    --hero-bg: var(--brand);
+    --hero-fg: var(--white);
+    --hero-muted: rgba(255, 255, 255, 0.72);
+    --hero-faint: rgba(255, 255, 255, 0.6);
+    --hero-line: rgba(255, 255, 255, 0.22);
 
     --action-primary-bg: var(--ink-900);
     --action-primary-bg-hover: var(--ink-800);

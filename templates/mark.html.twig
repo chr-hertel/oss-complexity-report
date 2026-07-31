@@ -1,0 +1,16 @@
+{#
+ # The brand mark, the same drawing the favicon carries: three ascending bars - green, amber, red -
+ # on a slate ground, the tallest one red, complexity going from healthy to hot.
+ #
+ # On the ground itself, the blue hero, the rounded square is dropped and only the bars are drawn.
+ #}
+{% set ground = ground ?? true %}
+<svg class="{{ class|default('mark') }}" width="{{ size }}" height="{{ size }}" aria-hidden="true"
+     viewBox="{{ ground ? '0 0 64 64' : '14 14 36 36' }}" xmlns="http://www.w3.org/2000/svg">
+    {% if ground %}
+        <rect width="64" height="64" rx="12" fill="var(--brand)"></rect>
+    {% endif %}
+    <rect x="14" y="38" width="10" height="12" rx="2" fill="var(--mark-low)"></rect>
+    <rect x="27" y="28" width="10" height="22" rx="2" fill="var(--mark-mid)"></rect>
+    <rect x="40" y="14" width="10" height="36" rx="2" fill="var(--mark-high)"></rect>
+</svg>

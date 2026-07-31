@@ -73,16 +73,37 @@
 
 {% block content %}
     <main class="page">
+        {#
+         # The opening states what the report is and how much of it there is: the same figures that
+         # used to close the page, on the brand ground, next to the mark it is stamped with.
+         #}
         <header class="hero">
-            <div class="wrap">
-                <div class="logo logo--hero">
-                    <div class="logo__kicker">Open Source PHP Software</div>
-                    <div class="logo__title">Complexity Report</div>
+            <div class="wrap hero__inner">
+                <div class="hero__intro">
+                    <div class="logo logo--hero">
+                        <div class="logo__kicker">Open Source PHP Software</div>
+                        <h1 class="logo__title">Complexity Report</h1>
+                    </div>
+                    <p class="hero__subline">
+                        How the cyclomatic complexity of PHP open source software evolved over time - one line
+                        per release, measured with phploc.
+                    </p>
+                    <dl class="stats stats--hero">
+                        <div>
+                            <dt class="stats__label">Repositories</dt>
+                            <dd class="stats__value">{{ statistics.repositoryCount|number_format }}</dd>
+                        </div>
+                        <div>
+                            <dt class="stats__label">Releases</dt>
+                            <dd class="stats__value">{{ statistics.tagCount|number_format }}</dd>
+                        </div>
+                        <div>
+                            <dt class="stats__label">Lines of code</dt>
+                            <dd class="stats__value">{{ statistics.linesOfCode|number_format }}</dd>
+                        </div>
+                    </dl>
                 </div>
-                <p class="hero__subline">
-                    How the cyclomatic complexity of PHP open source software evolved over time - one line
-                    per release, measured with phploc.
-                </p>
+                {{ include('mark.html.twig', {size: 168, ground: false, class: 'hero__mark'}) }}
             </div>
         </header>
 
@@ -211,27 +232,6 @@
                     </div>
                 </section>
             {% endif %}
-
-            <div class="section">
-                <dl class="stats">
-                    <div>
-                        <dt class="stats__label">Repositories</dt>
-                        <dd class="stats__value">{{ statistics.repositoryCount|number_format }}</dd>
-                    </div>
-                    <div>
-                        <dt class="stats__label">Organizations</dt>
-                        <dd class="stats__value">{{ statistics.organizationCount|number_format }}</dd>
-                    </div>
-                    <div>
-                        <dt class="stats__label">Releases</dt>
-                        <dd class="stats__value">{{ statistics.tagCount|number_format }}</dd>
-                    </div>
-                    <div>
-                        <dt class="stats__label">Lines of code</dt>
-                        <dd class="stats__value">{{ statistics.linesOfCode|number_format }}</dd>
-                    </div>
-                </dl>
-            </div>
         </div>
     </main>
 {% endblock %}

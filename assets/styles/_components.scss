@@ -329,11 +329,34 @@
         letter-spacing: var(--tracking-tight);
         color: var(--text-heading);
     }
+
+    // In the hero the same row is read on the brand ground, and only three of the four figures are
+    // shown - the vendors are one section of the page below.
+    &--hero {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        max-width: 34rem;
+        margin-top: var(--space-7);
+        padding-bottom: 0;
+        border-top-color: var(--hero-line);
+    }
+
+    &--hero &__label {
+        color: var(--hero-faint);
+    }
+
+    &--hero &__value {
+        color: var(--hero-fg);
+    }
 }
 
 @media (max-width: 720px) {
+    // Two columns is as far as the labels go before they collide - the hero row wraps with them.
     .stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .stats--hero {
+        margin-top: var(--space-6);
     }
 }
 

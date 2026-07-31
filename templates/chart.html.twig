@@ -2,41 +2,36 @@
 
 {% block title parent() ~ ' - ' ~ headline %}
 
+{# The one control the site header carries here: which organization the chart is drawn for. #}
+{% block header_action %}
+    <div class="dropdown" {{ stimulus_controller('dropdown') }}>
+        <button type="button" class="btn btn--secondary" aria-expanded="false" aria-haspopup="true"
+                data-dropdown-target="toggle" data-action="dropdown#toggle">
+            {{ organization.login|default(headline) }}
+            <span class="btn__caret" aria-hidden="true">▾</span>
+        </button>
+        <ul class="dropdown__menu" data-dropdown-target="menu" hidden>
+            <li>
+                <a class="dropdown__item {{ organization is not defined ? 'is-disabled' }}"
+                   href="{{ path('overview') }}">Most starred</a>
+            </li>
+            <li><hr class="dropdown__divider"></li>
+            {% for owner in all_organizations() %}
+                <li>
+                    <a class="dropdown__item {{ owner.login == organization.login|default() ? 'is-disabled' }}"
+                       href="{{ path('organization', {'organization': owner.login}) }}">
+                        {{ owner.login }}
+                    </a>
+                </li>
+            {% endfor %}
+            <li><hr class="dropdown__divider"></li>
+            <li><a class="dropdown__item" href="{{ path('start') }}">Add a repository</a></li>
+        </ul>
+    </div>
+{% endblock %}
+
 {% block content %}
     <main class="page" {{ stimulus_controller('swup', { containers: ['#nav', '#swup'] }) }}>
-        <div class="band band--md">
-            <div class="wrap chart-header">
-                <a class="logo" href="{{ path('start') }}">
-                    <div class="logo__kicker">Open Source PHP Software</div>
-                    <div class="logo__title">Complexity Report</div>
-                </a>
-                <div id="nav" class="dropdown" {{ stimulus_controller('dropdown') }}>
-                    <button type="button" class="btn btn--secondary" aria-expanded="false" aria-haspopup="true"
-                            data-dropdown-target="toggle" data-action="dropdown#toggle">
-                        {{ organization.login|default(headline) }}
-                        <span class="btn__caret" aria-hidden="true">▾</span>
-                    </button>
-                    <ul class="dropdown__menu" data-dropdown-target="menu" hidden>
-                        <li>
-                            <a class="dropdown__item {{ organization is not defined ? 'is-disabled' }}"
-                               href="{{ path('overview') }}">Most starred</a>
-                        </li>
-                        <li><hr class="dropdown__divider"></li>
-                        {% for owner in all_organizations() %}
-                            <li>
-                                <a class="dropdown__item {{ owner.login == organization.login|default() ? 'is-disabled' }}"
-                                   href="{{ path('organization', {'organization': owner.login}) }}">
-                                    {{ owner.login }}
-                                </a>
-                            </li>
-                        {% endfor %}
-                        <li><hr class="dropdown__divider"></li>
-                        <li><a class="dropdown__item" href="{{ path('start') }}">Add a repository</a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
         <div id="swup" class="wrap page__body">
             <div class="eyebrow">{{ organization is defined ? 'Organization' : 'Overview' }}</div>
             <h1 class="chart-title">
