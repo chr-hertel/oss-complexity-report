@@ -108,6 +108,16 @@
     }
 }
 
+// The release analysis reads eyebrow → the tabs that pick a line → the release being read. With a
+// single line there is nothing to pick, and the head moves up under the eyebrow.
+.tabs--series {
+    margin-top: var(--space-3);
+
+    &:not([hidden]) + .release-head {
+        margin-top: var(--space-5);
+    }
+}
+
 // The design puts a Dropdown here; a native select is the same control with keyboard behaviour that
 // does not have to be rebuilt, dressed as the secondary button it looks like.
 .release-select {

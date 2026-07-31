@@ -90,6 +90,8 @@ export default class extends Controller {
         'select',
         'seriesCount',
         'release',
+        'releaseTabs',
+        'releasePanel',
         'releaseRepository',
         'releaseName',
         'releaseMeta',
@@ -106,6 +108,9 @@ export default class extends Controller {
         });
 
         this.renders = 0;
+        // the lines that can be read release by release, and which one of them is being read
+        this.series = [];
+        this.repository = null;
         this.initChart();
         this.initSelectBox();
         this.render();
@@ -249,7 +254,7 @@ export default class extends Controller {
             this.seriesCountTarget.textContent = `${graphs.length} of ${this.limitValue} series shown.`;
         }
 
-        this.renderRelease(graphs[0]);
+        this.renderTabs(graphs);
     }
 
     /**
@@ -283,21 +288,72 @@ export default class extends Controller {
     }
 
     /**
-     * The measurement below the chart follows the first series - that is the repository the page was
-     * opened for, and the one whose line is drawn in the first colour.
+     * The measurement below the chart is one tab per line: every repository in the chart can be read
+     * release by release, not only the one the page was opened with. The tab carries the colour its
+     * series is drawn in, so a line and its numbers are found by the same swatch.
      */
-    renderRelease(graph) {
+    renderTabs(graphs) {
         if (!this.hasReleaseTarget) {
             return;
         }
 
-        if (!graph || 0 === graph.tags.length) {
-            this.releaseTarget.hidden = true;
+        this.series = graphs.filter((graph) => graph.tags.length > 0);
+        this.releaseTarget.hidden = 0 === this.series.length;
 
+        if (0 === this.series.length) {
             return;
         }
 
-        this.releaseTarget.hidden = false;
+        this.releaseTabsTarget.replaceChildren(
+            ...this.series.map((graph, index) => {
+                const tab = element('button', 'tab');
+
+                tab.type = 'button';
+                tab.id = `release-tab-${index}`;
+                tab.dataset.name = graph.name;
+                tab.dataset.action = 'chart#selectRepository';
+                tab.setAttribute('role', 'tab');
+                tab.setAttribute('aria-selected', 'false');
+                tab.append(element('span', 'tab__swatch'), element('span', null, graph.name));
+
+                return tab;
+            }),
+        );
+
+        // one line is not a choice
+        this.releaseTabsTarget.hidden = this.series.length < 2;
+
+        // whoever was being read stays it, as long as its line is still in the chart
+        const read = this.series.some((graph) => graph.name === this.repository)
+            ? this.repository
+            : this.series[0].name;
+
+        this.showRepository(read);
+    }
+
+    selectRepository(event) {
+        this.showRepository(event.currentTarget.dataset.name);
+    }
+
+    showRepository(name) {
+        const graph = this.series.find((entry) => entry.name === name);
+
+        if (!graph) {
+            return;
+        }
+
+        this.repository = name;
+
+        [...this.releaseTabsTarget.children].forEach((tab) => {
+            const active = tab.dataset.name === name;
+
+            tab.setAttribute('aria-selected', active ? 'true' : 'false');
+
+            if (active) {
+                this.releasePanelTarget.setAttribute('aria-labelledby', tab.id);
+            }
+        });
+
         this.release = graph;
         this.releaseSelectTarget.replaceChildren();
 

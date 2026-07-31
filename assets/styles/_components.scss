@@ -184,6 +184,32 @@
     }
 }
 
+// Tabs that stand for the lines of a chart: each one carries the colour of its series, by the same
+// rule the chips in the repository box follow - the position of a tab is the colour of its line.
+.tabs--series {
+    &[hidden] {
+        display: none;
+    }
+
+    .tab {
+        font-family: var(--font-mono);
+    }
+
+    .tab__swatch {
+        flex: 0 0 auto;
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        background: var(--chart-8);
+    }
+
+    @for $index from 1 through 8 {
+        .tab:nth-child(#{$index}) .tab__swatch {
+            background: var(--chart-#{$index});
+        }
+    }
+}
+
 // --- RepositoryCard ---------------------------------------------------------------------------
 // One analysed repository: vendor line, name, description, then a metrics row.
 .repo-grid {

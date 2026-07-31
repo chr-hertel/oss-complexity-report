@@ -129,10 +129,17 @@
                         </div>
                     </div>
 
+                    {#
+                     # One tab per line of the chart: every repository in it can be read release by
+                     # release, not only the one the page was opened with. The tabs are built by the
+                     # controller, since what is in the chart changes without leaving the page.
+                     #}
                     <section class="section" data-chart-target="release" hidden>
+                        <div class="eyebrow">Release analysis</div>
+                        <div class="tabs tabs--series" role="tablist" aria-label="Repositories in this chart"
+                             data-chart-target="releaseTabs"></div>
                         <div class="release-head">
                             <div>
-                                <div class="eyebrow">Release analysis</div>
                                 <h2>
                                     <span class="release-head__name" data-chart-target="releaseRepository"></span>
                                     <span class="badge" data-chart-target="releaseName"></span>
@@ -142,7 +149,7 @@
                             <select class="release-select" aria-label="Release"
                                     data-chart-target="releaseSelect" data-action="chart#selectRelease"></select>
                         </div>
-                        <div class="panel panel--pad-lg">
+                        <div class="panel panel--pad-lg" role="tabpanel" data-chart-target="releasePanel">
                             <div class="analysis" data-chart-target="analysis"></div>
                         </div>
                     </section>

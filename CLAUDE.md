@@ -202,7 +202,9 @@ chart expects.
 **Frontend** — Vite + symfony/reprise + StimulusBundle. `assets/controllers/chart_controller.js` reads the
 preselected repositories from a `data-repositories` attribute rendered by `templates/chart.html.twig`, and
 lazily fetches additional ones from the `repository` JSON route when picked in the select2 box - what is
-picked is written back into the query string, so a chart someone put together is a link.
+picked is written back into the query string, so a chart someone put together is a link. The release
+analysis below the chart is one tab per line, built from the same graphs: every repository in the chart can
+be read release by release, and a tab carries the colour of its series.
 `trend_controller.js` switches the time frame of the hero figure, which is rendered for all four windows
 at once, so nothing is fetched when one is picked.
 `refresh_controller.js` reloads the page every 30s while the status above the chart says a repository is
