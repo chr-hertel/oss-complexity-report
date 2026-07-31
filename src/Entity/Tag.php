@@ -6,7 +6,7 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity, ORM\UniqueConstraint(name: 'lib_tag', columns: ['library_id', 'name'])]
+#[ORM\Entity, ORM\UniqueConstraint(name: 'repo_tag', columns: ['repository_id', 'name'])]
 class Tag
 {
     #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
@@ -21,8 +21,8 @@ class Tag
         private int $linesOfCode,
         #[ORM\Column(type: 'float')]
         private float $averageComplexity,
-        #[ORM\ManyToOne(targetEntity: Library::class, inversedBy: 'tags')]
-        private Library $library,
+        #[ORM\ManyToOne(targetEntity: Repository::class, inversedBy: 'tags')]
+        private Repository $repository,
     ) {
     }
 
@@ -51,8 +51,8 @@ class Tag
         return $this->averageComplexity;
     }
 
-    public function getLibrary(): Library
+    public function getRepository(): Repository
     {
-        return $this->library;
+        return $this->repository;
     }
 }

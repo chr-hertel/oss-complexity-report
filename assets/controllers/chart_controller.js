@@ -26,11 +26,11 @@ export default class extends Controller {
     chartConfig;
 
     connect() {
-        this.initChart(JSON.parse(this.element.dataset.libraries));
+        this.initChart(JSON.parse(this.element.dataset.repositories));
         this.initSelectBox();
     }
 
-    initChart(libraries) {
+    initChart(repositories) {
         const ctx = document.getElementById('canvas');
         this.chartConfig = {
             type: 'line',
@@ -78,19 +78,19 @@ export default class extends Controller {
         Chart.register(zoomPlugin);
         this.chart = new Chart(ctx, this.chartConfig);
 
-        libraries.forEach((library) => this.addLibrary(library['name'], library['tags']));
+        repositories.forEach((repository) => this.addRepository(repository['name'], repository['tags']));
 
         this.chart.update();
     }
 
     initSelectBox() {
-        const $select = $('.js-library-select');
+        const $select = $('.js-repository-select');
         $select.select2();
 
         // register events
         $select.on('select2:select', this.disableSorting);
-        $select.on('select2:select', this.selectLibrary.bind(this));
-        $select.on('select2:unselect', this.removeLibrary.bind(this));
+        $select.on('select2:select', this.selectRepository.bind(this));
+        $select.on('select2:unselect', this.removeRepository.bind(this));
     }
 
     disableSorting(event) {
@@ -101,7 +101,7 @@ export default class extends Controller {
         $(this).trigger('change');
     }
 
-    addLibrary(label, data) {
+    addRepository(label, data) {
         const colorName = this.colorNames[this.chartConfig.data.datasets.length % this.colorNames.length];
         const nextColor = this.chartColors[colorName];
         const newDataset = {
@@ -116,16 +116,16 @@ export default class extends Controller {
         this.chartConfig.data.datasets.push(newDataset);
     }
 
-    selectLibrary(event) {
+    selectRepository(event) {
         const data = event.params.data;
         const self = this;
         $.ajax(data.id).done(function (response) {
-            self.addLibrary(data.text, response);
+            self.addRepository(data.text, response);
             self.chart.update();
         });
     }
 
-    removeLibrary(event) {
+    removeRepository(event) {
         const data = event.params.data;
 
         for (let index = 0; index < this.chartConfig.data.datasets.length; ++index) {

@@ -25,7 +25,7 @@ final class PhpunitVersionFixer implements FixerInterface
         $this->entityManager->createQueryBuilder()
             ->delete()
             ->from(Tag::class, 't')
-            ->join('t.library', 'l', Join::WITH, 'l.name = "phpunit/phpunit"')
+            ->join('t.repository', 'r', Join::WITH, 'r.name = "sebastianbergmann/phpunit"')
             ->where('t.created = :date')
             ->setParameter('date', new \DateTimeImmutable('2006-07-04 12:01:50'), Types::DATETIME_IMMUTABLE)
             ->getQuery()

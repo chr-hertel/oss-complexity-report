@@ -15,6 +15,7 @@ services:
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
         bind:
             string $repositoryPath: '%kernel.project_dir%/repositories'
+            string $githubToken: '%env(GITHUB_TOKEN)%'
 
     _instanceof:
         App\ComplexityReport\DataFixer\FixerInterface:

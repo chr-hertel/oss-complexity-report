@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport;
 
-use App\Entity\Library;
+use App\Entity\Repository;
 use App\Entity\Tag;
 
 final class GraphData implements \JsonSerializable
 {
     private const DATE_FORMAT = 'm-d-y';
 
-    public function __construct(private Library $library)
+    public function __construct(private Repository $repository)
     {
     }
 
@@ -22,7 +22,7 @@ final class GraphData implements \JsonSerializable
     {
         return array_values(array_unique(array_map(static function (Tag $tag) {
             return $tag->getCreated()->format(self::DATE_FORMAT);
-        }, $this->library->getTags())));
+        }, $this->repository->getTags())));
     }
 
     /**
@@ -36,7 +36,7 @@ final class GraphData implements \JsonSerializable
                 'x' => $tag->getCreated()->format(self::DATE_FORMAT),
                 'y' => round($tag->getAverageComplexity(), 2),
             ];
-        }, $this->library->getTags()));
+        }, $this->repository->getTags()));
     }
 
     /**
@@ -45,7 +45,7 @@ final class GraphData implements \JsonSerializable
     public function jsonSerialize(): array
     {
         return [
-            'name' => $this->library->getName(),
+            'name' => $this->repository->getName(),
             'tags' => $this->getTagData(),
             'labels' => $this->getLabels(),
         ];

@@ -4,54 +4,60 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport\DataFixer;
 
-use App\ComplexityReport\Git;
-use App\Entity\Library;
+use App\ComplexityReport\GitController;
+use App\Entity\Repository;
 use App\Repository\ProjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * Fixing tags that where originally Zend Framework release.
+ * Fixing tags that where originally Zend Framework releases.
  */
 final class LaminasVersionFixer implements FixerInterface
 {
     public function __construct(
         private ProjectRepository $repository,
-        private Git $git,
+        private GitController $gitController,
         private LoggerInterface $logger,
         private EntityManagerInterface $entityManager,
-        private string $repositoryPath,
     ) {
     }
 
     public function fixData(): void
     {
-        $laminas = $this->repository->findOneByName('Laminas');
+        // repositories are submitted by users now, so laminas is not necessarily part of the report
+        $laminas = $this->repository->findOneByVendor('laminas');
 
         if (null === $laminas) {
-            throw new \RuntimeException('Cannot find project Laminas.');
+            $this->logger->info('No laminas repositories submitted, nothing to fix.');
+
+            return;
         }
 
-        foreach ($laminas->getLibraries() as $library) {
-            $this->logger->info(sprintf('Checking %s for misplaced releases.', $library->getName()));
-            $this->shiftLibraryReleases($library);
+        foreach ($laminas->getRepositories() as $repository) {
+            $this->logger->info(sprintf('Checking %s for misplaced releases.', $repository->getName()));
+            $this->shiftReleases($repository);
         }
 
         $this->entityManager->flush();
     }
 
-    private function shiftLibraryReleases(Library $library): void
+    private function shiftReleases(Repository $repository): void
     {
-        $repository = $this->repositoryPath.'/'.$library->getRepositoryPath();
+        if (!$this->gitController->isCloned($repository)) {
+            $this->logger->info(sprintf('Repository %s is not cloned yet, skipping.', $repository->getName()));
 
-        foreach ($library->getTags() as $tag) {
+            return;
+        }
+
+        foreach ($repository->getTags() as $tag) {
             if ('2019-12-31' !== $tag->getCreated()->format('Y-m-d')) {
                 $this->logger->info(sprintf('Skipping release %s, looks good.', $tag->getName()));
                 continue;
             }
 
-            $this->git->run($repository, 'checkout', $tag->getName());
-            $created = new \DateTimeImmutable(trim($this->git->run($repository, 'log', '-1', '--format=%aI', '--skip=1')));
+            $this->gitController->checkoutTag($repository, $tag->getName());
+            $created = $this->gitController->getLastCommitDate($repository, 1);
 
             $this->logger->info(sprintf(
                 'Moving tag %s from %s to %s',

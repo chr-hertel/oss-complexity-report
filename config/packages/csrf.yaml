@@ -1,0 +1,5 @@
+framework:
+    csrf_protection:
+        # Stateless protection uses a double submit cookie written by the csrf-protection Stimulus
+        # controller, so visitors that only read the report never get a session.
+        stateless_token_ids: ['submit']

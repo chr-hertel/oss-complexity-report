@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport;
 
-use App\Repository\LibraryRepository;
 use App\Repository\ProjectRepository;
+use App\Repository\RepositoryRepository;
 use App\Repository\TagRepository;
 
 final class StatisticsLoader
 {
     public function __construct(
         private ProjectRepository $projectRepository,
-        private LibraryRepository $libraryRepository,
+        private RepositoryRepository $repositoryRepository,
         private TagRepository $tagRepository,
     ) {
     }
@@ -21,7 +21,7 @@ final class StatisticsLoader
     {
         return new Statistics(
             $this->projectRepository->count([]),
-            $this->libraryRepository->count([]),
+            $this->repositoryRepository->count([]),
             $this->tagRepository->count([]),
             $this->tagRepository->getLinesOfCodeSum()
         );
