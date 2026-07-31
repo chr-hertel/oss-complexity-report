@@ -33,8 +33,8 @@ final class RankingTest extends TestCase
         yield 'stars' => [Ranking::Stars, ['a/popular', 'a/huge', 'a/hairy', 'a/moving']];
         yield 'complexity' => [Ranking::Complexity, ['a/hairy', 'a/huge', 'a/popular', 'a/moving']];
         yield 'size' => [Ranking::Size, ['a/huge', 'a/popular', 'a/hairy', 'a/moving']];
-        // the biggest change in either direction comes first, so a drop beats a smaller rise
-        yield 'evolution' => [Ranking::Evolution, ['a/moving', 'a/hairy', 'a/popular', 'a/huge']];
+        // only what grew within the window, the biggest increase first - a drop is not an increase
+        yield 'growth' => [Ranking::Growth, ['a/hairy', 'a/popular']];
     }
 
     public function testItCutsTheListToTheLimit(): void
@@ -74,6 +74,9 @@ final class RankingTest extends TestCase
     }
 
     /**
+     * The first release is old enough to be the baseline of every window, the latest one is recent - so
+     * what these repositories did to their complexity, they did within the last twelve months.
+     *
      * @param array{int, float} $first
      * @param array{int, float} $latest
      */
@@ -88,11 +91,10 @@ final class RankingTest extends TestCase
             $stars,
         );
 
-        $created = new \DateTimeImmutable('2020-01-01');
+        $created = ['1.0' => new \DateTimeImmutable('-3 years'), '2.0' => new \DateTimeImmutable('-1 month')];
 
         foreach (['1.0' => $first, '2.0' => $latest] as $tag => [$linesOfCode, $complexity]) {
-            $repository->addTag(new GitTag($tag), new Analysis($linesOfCode, $complexity, $created));
-            $created = $created->modify('+1 year');
+            $repository->addTag(new GitTag($tag), new Analysis($linesOfCode, $complexity, $created[$tag]));
         }
 
         return $repository;

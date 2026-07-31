@@ -19,6 +19,11 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: RepositoryRepository::class)]
 class Repository
 {
+    /**
+     * How far back {@see self::getRecentEvolution()} looks - the twelve months the report calls recent.
+     */
+    private const string RECENT = '-12 months';
+
     #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
     private int $id;
 
@@ -184,14 +189,37 @@ class Repository
      */
     public function getEvolution(): float
     {
-        $first = $this->getFirstTag()?->getAverageComplexity() ?? 0.0;
-        $last = $this->getComplexity();
+        return self::change($this->getFirstTag()?->getAverageComplexity() ?? 0.0, $this->getComplexity());
+    }
 
-        if (0.0 === $first) {
-            return 0.0;
+    /**
+     * The same figure for the last twelve months - what the "Latest Increases" ranking is ordered by,
+     * over the window the hero rolls the whole report up into.
+     */
+    public function getRecentEvolution(): float
+    {
+        return $this->getEvolutionSince(new \DateTimeImmutable(self::RECENT));
+    }
+
+    /**
+     * How the average complexity changed since a point in time, in percent.
+     *
+     * The repository is compared against the release it stood at back then, which is the rule the hero
+     * trend follows as well. Two cases have nothing to say and are 0.0 rather than a made up number: a
+     * repository that was not measured yet when the window opened, and one that has not released since -
+     * there the baseline is the latest release, so nothing changed within the window.
+     */
+    public function getEvolutionSince(\DateTimeImmutable $since): float
+    {
+        $baseline = null;
+
+        foreach ($this->tags as $tag) {
+            if ($tag->getCreated() <= $since && (null === $baseline || $tag->getCreated() > $baseline->getCreated())) {
+                $baseline = $tag;
+            }
         }
 
-        return round((($last - $first) / $first) * 100, 1);
+        return self::change($baseline?->getAverageComplexity() ?? 0.0, $this->getComplexity());
     }
 
     public function getLocalPath(): string
@@ -225,5 +253,18 @@ class Repository
     public function asGraph(): GraphData
     {
         return new GraphData($this);
+    }
+
+    /**
+     * Change between two average complexities, in percent - a release without a single class has no
+     * average to compare against, so it is no change rather than a division by zero.
+     */
+    private static function change(float $from, float $to): float
+    {
+        if (0.0 === $from) {
+            return 0.0;
+        }
+
+        return round((($to - $from) / $from) * 100, 1);
     }
 }

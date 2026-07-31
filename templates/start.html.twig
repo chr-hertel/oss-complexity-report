@@ -32,6 +32,13 @@
         </span>
     {% endset %}
 
+    {% set growth %}
+        <span class="metric metric--{{ repository.recentEvolution|trend_tone }}"
+              title="Change in average complexity within the last 12 months - measured against the release it stood at back then">
+            <span class="metric__label">12M</span>{{ repository.recentEvolution|signed_percent }}
+        </span>
+    {% endset %}
+
     {% if ranking == 'stars' %}
         {{ stars }}{{ complexity }}{{ evolution }}
     {% elseif ranking == 'complexity' %}
@@ -39,7 +46,7 @@
     {% elseif ranking == 'size' %}
         {{ linesOfCode }}{{ releases }}{{ stars }}
     {% else %}
-        {{ evolution }}{{ complexity }}{{ stars }}
+        {{ growth }}{{ complexity }}{{ stars }}
     {% endif %}
 {% endmacro %}
 
@@ -233,11 +240,19 @@
                              aria-labelledby="tab-{{ entry.ranking.value }}"
                              data-rankings-target="panel" {{ not loop.first ? 'hidden' }}>
                             <p class="ranking__caption">{{ entry.ranking.caption }}</p>
-                            <div class="repo-grid">
-                                {% for repository in entry.repositories %}
-                                    {{ _self.card(repository, entry.ranking.value, loop.index) }}
-                                {% endfor %}
-                            </div>
+                            {#
+                             # A ranking can come out empty although the report has data - nothing
+                             # increased within the last twelve months is a result, not a broken page.
+                             #}
+                            {% if entry.repositories is empty %}
+                                <p class="empty-state">Nothing the report carries got more complex within the last 12 months.</p>
+                            {% else %}
+                                <div class="repo-grid">
+                                    {% for repository in entry.repositories %}
+                                        {{ _self.card(repository, entry.ranking.value, loop.index) }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
                     {% endfor %}
                 {% else %}
