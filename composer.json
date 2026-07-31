@@ -1,5 +1,5 @@
 {
-    "name": "stoffel/oss-complexiy-report",
+    "name": "chr-hertel/oss-complexity-report",
     "description": "Complexity Analysis of open source software projects",
     "type": "project",
     "license": "MIT",
