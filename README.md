@@ -152,6 +152,14 @@ killasgroup=true
 The scheduler must stay at `numprocs=1`; the consumer may be scaled up. `deploy.php` restarts both with
 `sudo supervisorctl`, so the deploy user needs to be allowed to run it.
 
+The same goes for `sudo systemctl reload php8.4-fpm`: php-fpm reaches the application through the `current`
+symlink, so opcache serves the release that was compiled under that path until the pool is reloaded - a
+deploy without it moves the symlink and changes nothing about what visitors get. Both grants together:
+
+```
+deployer ALL=(root) NOPASSWD: /usr/bin/supervisorctl, /usr/bin/systemctl reload php8.4-fpm
+```
+
 Submitting Repositories
 -----------------------
 

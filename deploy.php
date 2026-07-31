@@ -26,6 +26,13 @@ task('build', function () {
     run('{{bin/console}} dotenv:dump {{console_options}}');
 });
 
+// Moving the symlink is not what puts a release live: php-fpm reaches the application through that
+// symlink, so opcache keeps serving the previous release compiled under the very same path - for as long
+// as the pool runs. Reloading it is the actual switch.
+task('php-fpm', function () {
+    run('sudo systemctl reload php8.4-fpm');
+});
+
 // Workers keep running against the old release until they are restarted onto the new symlink.
 task('worker', function () {
     run('sudo supervisorctl restart oss_complexity_report_consumer:*');
@@ -36,6 +43,7 @@ after('deploy:cache:clear', 'build');
 
 // Schema changes go live with the release that needs them, so migrate right before the symlink switches.
 before('deploy:symlink', 'database:migrate');
-after('deploy:symlink', 'worker');
+after('deploy:symlink', 'php-fpm');
+after('php-fpm', 'worker');
 
 after('deploy:failed', 'deploy:unlock');
