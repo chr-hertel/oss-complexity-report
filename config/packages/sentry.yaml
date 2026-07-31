@@ -1,0 +1,23 @@
+sentry:
+    # An empty DSN means the SDK collects nothing and sends nothing, so this bundle is a no-op in every
+    # environment but production, where the DSN lives in the .env.local the deploy shares between releases.
+    dsn: '%env(SENTRY_DSN)%'
+
+    messenger:
+        # A message that is going to be retried is not an incident: AnalyseRepositoryHandler throws
+        # RecoverableMessageHandlingException for every repository another worker is holding, and
+        # github.com failing once is what the retry strategy is for. Only what ran out of retries and
+        # ended in the failure transport is worth reporting.
+        capture_soft_fails: false
+
+    # Error reporting only - tracing would instrument doctrine, twig, the cache and the HTTP client on
+    # every request to produce transactions nobody reads. Enable it here when there is a reason to.
+    tracing:
+        enabled: false
+
+    options:
+        ignore_exceptions:
+            # What bots produce on a public site. Monolog excludes both codes from its handler already,
+            # and an unknown organization is a 404 just as much as /wp-login.php is.
+            - Symfony\Component\HttpKernel\Exception\NotFoundHttpException
+            - Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException

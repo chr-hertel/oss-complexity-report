@@ -23,6 +23,10 @@ task('build', function () {
     cd('{{release_path}}');
     run('yarn install --frozen-lockfile');
     run('ASSET_BASE=/oss-complexity-report/build/ yarn build');
+    // Sentry groups errors by the revision they happened on, so every release tells it which one it is.
+    // It goes into a per release file - .env.local is shared between releases and would carry the
+    // revision of whichever deploy wrote it last.
+    run('echo "SENTRY_RELEASE={{release_revision}}" > {{release_path}}/.env.prod.local');
     run('{{bin/console}} dotenv:dump {{console_options}}');
 });
 

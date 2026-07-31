@@ -13,6 +13,7 @@
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.5",
         "phploc/phploc": "^7.0",
+        "sentry/sentry-symfony": "^5.11",
         "symfony/console": "^8.1",
         "symfony/doctrine-messenger": "^8.1",
         "symfony/dotenv": "^8.1",
