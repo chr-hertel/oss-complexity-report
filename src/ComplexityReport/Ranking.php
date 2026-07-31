@@ -15,7 +15,7 @@ enum Ranking: string
     case Stars = 'stars';
     case Complexity = 'complexity';
     case Size = 'size';
-    case Evolution = 'evolution';
+    case Growth = 'growth';
 
     /**
      * @return list<self>
@@ -31,7 +31,7 @@ enum Ranking: string
             self::Stars => 'Most starred',
             self::Complexity => 'Highest complexity',
             self::Size => 'Largest',
-            self::Evolution => 'Fastest changing',
+            self::Growth => 'Latest Increases',
         };
     }
 
@@ -44,7 +44,7 @@ enum Ranking: string
             self::Stars => null,
             self::Complexity => 'Ø',
             self::Size => 'LOC',
-            self::Evolution => '%',
+            self::Growth => '%',
         };
     }
 
@@ -54,7 +54,7 @@ enum Ranking: string
             self::Stars => 'Most starred repositories',
             self::Complexity => 'Highest average complexity',
             self::Size => 'Largest codebases',
-            self::Evolution => 'Biggest change over time',
+            self::Growth => 'Biggest increase in the last 12 months',
         };
     }
 
@@ -64,7 +64,7 @@ enum Ranking: string
             self::Stars => 'The order the report itself is built around - stars decide what the chart opens with.',
             self::Complexity => 'Average cyclomatic complexity of the latest analysed release, across all methods and functions.',
             self::Size => 'Lines of code in the latest analysed release, as phploc counts them.',
-            self::Evolution => 'Change in average complexity between the first and the latest analysed release - green means the codebase got simpler, red means it got hairier.',
+            self::Growth => 'Repositories whose average complexity grew the most within the last 12 months, measured against the release they stood at back then - the window the figure above uses as well.',
         };
     }
 
@@ -75,9 +75,26 @@ enum Ranking: string
      */
     public function sort(array $repositories, int $limit): array
     {
-        usort($repositories, $this->comparator());
+        $ranked = array_values(array_filter($repositories, $this->filter()));
 
-        return array_slice($repositories, 0, $limit);
+        usort($ranked, $this->comparator());
+
+        return array_slice($ranked, 0, $limit);
+    }
+
+    /**
+     * What a ranking has no room for. Only the increases leave anything out: a repository that got
+     * simpler within the window did not increase, and neither did one that has not released in it -
+     * both are 0.0 or less, which is nothing to rank.
+     *
+     * @return callable(Repository): bool
+     */
+    private function filter(): callable
+    {
+        return match ($this) {
+            self::Growth => static fn (Repository $repository) => $repository->getRecentEvolution() > 0.0,
+            default => static fn (Repository $repository) => true,
+        };
     }
 
     /**
@@ -91,7 +108,7 @@ enum Ranking: string
             self::Stars => static fn (Repository $left, Repository $right) => $right->getStars() <=> $left->getStars(),
             self::Complexity => static fn (Repository $left, Repository $right) => [$right->getComplexity(), $right->getStars()] <=> [$left->getComplexity(), $left->getStars()],
             self::Size => static fn (Repository $left, Repository $right) => [$right->getLinesOfCode(), $right->getStars()] <=> [$left->getLinesOfCode(), $left->getStars()],
-            self::Evolution => static fn (Repository $left, Repository $right) => [abs($right->getEvolution()), $right->getStars()] <=> [abs($left->getEvolution()), $left->getStars()],
+            self::Growth => static fn (Repository $left, Repository $right) => [$right->getRecentEvolution(), $right->getStars()] <=> [$left->getRecentEvolution(), $left->getStars()],
         };
     }
 }
