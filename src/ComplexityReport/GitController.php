@@ -25,6 +25,17 @@ final readonly class GitController
         return GitTag::fromNames($this->git->listTags($localPath));
     }
 
+    /**
+     * Tags of the repository on github.com - reads refs only, so checking for new releases neither
+     * needs a clone nor touches the working copy of a repository that is being analysed.
+     *
+     * @return GitTag[]
+     */
+    public function loadRemoteTags(Repository $repository): array
+    {
+        return GitTag::fromRefs($this->git->listRemoteTags($repository->getCloneUrl()));
+    }
+
     public function checkoutTag(Repository $repository, string $name): void
     {
         $this->git->run($this->getLocalPath($repository), 'checkout', '--force', $name);

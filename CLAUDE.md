@@ -38,6 +38,12 @@ bin/console lint:container
 bin/console doctrine:schema:validate --skip-sync   # CI skips the sync check
 bin/console doctrine:migrations:diff              # after changing an entity
 
+# async
+bin/console messenger:consume async -vv           # the analysis queue
+bin/console messenger:consume scheduler_nightly   # the nightly release scan and star refresh
+bin/console messenger:stats                       # what is still queued
+bin/console debug:scheduler                       # next run of the recurring messages
+
 # frontend — Vite, wired into Twig by symfony/reprise
 yarn dev-server     # vite dev server with HMR, reprise points Twig at it
 yarn dev            # one-off development build
@@ -59,18 +65,22 @@ bin/console doctrine:migrations:migrate # schema is managed by doctrine/migratio
 bin/console cache:pool:clear cache.app
 
 bin/console doctrine:fixtures:load -n   # submits the seed repositories in AppFixtures (hits the GitHub API)
-bin/console app:data:aggregate -vv      # clone repos, checkout tags, phploc → Tag rows
+bin/console app:data:aggregate          # queues an AnalyseRepository message per repository
+bin/console messenger:consume async -vv # the actual work: clone, checkout tags, phploc → Tag rows
 bin/console app:data:fix -vv            # per-repository data corrections
 bin/console app:statistics              # counts + total LOC
 ```
 
-Day-to-day there is no rebuild — `app:data:aggregate --pending` picks up what users submitted, and
-`app:repositories:refresh` updates stars (and with them the order of the report).
+`app:data:aggregate` only dispatches — nothing happens until a worker consumes `async`, and `app:data:fix`
+needs the queue to be empty (`messenger:stats`) to see all the data.
 
-Aggregation is slow (clones every submitted repository) and leans on the `cache.app` filesystem pool:
-GitHub responses and git tag lists expire after 1h, but **per-tag phploc analyses are cached without
-expiry**. Stale or wrong numbers usually mean the pool needs clearing, not that the code is broken.
-Clones live in `repositories/<vendor>/<repository>` (gitignored, a shared dir in deployment).
+Day-to-day there is no rebuild and nothing to run by hand: submitting dispatches the analysis, and the
+nightly schedule looks for new releases and refreshes stars.
+
+Analysis is slow (clones every submitted repository) and leans on the `cache.app` filesystem pool: GitHub
+responses expire after 1h, but **per-tag phploc analyses are cached without expiry**. Stale or wrong
+numbers usually mean the pool needs clearing, not that the code is broken. Clones live in
+`repositories/<vendor>/<repository>` (gitignored, a shared dir in deployment).
 
 ## Architecture
 
@@ -86,22 +96,40 @@ main library anymore — `getMainRepository()` returns its most starred analysed
   behind a 1h cache. `GitHub/RepositoryIdentifier::fromInput()` parses everything users may paste
   (`vendor/repo`, https/ssh urls, deep links) and rejects any host but github.com.
 - `RepositorySubmitter` — validates a submission (unknown, duplicate, fork, empty, less than
-  `MIN_PHP_SHARE` PHP) and creates the `Project` for its owner on the fly. Rejections are
-  `Exception\SubmissionFailed`, whose messages are written to be shown to the submitter.
+  `MIN_PHP_SHARE` PHP), creates the `Project` for its owner on the fly and dispatches `AnalyseRepository`.
+  Rejections are `Exception\SubmissionFailed`, whose messages are written to be shown to the submitter.
 - `RepositoryRefresher` — re-reads stars and metadata for everything submitted.
-- `DataAggregator` — the core loop: for each repository, load tags (`GitController`), skip anything
-  `GitTag::isPreRelease()` (contains `-`) or `isPatchRelease()` (not a plain `X.Y` / `X.Y.0` version),
-  checkout, analyse. Failures are logged per repository so one bad submission cannot stop the run; only
-  successful runs `markAnalysed()`, and known tags are never analysed twice.
+- `ReleaseScanner` — which releases of a repository are missing: skips anything `GitTag::isPreRelease()`
+  (contains `-`) or `isPatchRelease()` (not a plain `X.Y` / `X.Y.0` version) and anything already stored.
+  `scanRemote()` reads refs with `git ls-remote` (no clone, no working copy), `scanWorkingCopy()` fetches
+  the clone first.
+- `RepositoryAnalyser` — measures those releases: checkout, phploc, `Tag`. Flushes after every release so a
+  retry only redoes what is left, then `markAnalysed()`. It does **not** guard the working copy — that is
+  the handler's job.
 - `Git` / `GitController` / `CodeAnalyser` — `Git` shells out via symfony/process and logs every call on the
-  `git` monolog channel; `GitController` adds the domain layer (clone on first use, load tags, checkout,
-  last commit date). Metrics come from phploc's `Analyser` (`loc`, `classCcnAvg`). Both receive the
-  `$repositoryPath` bound globally in `config/services.yaml`.
+  `git` monolog channel; it pins `GIT_TERMINAL_PROMPT=0` so a repository that went private fails instead of
+  blocking a worker on a credential prompt. `GitController` adds the domain layer (clone on first use, load
+  tags local and remote, checkout, last commit date). Metrics come from phploc's `Analyser` (`loc`,
+  `classCcnAvg`). Both receive the `$repositoryPath` bound globally in `config/services.yaml`.
 - `DataFixer` + `DataFixer/*Fixer` — post-processing for datasets where git history lies (Laminas tags all
   dated at the Zend→Laminas import, PHPUnit tags with a bogus 2006 date, Laravel minors that distort the
   chart). They must no-op when their repository was never submitted. Implementing `FixerInterface` is
   enough: `_instanceof` in `config/services.yaml` tags it `complexity_report.data_fixer` and injects it
   into `DataFixer`.
+
+**Async** (`src/Message`, `src/MessageHandler`, `src/Schedule.php`) — messenger over the doctrine transport
+(`async`, plus `failed` for what did not survive its retries; both `auto_setup=0`, the table comes from a
+migration). `ScanForNewReleases` fans out into one `ScanRepository` per repository, which asks github.com
+for refs and only dispatches `AnalyseRepository` when a release is actually missing — so the nightly run
+neither clones nor queues anything for a repository that did not release. `RefreshRepositories` wraps
+`RepositoryRefresher`. The nightly `Schedule` is `stateful()` (a deploy restarting the worker must not
+re-trigger the night) and `lock()`ed, and hands both tasks to `async` via `RedispatchMessage` instead of
+running them in the schedule worker.
+
+`AnalyseRepositoryHandler` takes a `flock` per repository before analysing: checking out a tag rewrites the
+shared working copy, so a second worker on the same repository would silently measure the wrong code. A
+busy repository throws `RecoverableMessageHandlingException` and is retried — deliberately without
+consuming the retry budget, since being busy is not a failure.
 
 **Web** (`src/Controller/ReportController`) — routes are distinguished by `priority`, since `{vendor}` and
 `{id}` both match a single segment: `overview`/`submit` (3) > `repository` (2, digits only, returns JSON) >

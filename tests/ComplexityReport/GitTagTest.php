@@ -23,6 +23,35 @@ final class GitTagTest extends TestCase
         self::assertSame([], GitTag::fromNames([]));
     }
 
+    public function testReadsNamesFromRemoteRefs(): void
+    {
+        $tags = GitTag::fromRefs([
+            "b8dc4dbb4d3e0e2f2b5eb4b9d5cf5a5d2c1e8f90\trefs/tags/v6.4.0",
+            "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d\trefs/tags/v7.0.0",
+        ]);
+
+        self::assertCount(2, $tags);
+        self::assertSame('v6.4.0', $tags[0]->getName());
+        self::assertSame('v7.0.0', $tags[1]->getName());
+    }
+
+    public function testKeepsSlashesAndDotsInRemoteTagNames(): void
+    {
+        $tags = GitTag::fromRefs(["b8dc4db\trefs/tags/release/1.2.3"]);
+
+        self::assertSame('release/1.2.3', $tags[0]->getName());
+    }
+
+    public function testIgnoresRefsThatAreNotTags(): void
+    {
+        $tags = GitTag::fromRefs([
+            "b8dc4db\trefs/heads/main",
+            '',
+        ]);
+
+        self::assertSame([], $tags);
+    }
+
     /**
      * @dataProvider preReleases
      */

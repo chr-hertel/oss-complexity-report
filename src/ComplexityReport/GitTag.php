@@ -22,6 +22,26 @@ final class GitTag
         }, $names);
     }
 
+    /**
+     * Tags as `git ls-remote` reports them - `<sha>\trefs/tags/<name>` per line.
+     *
+     * @param list<string> $refs
+     *
+     * @return list<self>
+     */
+    public static function fromRefs(array $refs): array
+    {
+        $tags = [];
+
+        foreach ($refs as $ref) {
+            if (1 === preg_match('#\srefs/tags/(.+)$#', $ref, $matches)) {
+                $tags[] = new self($matches[1]);
+            }
+        }
+
+        return $tags;
+    }
+
     public function getName(): string
     {
         return $this->name;

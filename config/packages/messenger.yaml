@@ -1,0 +1,28 @@
+framework:
+    messenger:
+        failure_transport: failed
+
+        transports:
+            # https://symfony.com/doc/current/messenger.html#transport-configuration
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    # reading from github.com fails temporarily often enough to be worth retrying, but a
+                    # repository that stays broken should end up in the failure transport, not in a loop
+                    max_retries: 3
+                    delay: 60000
+                    multiplier: 3
+            failed: 'doctrine://default?queue_name=failed&auto_setup=0'
+
+        routing:
+            App\Message\ScanForNewReleases: async
+            App\Message\ScanRepository: async
+            App\Message\AnalyseRepository: async
+            App\Message\RefreshRepositories: async
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: 'in-memory://'
+                failed: 'in-memory://'

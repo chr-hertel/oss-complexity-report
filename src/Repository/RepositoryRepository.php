@@ -66,11 +66,34 @@ final class RepositoryRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return list<Repository>
+     * Ids only - queueing work does not need the entities behind them.
+     *
+     * @return list<int>
      */
-    public function findAllByStars(): array
+    public function findAllIds(): array
     {
-        return $this->findBy([], ['stars' => 'desc', 'name' => 'asc']);
+        return $this->idsOf($this->createQueryBuilder('r')->orderBy('r.stars', 'DESC'));
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function findPendingIds(): array
+    {
+        return $this->idsOf(
+            $this->createQueryBuilder('r')->where('r.analysed IS NULL')->orderBy('r.submitted', 'ASC')
+        );
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function idsOf(QueryBuilder $queryBuilder): array
+    {
+        /** @var list<array{id: int}> $rows */
+        $rows = $queryBuilder->select('r.id')->getQuery()->getArrayResult();
+
+        return array_column($rows, 'id');
     }
 
     private function withData(): QueryBuilder

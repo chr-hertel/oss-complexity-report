@@ -24,16 +24,36 @@ final readonly class Git
      */
     public function listTags(string $path): array
     {
-        $tags = preg_split('/\R/', trim($this->run($path, 'tag')), -1, PREG_SPLIT_NO_EMPTY);
+        return $this->lines($this->run($path, 'tag'));
+    }
 
-        return false === $tags ? [] : $tags;
+    /**
+     * Refs of a remote, without cloning it - `--refs` drops the `^{}` entries of annotated tags.
+     *
+     * @return list<string>
+     */
+    public function listRemoteTags(string $url): array
+    {
+        return $this->lines($this->run(null, 'ls-remote', '--tags', '--refs', $url));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function lines(string $output): array
+    {
+        $lines = preg_split('/\R/', trim($output), -1, PREG_SPLIT_NO_EMPTY);
+
+        return false === $lines ? [] : $lines;
     }
 
     public function run(?string $workingDirectory, string ...$arguments): string
     {
         $this->gitLogger->debug(sprintf('git %s', implode(' ', $arguments)));
 
-        $process = new Process(['git', ...$arguments], $workingDirectory);
+        // a repository that went private or was deleted must fail instead of waiting for credentials
+        // that a worker process can never provide
+        $process = new Process(['git', ...$arguments], $workingDirectory, ['GIT_TERMINAL_PROMPT' => '0']);
         $process->setTimeout(null);
 
         return $process->mustRun()->getOutput();

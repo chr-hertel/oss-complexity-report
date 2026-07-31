@@ -50,7 +50,7 @@ final readonly class RepositorySubmitCommand
             return 1;
         }
 
-        $io->success('Done - run app:data:aggregate --pending to analyse them.');
+        $io->success('Done - run messenger:consume async to analyse them.');
 
         return 0;
     }

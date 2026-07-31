@@ -9,10 +9,12 @@ use App\ComplexityReport\GitHub\GitHubClient;
 use App\ComplexityReport\GitHub\RepositoryIdentifier;
 use App\Entity\Project;
 use App\Entity\Repository;
+use App\Message\AnalyseRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\RepositoryRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * Takes whatever identifies a GitHub repository and queues it up for analysis.
@@ -29,6 +31,7 @@ final class RepositorySubmitter
         private RepositoryRepository $repositoryRepository,
         private ProjectRepository $projectRepository,
         private EntityManagerInterface $entityManager,
+        private MessageBusInterface $messageBus,
         private LoggerInterface $logger,
     ) {
     }
@@ -58,6 +61,9 @@ final class RepositorySubmitter
 
         $this->entityManager->persist($repository);
         $this->entityManager->flush();
+
+        // dispatched after the flush, the handler looks the repository up by the id assigned here
+        $this->messageBus->dispatch(new AnalyseRepository($repository->getId()));
 
         $this->logger->info(sprintf('Submitted repository %s for analysis', $identifier));
 
