@@ -109,13 +109,8 @@ Deploying schema changes
 
 The schema is managed by doctrine/migrations and `deploy.php` runs them right before the symlink switches.
 
-The production database predates the migration history, so its baseline has to be marked as executed once,
-otherwise the first migration tries to create tables that are already there:
-
-```bash
-symfony console doctrine:migrations:sync-metadata-storage
-symfony console doctrine:migrations:version 'DoctrineMigrations\Version20260731011704' --add
-```
+The production database predates the migration history, so its baseline would try to create tables that are
+already there. It recognizes them and records itself as executed instead - nothing to do by hand.
 
 After the deploy that turns libraries into repositories, run `app:repositories:refresh` once to fill in the
 stars and descriptions the migration leaves empty.
