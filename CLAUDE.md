@@ -52,7 +52,8 @@ yarn check-style    # prettier over assets/
 ```
 
 Tests live under `App\Tests\` (PSR-4 → `tests/`) and cover the pure domain logic (input parsing, API
-mapping, release detection) — everything else needs a booted kernel and is not covered yet.
+mapping, release detection, the rolled up trends) — everything else needs a booted kernel and is not
+covered yet.
 
 ## Rebuilding the dataset
 
@@ -109,6 +110,14 @@ used to carry came from optional profile fields and named the wrong account as o
   submission is what queued it, so pasting a known repository is how people look it up — it is answered
   from the database, before github.com is asked at all.
 - `RepositoryRefresher` — re-reads stars and metadata for everything submitted.
+- `Trend/*` — the whole report rolled up into one figure per time frame (`TrendWindow`: YTD, 12 months,
+  5 years, all time), shown in the hero of the start page. `TrendCalculator` is pure: it takes a list of
+  `ReleasePoint`s and the current time and returns `Trend` value objects, which is why the rules live
+  there and are unit tested — only libraries already measured when a window opened take part in it, each
+  counts once and is represented by the release it stood at back then (all time compares every library
+  against its own first release). `TrendLoader` is the thin edge: one query via
+  `TagRepository::findReleasePoints()`, cached in `cache.app` for an hour under a key that carries the
+  day, since the windows move with it.
 - `ReleaseScanner` — which releases of a repository are missing: skips anything `GitTag::isPreRelease()`
   (contains `-`) or `isPatchRelease()` (not a plain `X.Y` / `X.Y.0` version) and anything already stored.
   `scanRemote()` reads refs with `git ls-remote` (no clone, no working copy), `scanWorkingCopy()` fetches
@@ -156,14 +165,17 @@ it was just queued or has been in the report for years.
 only, returns JSON) > `organization` (1, resolves the `Organization` entity from its `login`, optional
 `?repository=<id>` preselects one of its repositories). An organization page exists from the moment
 something was submitted for it - a repository that carries no releases yet has no chart but a status
-telling the visitor it is queued or being measured right now. `start` renders the submit form, the most
-starred repositories, the organizations and what is still queued. `Repository::asGraph()` returns a
+telling the visitor it is queued or being measured right now. `start` renders the trend in the hero, the
+submit form, the most starred repositories, the organizations and what is still queued.
+`Repository::asGraph()` returns a
 `GraphData` value object that
 JSON-serializes into what the chart expects.
 
 **Frontend** — Vite + symfony/reprise + StimulusBundle. `assets/controllers/chart_controller.js` reads the
 preselected repositories from a `data-repositories` attribute rendered by `templates/chart.html.twig`, and
 lazily fetches additional ones from the `repository` JSON route when picked in the select2 box.
+`trend_controller.js` switches the time frame of the hero figure, which is rendered for all four windows
+at once, so nothing is fetched when one is picked.
 `refresh_controller.js` reloads the page every 30s while the status above the chart says a repository is
 queued or being measured - it is only rendered in that state, so the reloading stops by itself once the
 data is there, and a backgrounded tab skips its turn. Page transitions use symfony/ux-swup. `vite.config.js` takes the public path from `ASSET_BASE` (set by the build

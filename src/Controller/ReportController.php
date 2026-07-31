@@ -9,6 +9,7 @@ use App\ComplexityReport\Ranking;
 use App\ComplexityReport\RepositorySearch;
 use App\ComplexityReport\RepositorySubmitter;
 use App\ComplexityReport\StatisticsLoader;
+use App\ComplexityReport\Trend\TrendLoader;
 use App\Entity\Organization;
 use App\Entity\Repository;
 use App\Repository\OrganizationRepository;
@@ -43,6 +44,7 @@ final class ReportController extends AbstractController
         RepositoryRepository $repositoryRepository,
         OrganizationRepository $organizationRepository,
         StatisticsLoader $statisticsLoader,
+        TrendLoader $trendLoader,
     ): Response {
         // one query for every ranking - they all sort the same set, only by a different measurement
         $analysed = $repositoryRepository->findAnalysedWithTags();
@@ -57,6 +59,7 @@ final class ReportController extends AbstractController
             'organizations' => $organizationRepository->findWithData(),
             'pending' => $repositoryRepository->findPending(),
             'statistics' => $statisticsLoader->load(),
+            'trends' => $trendLoader->load(),
         ]);
     }
 

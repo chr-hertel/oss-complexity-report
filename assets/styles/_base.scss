@@ -157,6 +157,7 @@ canvas {
 
     &__inner {
         display: flex;
+        flex-wrap: wrap;
         gap: var(--space-7);
         align-items: center;
         justify-content: space-between;
@@ -185,6 +186,106 @@ canvas {
 
     .logo__title {
         color: var(--hero-fg);
+    }
+}
+
+// The right hand side of the start hero: the whole dataset as one figure, over the time frames it can
+// be read in. The trend tones of the design system are ink on white and would sink into the brand
+// ground, so the number borrows the lightened bars of the mark instead.
+.hero-trend {
+    flex: 0 0 auto;
+    width: clamp(260px, 26vw, 320px);
+    padding: var(--space-5);
+    background: rgba(255, 255, 255, 0.06);
+    border: var(--border-width) solid var(--hero-line);
+    border-radius: var(--radius-lg);
+
+    &__label {
+        font-family: var(--font-mono);
+        font-size: var(--text-eyebrow);
+        font-weight: var(--weight-medium);
+        letter-spacing: var(--tracking-eyebrow);
+        text-transform: uppercase;
+        color: var(--hero-faint);
+    }
+
+    &__figure {
+        margin-top: var(--space-4);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    &__value {
+        font-size: 38px;
+        font-weight: var(--weight-semibold);
+        letter-spacing: var(--tracking-heading);
+        line-height: var(--leading-heading);
+        font-variant-numeric: tabular-nums;
+        color: var(--hero-fg);
+
+        &--good {
+            color: var(--mark-low);
+        }
+
+        &--bad {
+            color: var(--mark-high);
+        }
+    }
+
+    &__caption {
+        margin-top: var(--space-2);
+        font-size: var(--text-sm);
+        color: var(--hero-muted);
+    }
+
+    &__since {
+        display: block;
+        margin-top: 2px;
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--hero-faint);
+    }
+
+    // four equal columns, so the switch is one row at every width the card is given
+    &__windows {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--space-1);
+        margin-top: var(--space-5);
+        padding-top: var(--space-4);
+        border-top: var(--border-width) solid var(--hero-line);
+    }
+
+    &__window {
+        padding: 4px 0;
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--hero-faint);
+        background: transparent;
+        border: var(--border-width) solid transparent;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition:
+            color var(--transition),
+            background-color var(--transition);
+
+        &:hover {
+            color: var(--hero-fg);
+        }
+
+        &[aria-selected='true'] {
+            color: var(--hero-fg);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--hero-line);
+        }
+
+        // the brand tinted ring of the design system disappears on the brand ground
+        &:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.28);
+        }
     }
 }
 
@@ -297,5 +398,10 @@ canvas {
     // Too small to read as the mark, and the header carries it two rows further up anyway.
     .hero__mark {
         display: none;
+    }
+
+    // The figure is content, so it stays - it drops under the intro and takes the full width there.
+    .hero-trend {
+        width: 100%;
     }
 }
