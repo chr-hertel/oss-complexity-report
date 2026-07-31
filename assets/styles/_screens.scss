@@ -6,14 +6,14 @@
 }
 
 // --- Start ------------------------------------------------------------------------------------
-// The input spans the band, with the label and the hint reading underneath it rather than beside it.
+// The input spans the band, announced by the label above it and explained by the hint underneath.
 .submit-band {
-    &__intro {
-        margin-top: var(--space-3);
+    &__label {
+        margin-bottom: var(--space-3);
     }
 
     &__hint {
-        margin-top: var(--space-2);
+        margin-top: var(--space-3);
         font-size: var(--text-sm);
         color: var(--text-muted);
     }
