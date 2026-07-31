@@ -103,6 +103,18 @@ final class RepositoryRepository extends ServiceEntityRepository
     }
 
     /**
+     * How much work is waiting - counted rather than loaded, the submitter only needs the number.
+     */
+    public function countPending(): int
+    {
+        return (int) $this->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->where('r.analysed IS NULL')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
      * Submitted repositories that are waiting for their first analysis.
      *
      * @return list<Repository>

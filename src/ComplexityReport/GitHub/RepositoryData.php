@@ -14,6 +14,10 @@ final class RepositoryData
         public readonly int $stars,
         public readonly bool $fork,
         public readonly bool $empty,
+        /**
+         * Size of the repository in kilobytes, as github.com reports it - what a clone roughly costs.
+         */
+        public readonly int $size = 0,
     ) {
     }
 
@@ -25,6 +29,7 @@ final class RepositoryData
         /** @var array{login: string} $owner */
         $owner = $data['owner'];
         $identifier = new RepositoryIdentifier($owner['login'], (string) $data['name']);
+        $size = (int) $data['size'];
 
         return new self(
             $identifier,
@@ -33,7 +38,8 @@ final class RepositoryData
             null !== $data['description'] ? (string) $data['description'] : null,
             (int) $data['stargazers_count'],
             (bool) $data['fork'],
-            0 === (int) $data['size'],
+            0 === $size,
+            $size,
         );
     }
 }

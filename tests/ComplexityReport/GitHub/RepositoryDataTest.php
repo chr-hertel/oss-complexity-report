@@ -29,6 +29,8 @@ final class RepositoryDataTest extends TestCase
         self::assertSame(9678, $data->stars);
         self::assertFalse($data->fork);
         self::assertFalse($data->empty);
+        // what a clone of it roughly costs, which is why it is carried at all
+        self::assertSame(4711, $data->size);
     }
 
     public function testItDetectsEmptyRepositoriesAndMissingDescriptions(): void

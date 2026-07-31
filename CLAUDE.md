@@ -103,8 +103,11 @@ used to carry came from optional profile fields and named the wrong account as o
 - `GitHub/GitHubClient` — the only external source, wraps `api.github.com` (repository, owner, languages)
   behind a 1h cache. `GitHub/RepositoryIdentifier::fromInput()` parses everything users may paste
   (`owner/repo`, https/ssh urls, deep links) and rejects any host but github.com.
-- `RepositorySubmitter` — validates a submission (unknown, fork, empty, less than `MIN_PHP_SHARE` PHP),
-  creates the `Organization` for its owner on the fly and dispatches `AnalyseRepository`. Rejections are
+- `RepositorySubmitter` — validates a submission (unknown, fork, empty, larger than `MAX_SIZE`, less than
+  `MIN_PHP_SHARE` PHP) and refuses everything while `MAX_PENDING` repositories are already waiting for a
+  worker — the submitter picks what gets cloned, so what a submission may cost is capped before it is
+  queued rather than after. It then creates the `Organization` for its owner on the fly and dispatches
+  `AnalyseRepository`. Rejections are
   `Exception\SubmissionFailed`, whose messages are written to be shown to the submitter. A repository the
   report already carries is **not** one of them: `submit()` returns a `Submission` that says whether this
   submission is what queued it, so pasting a known repository is how people look it up — it is answered
@@ -126,11 +129,17 @@ used to carry came from optional profile fields and named the wrong account as o
   retry only redoes what is left, then `markAnalysed()`. It does **not** guard the working copy — that is
   the handler's job.
 - `Git` / `GitController` / `CodeAnalyser` — `Git` shells out via symfony/process and logs every call on the
-  `git` monolog channel; it pins `GIT_TERMINAL_PROMPT=0` so a repository that went private fails instead of
-  blocking a worker on a credential prompt. `GitController` adds the domain layer (clone on first use, load
-  tags local and remote, checkout, last commit date, remove/list working copies). Metrics come from phploc's
-  `Analyser` (`loc`, `classCcnAvg`). Both receive the `$repositoryPath` bound globally in
-  `config/services.yaml`.
+  `git` monolog channel; it passes arguments as a list (never a shell line), pins `GIT_TERMINAL_PROMPT=0` so
+  a repository that went private fails instead of blocking a worker on a credential prompt, and gives every
+  call a `TIMEOUT` so a remote that stalls mid-transfer cannot hold that worker forever. `GitController`
+  adds the domain layer (clone on first use, load tags local and remote, checkout under the full
+  `refs/tags/` ref, last commit date, remove/list working copies). Metrics come from phploc's `Analyser`
+  (`loc`, `classCcnAvg`). Both receive the `$repositoryPath` bound globally in `config/services.yaml`.
+- `SourceFiles` — which files of a working copy phploc is handed. A submitted repository decides what its
+  own files are and git stores a symlink like any other file, so this drops what leaves the working copy
+  (`evil.php -> /dev/zero` reads until the worker is out of memory, a link to a file elsewhere would be
+  counted into the report) and what is too large to be source code. Links **within** the copy are ordinary
+  and stay.
 - `WorkingCopyLock` — one lock per repository, taken by everything that touches its working copy.
 - `DataFixer` + `DataFixer/*Fixer` — post-processing for datasets where git history lies (Laminas tags all
   dated at the Zend→Laminas import, PHPUnit tags with a bogus 2006 date, Laravel minors that distort the
@@ -152,13 +161,20 @@ shared working copy, so a second worker on the same repository would silently me
 busy repository throws `RecoverableMessageHandlingException` and is retried — deliberately without
 consuming the retry budget, since being busy is not a failure.
 
-**Submitting** is the only write the web exposes, so `submit` checks a CSRF token before anything else and
-then spends one token of the `submission` rate limiter (5 per 15 minutes and IP). CSRF is **stateless**
-(`config/packages/csrf.yaml`): the token is a double submit cookie written by Symfony's `csrf-protection`
-Stimulus controller, which is why the hidden field carries `data-controller="csrf-protection"` and why
-reading the report never starts a session. Both rejections are flashes, not exceptions - a human mistyping
-twice should not get an error page. Anything that gets through ends on the page of its repository, whether
-it was just queued or has been in the report for years.
+**Submitting** is the only write the web exposes, so `submit` spends one token of the `submission` rate
+limiter (5 per 15 minutes and IP) before anything else and only then checks the CSRF token - the limiter
+comes first because a request without a token costs something too, and this way a script cannot send more
+of them than a visitor may send submissions. CSRF is **stateless** (`config/packages/csrf.yaml`): the token
+is a double submit cookie written by Symfony's `csrf-protection` Stimulus controller, which is why the
+hidden field carries `data-controller="csrf-protection"`, and a browser without javascript still passes on
+the same-origin check. It is a cross-site guard, not a bot guard - the rate limiter is what bounds the
+work.
+
+Reading the report never starts a session, and these two refusals must not either: a flash writes a
+session, so `refuse()` answers them with a plain `429`/`400` instead. Everything a *visitor* runs into -
+an unknown repository, a fork, too little PHP - stays a flash on the start page, redirected to with the
+303 turbo needs, because a human mistyping twice should not get an error page. Anything that gets through
+ends on the page of its repository, whether it was just queued or has been in the report for years.
 
 **Web** (`src/Controller/ReportController`) — routes are distinguished by `priority`, since
 `{organization}` and `{id}` both match a single segment: `overview`/`submit` (3) > `repository` (2, digits

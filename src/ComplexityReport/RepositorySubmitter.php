@@ -24,7 +24,25 @@ final class RepositorySubmitter
     /**
      * Repositories don't need a composer.json, but they need to be mostly written in PHP.
      */
-    private const MIN_PHP_SHARE = 0.2;
+    private const float MIN_PHP_SHARE = 0.2;
+
+    /**
+     * Largest repository that is still worth cloning, in kilobytes - the unit github.com reports.
+     *
+     * Analysing means cloning the full history into a shared directory, and the submitter picks what
+     * lands there. Two gigabytes is far above what the source of a PHP project weighs and still bounds
+     * what a single submission can cost the disk.
+     */
+    private const int MAX_SIZE = 2 * 1024 * 1024;
+
+    /**
+     * How many repositories may wait for their first analysis at once.
+     *
+     * Every submission ends in a clone, and the queue is drained by a worker that measures one release
+     * after another. Past this the report is not losing anything by asking people to come back later -
+     * whoever fills the queue does not get to fill the disk with it.
+     */
+    private const int MAX_PENDING = 50;
 
     public function __construct(
         private GitHubClient $client,
@@ -63,6 +81,15 @@ final class RepositorySubmitter
 
         if ($data->empty) {
             throw SubmissionFailed::emptyRepository($identifier);
+        }
+
+        if ($data->size > self::MAX_SIZE) {
+            throw SubmissionFailed::oversizedRepository($identifier, $data->size, self::MAX_SIZE);
+        }
+
+        // asked once the repository itself is worth taking, so a full queue costs no further api quota
+        if ($this->repositoryRepository->countPending() >= self::MAX_PENDING) {
+            throw SubmissionFailed::tooManySubmissions();
         }
 
         if ($this->client->getPhpShare($data->identifier) < self::MIN_PHP_SHARE) {
