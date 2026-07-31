@@ -208,12 +208,13 @@ submitted: no releases yet means no lines but a status telling the visitor it is
 right now - the one state the browser cannot rename, since nothing can be picked in it.
 
 Routes are distinguished by `priority`, since `{organization}` and the slug of a repository both match
-whatever is left: `chart`/`search`/`submit` (3) > `repository` (2, `owner/repository`, returns the releases
-as JSON - the slug is the whole route, so the select box can request it relative to the page it is on) >
-`organization` (1). The last one is the page GitHub accounts used to have, kept as a permanent redirect
-into the chart - `?repository=<id>` included, since that is how the links that were handed out address a
-repository. `Repository::asGraph()` returns a `GraphData` value object that JSON-serializes into what the
-chart expects.
+whatever is left: `chart`/`search`/`submit` (3) > `repository` (2, `owner/repository`, returns one line of
+the chart as JSON - the slug is the whole route, so the select box can request it relative to the page it
+is on) > `organization` (1). The last one is the page GitHub accounts used to have, kept as a permanent
+redirect into the chart - `?repository=<id>` included, since that is how the links that were handed out
+address a repository. `Repository::asGraph()` returns a `GraphData` value object that JSON-serializes into
+what the chart expects: the releases it draws plus the github.com url and the stars of the repository they
+belong to, so a line picked later carries the same facts as one the page was rendered with.
 
 **Frontend** — Vite + symfony/reprise + StimulusBundle. `assets/controllers/chart_controller.js` reads the
 preselected repositories from a `data-repositories` attribute rendered by `templates/chart.html.twig`, and
@@ -222,7 +223,11 @@ picked is written back into the query string, so a chart someone put together is
 analysis below the chart is one tab per line, built from the same graphs: every repository in the chart can
 be read release by release, and a tab carries the colour of its series - and since a point in the chart
 *is* a release, clicking one opens it there: the line it belongs to becomes the tab being read and the
-point the release, scrolled to only when the section is off screen. The chart zooms and pans
+point the release, scrolled to only when the section is off screen. Its head says what a release is read
+against: the repository it belongs to, linking to github.com and carrying its stars and its first measured
+release, and the day the release was tagged - which is the only date the report has, since when a release
+was measured is whenever it was submitted or a nightly scan found it and says nothing about the code.
+The chart zooms and pans
 (chartjs-plugin-zoom), which the address bar knows nothing about, so the way back is the `.chart-reset`
 button floating over it - rendered `hidden` and shown by the controller only while `isZoomedOrPanned()`.
 `trend_controller.js` switches the time frame of the hero figure, which is rendered for all four windows

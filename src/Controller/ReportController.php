@@ -175,16 +175,17 @@ final class ReportController extends AbstractController
     }
 
     /**
-     * The releases behind one line of the chart. A repository is addressed the way github.com addresses
-     * it, and that slug is the whole route - so the select box can request it relative to the page it is
-     * on, which keeps working under a deployed sub path.
+     * One line of the chart: the repository and the releases behind it, in the shape the page is
+     * rendered with, so a line picked later reads the same as one the page opened on. A repository is
+     * addressed the way github.com addresses it, and that slug is the whole route - so the select box
+     * can request it relative to the page it is on, which keeps working under a deployed sub path.
      */
     #[Route('{name}', name: 'repository', requirements: ['name' => '[^/]+/[^/]+'], methods: 'GET', priority: 2)]
     public function repository(string $name, RepositoryRepository $repositories): JsonResponse
     {
         $repository = $repositories->findBySlug($name) ?? throw $this->createNotFoundException();
 
-        return new JsonResponse($repository->asGraph()->getTagData());
+        return new JsonResponse($repository->asGraph());
     }
 
     /**

@@ -44,13 +44,18 @@ final class GraphData implements \JsonSerializable
     }
 
     /**
-     * @return array{name: string, tags: list<array{name: string, x: string, date: string, y: float, loc: int}>, labels: list<string>}
+     * A line of the chart: what it is called, where it comes from and the releases it is drawn from.
+     * `url` and `stars` are what the release analysis says about the repository behind the line.
+     *
+     * @return array{name: string, url: string, stars: int, tags: list<array{name: string, x: string, date: string, y: float, loc: int}>, labels: list<string>}
      */
     public function jsonSerialize(): array
     {
         return [
             // the select box addresses a repository by its slug, which is the name it is drawn under
             'name' => $this->repository->getName(),
+            'url' => $this->repository->getUrl(),
+            'stars' => $this->repository->getStars(),
             'tags' => $this->getTagData(),
             'labels' => $this->getLabels(),
         ];

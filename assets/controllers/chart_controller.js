@@ -40,6 +40,21 @@ function element(tag, className, text) {
 const count = (value) => value.toLocaleString('en-US');
 const decimal = (value, digits) =>
     value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+const day = (value) => moment(value, 'YYYY-MM-DD').format('LL');
+const dot = () => element('span', 'release-head__dot', '·');
+
+// the star count of the rankings, shortened the way the `stars` twig filter shortens it
+function stars(total) {
+    const node = element('span', 'metric metric--star');
+
+    node.title = `${count(total)} stars on GitHub`;
+    node.append(
+        element('i', 'fas fa-star'),
+        element('span', null, total < 1000 ? String(total) : `${(total / 1000).toFixed(1).replace(/\.0$/, '')}k`),
+    );
+
+    return node;
+}
 
 // complexity going down is an improvement, going up is a regression
 const tone = (value) => (Math.abs(value) < 0.005 ? 'flat' : value < 0 ? 'good' : 'bad');
@@ -365,7 +380,8 @@ export default class extends Controller {
             // the slug is the whole route, so a relative request keeps working under a deployed sub path
             const response = await fetch(slug, { headers: { Accept: 'application/json' } });
 
-            this.graphs.set(slug, { name: slug, tags: await response.json() });
+            // the route answers with the line itself, the same shape the page was rendered with
+            this.graphs.set(slug, await response.json());
         }
 
         return this.graphs.get(slug);
@@ -467,26 +483,44 @@ export default class extends Controller {
         const first = tags[0];
 
         this.releaseSelectTarget.value = String(index);
-        this.releaseRepositoryTarget.textContent = this.release.name;
         this.releaseNameTarget.textContent = tag.name;
 
-        this.releaseMetaTarget.replaceChildren(
-            element('span', null, `Measured with phploc on ${moment(tag.date, 'YYYY-MM-DD').format('LL')}`),
+        // where the release is read on github.com - the name of the repository is its address there
+        this.releaseRepositoryTarget.href = this.release.url;
+        this.releaseRepositoryTarget.title = this.release.url.replace('https://', '');
+        this.releaseRepositoryTarget.replaceChildren(
+            element('span', null, this.release.name),
+            element('i', 'fas fa-arrow-up-right-from-square'),
         );
+
+        /*
+         * The date a release carries is the day it was tagged, not the day the report measured it - the
+         * measurement happened whenever the repository was submitted or a nightly scan picked the release
+         * up, which is not what anyone reading a release is after.
+         */
+        this.releaseMetaTarget.replaceChildren(element('span', null, `Released on ${day(tag.date)}`));
 
         if (previous) {
             this.releaseMetaTarget.append(
-                element('span', 'release-head__dot', '·'),
+                dot(),
                 element('span', null, 'Ø complexity'),
                 trend(Math.round((tag.y - previous.y) * 100) / 100, 2, `vs ${previous.name}`),
             );
         }
 
+        // what the repository behind the line is, next to the release being read from it
+        this.releaseMetaTarget.append(
+            dot(),
+            stars(this.release.stars),
+            dot(),
+            element('span', null, `First release ${day(first.date)}`),
+        );
+
         const complexities = tags.map((entry) => entry.y);
 
         const groups = [
             group('Release', [
-                row('Released', moment(tag.date, 'YYYY-MM-DD').format('LL')),
+                row('Released', day(tag.date)),
                 row('Lines of code (LOC)', count(tag.loc)),
                 row('Ø cyclomatic complexity', decimal(tag.y, 2)),
             ]),
@@ -502,11 +536,11 @@ export default class extends Controller {
                       row('Ø complexity', trend(Math.round((tag.y - first.y) * 100) / 100, 2)),
                   ])
                 : null,
+            // the first release is in the head, above every group - it says what the repository is
             group(`All ${tags.length} releases`, [
                 row('Analysed releases', count(tags.length)),
                 row('Lowest Ø complexity', decimal(Math.min(...complexities), 2)),
                 row('Highest Ø complexity', decimal(Math.max(...complexities), 2)),
-                row('First release', moment(first.date, 'YYYY-MM-DD').format('LL')),
             ]),
         ];
 
