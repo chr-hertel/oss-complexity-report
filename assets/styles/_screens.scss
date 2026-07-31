@@ -6,26 +6,16 @@
 }
 
 // --- Start ------------------------------------------------------------------------------------
+// The input spans the band, with the label and the hint reading underneath it rather than beside it.
 .submit-band {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-6);
-    align-items: flex-start;
-    justify-content: space-between;
-
     &__intro {
-        max-width: 34ch;
+        margin-top: var(--space-3);
     }
 
     &__hint {
         margin-top: var(--space-2);
         font-size: var(--text-sm);
         color: var(--text-muted);
-    }
-
-    &__form {
-        flex: 1 1 420px;
-        max-width: 560px;
     }
 
     .alert {
