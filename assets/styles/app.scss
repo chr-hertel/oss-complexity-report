@@ -34,6 +34,25 @@ h1 {
     }
 }
 
+.repository-card {
+    transition:
+        transform 0.15s ease-in-out,
+        box-shadow 0.15s ease-in-out;
+
+    &:hover {
+        transform: translateY(-0.25rem);
+        box-shadow: 0 0.5rem 1rem rgba(63, 76, 107, 0.25) !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+
+        &:hover {
+            transform: none;
+        }
+    }
+}
+
 a.logo {
     text-decoration: none;
     color: rgba(63, 76, 107, 1);
