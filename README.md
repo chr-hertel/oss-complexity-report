@@ -56,7 +56,7 @@ Two workers are needed - one for the queue, one for the schedule:
 
 ```bash
 symfony console messenger:consume async -vv
-symfony console messenger:consume scheduler_nightly -vv
+symfony console messenger:consume scheduler_default -vv
 ```
 
 The `async` transport may be consumed by several workers. Checking out a tag rewrites a working copy, so
@@ -138,7 +138,7 @@ stopasgroup=true
 killasgroup=true
 
 [program:oss_complexity_report_scheduler]
-command=php /var/www/oss-complexity-report/current/bin/console messenger:consume scheduler_nightly --time-limit=3600 --env=prod
+command=php /var/www/oss-complexity-report/current/bin/console messenger:consume scheduler_default --time-limit=3600 --env=prod
 process_name=%(program_name)s_%(process_num)02d
 numprocs=1
 user=deployer
