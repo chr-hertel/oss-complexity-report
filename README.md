@@ -11,9 +11,13 @@ starred ones.
 Requirements
 ------------
 
-* PHP 8.4
+* PHP 8.4 or newer
 * Node 26 (see .nvmrc) & Yarn
-* A database (e.g. PostgreSQL)
+* PostgreSQL - the migrations are written for it, `docker-compose.yml` starts a 15 on port 8432, which is
+  what `DATABASE_URL` in `.env` points at
+* git, since analysing a repository shells out to it
+* The [Symfony CLI][symfony-cli] - every command below is written as `symfony console`, which runs
+  `bin/console` with the environment of the local web server
 
 Setup
 -----
@@ -25,14 +29,44 @@ composer install
 yarn install
 yarn build
 docker-compose up -d
+symfony console doctrine:migrations:migrate
 symfony serve -d
 ```
+
+That is an empty report - it fills up by submitting repositories, either with the form on the start page
+or on the command line (see below). The fixtures submit a handful to start with.
+
+[symfony-cli]: https://symfony.com/download
 
 Assets are bundled by Vite and wired into Twig by [symfony/reprise][reprise].
 Run `yarn build` for a one-off build, or `yarn dev` to start the Vite dev
 server with hot module replacement - reprise picks it up automatically.
 
 [reprise]: https://github.com/symfony/reprise
+
+Checks
+------
+
+`bin/check` runs everything a pull request runs, plus prettier and `yarn audit`:
+
+```bash
+bin/check
+```
+
+Individually, if only one of them is interesting:
+
+```bash
+symfony php vendor/bin/phpunit                    # add --filter testName tests/Some/FileTest.php for one
+symfony php vendor/bin/php-cs-fixer fix           # --dry-run to only report
+symfony php vendor/bin/phpstan analyse            # level 8
+symfony console lint:yaml config --parse-tags
+symfony console lint:twig templates
+symfony console lint:container
+```
+
+The tests cover the domain logic that is pure - parsing what people paste, mapping the GitHub API,
+deciding which releases count, rolling the report up into the trend. Everything that needs a booted
+kernel is not covered yet.
 
 Background Processing
 ---------------------
@@ -152,3 +186,8 @@ quarter of an hour and IP, since each one spends github.com API quota and ends i
 
 Set `GITHUB_TOKEN` in `.env.local` to raise the github.com API rate limit from 60 to 5.000 requests per
 hour. The token only reads public data, so it does not need any scope.
+
+License
+-------
+
+MIT, see [LICENSE](LICENSE).
