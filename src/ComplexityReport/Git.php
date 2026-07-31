@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\ComplexityReport;
 
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Process\Process;
 
 final readonly class Git
 {
     public function __construct(
+        #[Target('git')]
         private LoggerInterface $gitLogger,
     ) {
     }
