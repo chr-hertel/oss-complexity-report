@@ -12,18 +12,18 @@
                 </a>
                 <div id="nav" class="dropdown btn-group-lg mt-2">
                     <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                        {{ project.name|default(headline) }}
+                        {{ organization.login|default(headline) }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-right overflow-auto" style="max-height: 70vh" aria-labelledby="dropdownMenuButton">
                         <li>
-                            <a class="dropdown-item {{ project is not defined ? 'disabled' }}" href="{{ path('overview') }}">Most starred</a>
+                            <a class="dropdown-item {{ organization is not defined ? 'disabled' }}" href="{{ path('overview') }}">Most starred</a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
-                        {% for vendor in all_projects() %}
+                        {% for owner in all_organizations() %}
                             <li>
-                                <a class="dropdown-item {{ vendor.vendor == project.vendor|default() ? 'disabled' }}"
-                                   href="{{ path('project', {'vendor': vendor.vendor}) }}">
-                                    {{ vendor.name }}
+                                <a class="dropdown-item {{ owner.login == organization.login|default() ? 'disabled' }}"
+                                   href="{{ path('organization', {'organization': owner.login}) }}">
+                                    {{ owner.login }}
                                 </a>
                             </li>
                         {% endfor %}
@@ -33,11 +33,11 @@
                 </div>
             </div>
         </div>
-        <div id="swup" class="js-project container mt-5">
+        <div id="swup" class="container mt-5">
             <h2 class="mb-0">{{ headline }}
-                {% if project is defined %}
-                    <a href="{{ project.url }}" target="_blank" class="text-secondary"
-                       title="{{ project.url|replace({'https://':'', '/':''}) }}">
+                {% if organization is defined %}
+                    <a href="{{ organization.url }}" target="_blank" class="text-secondary"
+                       title="{{ organization.url|replace({'https://':''}) }}">
                         <i class="fas fa-external-link-square-alt h6"></i>
                     </a>
                 {% endif %}
@@ -55,9 +55,9 @@
                         reload this page in a few minutes to see the first numbers.
                     {% endif %}
                 </div>
-            {% elseif project is defined and repositories is empty %}
+            {% elseif organization is defined and repositories is empty %}
                 <div class="alert alert-warning mt-3 mb-0">
-                    None of the repositories of {{ project.name }} carries a release that could be measured.
+                    None of the repositories of {{ organization.login }} carries a release that could be measured.
                 </div>
             {% endif %}
 

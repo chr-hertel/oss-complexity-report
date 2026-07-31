@@ -7,9 +7,9 @@ namespace App\Controller;
 use App\ComplexityReport\Exception\SubmissionFailed;
 use App\ComplexityReport\RepositorySubmitter;
 use App\ComplexityReport\StatisticsLoader;
-use App\Entity\Project;
+use App\Entity\Organization;
 use App\Entity\Repository;
-use App\Repository\ProjectRepository;
+use App\Repository\OrganizationRepository;
 use App\Repository\RepositoryRepository;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -34,12 +34,12 @@ final class ReportController extends AbstractController
     #[Route('', name: 'start', methods: 'GET')]
     public function start(
         RepositoryRepository $repositoryRepository,
-        ProjectRepository $projectRepository,
+        OrganizationRepository $organizationRepository,
         StatisticsLoader $statisticsLoader,
     ): Response {
         return $this->render('start.html.twig', [
             'featured' => $repositoryRepository->findMostStarred(self::FEATURED_LIMIT),
-            'projects' => $projectRepository->findWithData(),
+            'organizations' => $organizationRepository->findWithData(),
             'pending' => $repositoryRepository->findPending(),
             'statistics' => $statisticsLoader->load(),
         ]);
@@ -87,19 +87,19 @@ final class ReportController extends AbstractController
         ]);
     }
 
-    #[Route('{vendor}', name: 'project', methods: 'GET', priority: 1)]
-    public function project(
-        #[MapEntity(mapping: ['vendor' => 'vendor'])] Project $project,
+    #[Route('{organization}', name: 'organization', methods: 'GET', priority: 1)]
+    public function organization(
+        #[MapEntity(mapping: ['organization' => 'login'])] Organization $organization,
         Request $request,
     ): Response {
-        $selected = $this->selectRepository($project, $request->query->getInt('repository'));
+        $selected = $this->selectRepository($organization, $request->query->getInt('repository'));
 
         return $this->render('chart.html.twig', [
-            'headline' => sprintf('Project: %s', $project->getName()),
-            'project' => $project,
+            'headline' => sprintf('Organization: %s', $organization->getLogin()),
+            'organization' => $organization,
             // a repository without releases has nothing to draw yet, the status below the headline says so
             'selectedRepositories' => $selected->hasData() ? [$selected] : [],
-            'repositories' => $project->getAnalysedRepositories(),
+            'repositories' => $organization->getAnalysedRepositories(),
             'pendingRepository' => $selected->isAnalysed() ? null : $selected,
         ]);
     }
@@ -111,12 +111,12 @@ final class ReportController extends AbstractController
     }
 
     /**
-     * The page of a repository is the one of its project, with the repository preselected.
+     * The page of a repository is the one of its organization, with the repository preselected.
      */
     private function toRepository(Repository $repository): Response
     {
-        return $this->redirectToRoute('project', [
-            'vendor' => $repository->getProject()->getVendor(),
+        return $this->redirectToRoute('organization', [
+            'organization' => $repository->getOrganization()->getLogin(),
             'repository' => $repository->getId(),
         ]);
     }
@@ -124,14 +124,14 @@ final class ReportController extends AbstractController
     /**
      * Every repository can be picked, analysed or not - one that was just submitted has a page, too.
      */
-    private function selectRepository(Project $project, int $id): Repository
+    private function selectRepository(Organization $organization, int $id): Repository
     {
-        foreach ($project->getRepositories() as $repository) {
+        foreach ($organization->getRepositories() as $repository) {
             if ($repository->getId() === $id) {
                 return $repository;
             }
         }
 
-        return $project->getMainRepository();
+        return $organization->getMainRepository();
     }
 }

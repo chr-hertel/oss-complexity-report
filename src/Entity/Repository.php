@@ -38,8 +38,8 @@ class Repository
         private string $url,
         #[ORM\Column]
         private string $cloneUrl,
-        #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'repositories')]
-        private readonly Project $project,
+        #[ORM\ManyToOne(targetEntity: Organization::class, inversedBy: 'repositories')]
+        private readonly Organization $organization,
         #[ORM\Column(type: 'text', nullable: true)]
         private ?string $description = null,
         #[ORM\Column(type: 'integer')]
@@ -50,13 +50,13 @@ class Repository
         $this->tags = new ArrayCollection();
     }
 
-    public static function fromGitHub(RepositoryData $data, Project $project): self
+    public static function fromGitHub(RepositoryData $data, Organization $organization): self
     {
         return new self(
             (string) $data->identifier,
             $data->url,
             $data->cloneUrl,
-            $project,
+            $organization,
             $data->description,
             $data->stars,
         );
@@ -108,9 +108,9 @@ class Repository
         return $this->stars;
     }
 
-    public function getProject(): Project
+    public function getOrganization(): Organization
     {
-        return $this->project;
+        return $this->organization;
     }
 
     public function getSubmitted(): \DateTimeImmutable

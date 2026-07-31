@@ -6,7 +6,7 @@ namespace App\ComplexityReport\DataFixer;
 
 use App\ComplexityReport\GitController;
 use App\Entity\Repository;
-use App\Repository\ProjectRepository;
+use App\Repository\OrganizationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -16,7 +16,7 @@ use Psr\Log\LoggerInterface;
 final class LaminasVersionFixer implements FixerInterface
 {
     public function __construct(
-        private ProjectRepository $repository,
+        private OrganizationRepository $repository,
         private GitController $gitController,
         private LoggerInterface $logger,
         private EntityManagerInterface $entityManager,
@@ -26,7 +26,7 @@ final class LaminasVersionFixer implements FixerInterface
     public function fixData(): void
     {
         // repositories are submitted by users now, so laminas is not necessarily part of the report
-        $laminas = $this->repository->findOneByVendor('laminas');
+        $laminas = $this->repository->findOneByLogin('laminas');
 
         if (null === $laminas) {
             $this->logger->info('No laminas repositories submitted, nothing to fix.');

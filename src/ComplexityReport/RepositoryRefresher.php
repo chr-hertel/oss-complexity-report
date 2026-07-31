@@ -7,7 +7,7 @@ namespace App\ComplexityReport;
 use App\ComplexityReport\Exception\SubmissionFailed;
 use App\ComplexityReport\GitHub\GitHubClient;
 use App\ComplexityReport\GitHub\RepositoryIdentifier;
-use App\Repository\ProjectRepository;
+use App\Repository\OrganizationRepository;
 use App\Repository\RepositoryRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -20,7 +20,7 @@ final class RepositoryRefresher
     public function __construct(
         private GitHubClient $client,
         private RepositoryRepository $repositoryRepository,
-        private ProjectRepository $projectRepository,
+        private OrganizationRepository $organizationRepository,
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
     ) {
@@ -47,13 +47,13 @@ final class RepositoryRefresher
             ++$refreshed;
         }
 
-        foreach ($this->projectRepository->findAll() as $project) {
+        foreach ($this->organizationRepository->findAll() as $organization) {
             try {
-                $project->update($this->client->getOwner($project->getVendor(), true));
+                $organization->update($this->client->getOwner($organization->getLogin(), true));
             } catch (SubmissionFailed $exception) {
                 $this->logger->warning(sprintf(
-                    'Cannot refresh project %s: %s',
-                    $project->getVendor(),
+                    'Cannot refresh organization %s: %s',
+                    $organization->getLogin(),
                     $exception->getMessage()
                 ));
             }

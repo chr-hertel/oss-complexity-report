@@ -9,8 +9,8 @@ evolved over time. Anyone can submit a GitHub repository; the app clones it, che
 release tag, runs phploc over it, and renders the result as a Chart.js line chart.
 
 The dataset is **submission-driven, not curated**: github.com is the only source (no packagist, no
-`composer.json` needed, so `wordpress/wordpress` works too), and `Project` rows are derived from the GitHub
-owner of whatever was submitted. Start page and overview focus on the most starred repositories.
+`composer.json` needed, so `wordpress/wordpress` works too), and `Organization` rows are derived from the
+GitHub owner of whatever was submitted. Start page and overview focus on the most starred repositories.
 
 Requires PHP 8.4, Node (see `.nvmrc`) / Yarn and PostgreSQL 15 (`docker-compose up -d` starts one on port
 **8432**, matching `DATABASE_URL` in `.env`). `GITHUB_TOKEN` in `.env.local` is optional and only raises the
@@ -81,7 +81,7 @@ Analysis is slow (clones the repository) and leans on the `cache.app` filesystem
 expire after 1h, but **per-tag phploc analyses are cached without expiry**. Stale or wrong numbers usually
 mean the pool needs clearing, not that the code is broken.
 
-Clones live in `repositories/<vendor>/<repository>` (gitignored, a shared dir in deployment) and are
+Clones live in `repositories/<owner>/<repository>` (gitignored, a shared dir in deployment) and are
 **scratch space, not a cache** — `RepositoryAnalyser` removes the working copy when it is done, so the disk
 is bounded by what is being analysed rather than by everything ever submitted. It also asks the remote
 before cloning at all, so an up-to-date repository costs one `ls-remote`. `app:repositories:clean` sweeps
@@ -90,18 +90,20 @@ what predates that, including directories that no repository maps to anymore (th
 ## Architecture
 
 **Entities** (`src/Entity`, Doctrine attributes on constructor-promoted properties, no setters except
-`Tag::setCreated` for the fixers and `update()` for GitHub refreshes): `Project` (a GitHub owner, e.g.
-`symfony`) → `Repository` (a GitHub repository, e.g. `symfony/console`, holds `stars` + `analysed`) → `Tag`
-(one analysed release, holds `linesOfCode` + `averageComplexity` + `created`). `Project` has no curated
-main library anymore — `getMainRepository()` returns its most starred analysed repository.
+`Tag::setCreated` for the fixers and `update()` for GitHub refreshes): `Organization` (a GitHub account,
+e.g. `symfony`) → `Repository` (a GitHub repository, e.g. `symfony/console`, holds `stars` + `analysed`) →
+`Tag` (one analysed release, holds `linesOfCode` + `averageComplexity` + `created`). `Organization` has no
+curated main library anymore — `getMainRepository()` returns its most starred analysed repository, and it
+holds nothing but the GitHub `login` it is addressed by plus an avatar: the display name and homepage it
+used to carry came from optional profile fields and named the wrong account as often as the right one.
 
 **Domain services** (`src/ComplexityReport`) — the thin `src/Command` classes only wrap these:
 
 - `GitHub/GitHubClient` — the only external source, wraps `api.github.com` (repository, owner, languages)
   behind a 1h cache. `GitHub/RepositoryIdentifier::fromInput()` parses everything users may paste
-  (`vendor/repo`, https/ssh urls, deep links) and rejects any host but github.com.
+  (`owner/repo`, https/ssh urls, deep links) and rejects any host but github.com.
 - `RepositorySubmitter` — validates a submission (unknown, fork, empty, less than `MIN_PHP_SHARE` PHP),
-  creates the `Project` for its owner on the fly and dispatches `AnalyseRepository`. Rejections are
+  creates the `Organization` for its owner on the fly and dispatches `AnalyseRepository`. Rejections are
   `Exception\SubmissionFailed`, whose messages are written to be shown to the submitter. A repository the
   report already carries is **not** one of them: `submit()` returns a `Submission` that says whether this
   submission is what queued it, so pasting a known repository is how people look it up — it is answered
@@ -149,13 +151,14 @@ reading the report never starts a session. Both rejections are flashes, not exce
 twice should not get an error page. Anything that gets through ends on the page of its repository, whether
 it was just queued or has been in the report for years.
 
-**Web** (`src/Controller/ReportController`) — routes are distinguished by `priority`, since `{vendor}` and
-`{id}` both match a single segment: `overview`/`submit` (3) > `repository` (2, digits only, returns JSON) >
-`project` (1, resolves the `Project` entity from the `vendor` route parameter, optional `?repository=<id>`
-preselects one of its repositories). A project page exists from the moment something was submitted for it -
-a repository that carries no releases yet has no chart but a status telling the visitor it is queued or
-being measured right now. `start` renders the submit form, the most starred repositories, the
-vendors and what is still queued. `Repository::asGraph()` returns a `GraphData` value object that
+**Web** (`src/Controller/ReportController`) — routes are distinguished by `priority`, since
+`{organization}` and `{id}` both match a single segment: `overview`/`submit` (3) > `repository` (2, digits
+only, returns JSON) > `organization` (1, resolves the `Organization` entity from its `login`, optional
+`?repository=<id>` preselects one of its repositories). An organization page exists from the moment
+something was submitted for it - a repository that carries no releases yet has no chart but a status
+telling the visitor it is queued or being measured right now. `start` renders the submit form, the most
+starred repositories, the organizations and what is still queued. `Repository::asGraph()` returns a
+`GraphData` value object that
 JSON-serializes into what the chart expects.
 
 **Frontend** — Vite + symfony/reprise + StimulusBundle. `assets/controllers/chart_controller.js` reads the
