@@ -1,6 +1,12 @@
 Open Source Software Complexity Report
 ======================================
 
+Measures how the cyclomatic complexity of PHP open source software evolved over time.
+
+Every repository on github.com that is mostly written in PHP can be submitted - a `composer.json` is not
+needed, so `wordpress/wordpress` works just as well as `symfony/console`. Submitted repositories are
+grouped by their GitHub vendor, and the start page and the overview chart focus on the most starred ones.
+
 Requirements
 ------------
 
@@ -37,11 +43,8 @@ symfony console doctrine:database:create
 symfony console doctrine:schema:create
 symfony console cache:pool:clear cache.app
 
-# loads projects to analyse from fixtures to database
+# submits a couple of well known repositories to start with
 symfony console doctrine:fixtures:load -n
-
-# fetches project libraries from packagist.org and stores them in database
-symfony console app:libraries:load -vv
 
 # clones repositories and analyses code base of every major and minor release
 symfony console app:data:aggregate -vv
@@ -49,3 +52,18 @@ symfony console app:data:aggregate -vv
 # fix some data issues
 symfony console app:data:fix -vv
 ```
+
+Submitting Repositories
+-----------------------
+
+Repositories are submitted with the form on the start page, or on the command line:
+
+```bash
+symfony console app:repository:submit wordpress/wordpress https://github.com/symfony/console
+```
+
+Submitting only queues a repository - `app:data:aggregate --pending` analyses everything that came in
+since the last run, and `app:repositories:refresh` updates the stars that order the report.
+
+Set `GITHUB_TOKEN` in `.env.local` to raise the github.com API rate limit from 60 to 5.000 requests per
+hour. The token only reads public data, so it does not need any scope.

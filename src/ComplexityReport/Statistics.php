@@ -8,7 +8,7 @@ final class Statistics
 {
     public function __construct(
         public readonly int $projectCount,
-        public readonly int $libraryCount,
+        public readonly int $repositoryCount,
         public readonly int $tagCount,
         public readonly int $linesOfCode,
     ) {
@@ -19,9 +19,9 @@ final class Statistics
         return $this->projectCount;
     }
 
-    public function getLibraryCount(): int
+    public function getRepositoryCount(): int
     {
-        return $this->libraryCount;
+        return $this->repositoryCount;
     }
 
     public function getTagCount(): int

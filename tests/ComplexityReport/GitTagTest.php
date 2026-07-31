@@ -57,5 +57,13 @@ final class GitTagTest extends TestCase
         yield 'minor release' => ['v6.4.0', false];
         yield 'patch release' => ['v6.4.1', true];
         yield 'double digit patch' => ['v6.4.12', true];
+
+        // projects without a composer.json are not necessarily semver - WordPress writes its minors as "6.8"
+        yield 'two digit minor' => ['6.8', false];
+        yield 'two digit minor with prefix' => ['v7.0', false];
+        yield 'early version' => ['0.71', false];
+        yield 'two digit patch' => ['6.8.1', true];
+        yield 'named tag' => ['nightly', true];
+        yield 'four digits' => ['1.2.3.4', true];
     }
 }

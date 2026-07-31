@@ -4,54 +4,50 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\ComplexityReport\GitHub\OwnerData;
 use App\Repository\ProjectRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Collections\Criteria;
-use Doctrine\Common\Collections\Expr\Comparison;
-use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * A GitHub owner - projects are not curated anymore but derived from the repositories that were submitted.
+ */
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
 class Project
 {
-    private const array MAIN_LIBRARIES = [
-        'composer' => 'composer/composer',
-        'doctrine' => 'doctrine/orm',
-        'laminas' => 'laminas/laminas-mvc',
-        'laravel' => 'laravel/framework',
-        'league' => 'league/flysystem',
-        'phpunit' => 'phpunit/phpunit',
-        'symfony' => 'symfony/symfony',
-        'typo3' => 'typo3/cms-core',
-    ];
-
     #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
     private int $id;
 
     /**
-     * @var Selectable<int, Library>&Collection<int, Library>
+     * @var Collection<int, Repository>
      */
-    #[ORM\OneToMany(targetEntity: Library::class, mappedBy: 'project')]
-    private Collection $libraries;
-
-    /**
-     * @return list<string>
-     */
-    public static function getMainLibraries(): array
-    {
-        return array_values(self::MAIN_LIBRARIES);
-    }
+    #[ORM\OneToMany(targetEntity: Repository::class, mappedBy: 'project')]
+    private Collection $repositories;
 
     public function __construct(
         #[ORM\Column(unique: true)]
-        private readonly string $name,
-        #[ORM\Column]
-        private readonly string $url,
-        #[ORM\Column(unique: true)]
         private readonly string $vendor,
+        #[ORM\Column]
+        private string $name,
+        #[ORM\Column]
+        private string $url,
+        #[ORM\Column(nullable: true)]
+        private ?string $avatarUrl = null,
     ) {
-        $this->libraries = new ArrayCollection();
+        $this->repositories = new ArrayCollection();
+    }
+
+    public static function fromGitHub(OwnerData $owner): self
+    {
+        return new self($owner->login, $owner->name, $owner->url, $owner->avatarUrl);
+    }
+
+    public function update(OwnerData $owner): void
+    {
+        $this->name = $owner->name;
+        $this->url = $owner->url;
+        $this->avatarUrl = $owner->avatarUrl;
     }
 
     public function getName(): string
@@ -69,28 +65,60 @@ class Project
         return $this->vendor;
     }
 
-    /**
-     * @return Library[]
-     */
-    public function getLibraries(): array
+    public function getAvatarUrl(): ?string
     {
-        return $this->libraries->toArray();
+        return $this->avatarUrl;
     }
 
-    public function getMainLibrary(): Library
+    /**
+     * @return list<Repository>
+     */
+    public function getRepositories(): array
     {
-        if (!array_key_exists($this->getVendor(), self::MAIN_LIBRARIES)) {
-            throw new \DomainException(sprintf('Cannot determine main library of project "%s"', $this->getName()));
+        $repositories = $this->repositories->toArray();
+
+        // usort reindexes, so the result is a list
+        usort($repositories, static function (Repository $left, Repository $right) {
+            return $right->getStars() <=> $left->getStars();
+        });
+
+        return $repositories;
+    }
+
+    /**
+     * @return list<Repository>
+     */
+    public function getAnalysedRepositories(): array
+    {
+        $analysed = [];
+
+        foreach ($this->getRepositories() as $repository) {
+            if ($repository->hasData()) {
+                $analysed[] = $repository;
+            }
         }
 
-        $mainLibrary = $this->libraries->matching(
-            new Criteria(new Comparison('name', '=', self::MAIN_LIBRARIES[$this->getVendor()]))
-        )->first();
+        return $analysed;
+    }
 
-        if (false === $mainLibrary) {
-            throw new \DomainException(sprintf('Cannot load main library of project "%s"', $this->getName()));
+    public function getStars(): int
+    {
+        return array_sum(array_map(static function (Repository $repository) {
+            return $repository->getStars();
+        }, $this->repositories->toArray()));
+    }
+
+    /**
+     * The most popular repository of a vendor is the one preselected in its chart.
+     */
+    public function getMainRepository(): Repository
+    {
+        $repositories = $this->getAnalysedRepositories() ?: $this->getRepositories();
+
+        if ([] === $repositories) {
+            throw new \DomainException(sprintf('Project "%s" does not have any repository.', $this->name));
         }
 
-        return $mainLibrary;
+        return $repositories[0];
     }
 }

@@ -14,18 +14,21 @@
                     <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                         {{ project.name|default(headline) }}
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+                    <ul class="dropdown-menu dropdown-menu-right overflow-auto" style="max-height: 70vh" aria-labelledby="dropdownMenuButton">
                         <li>
-                            <a class="dropdown-item {{ headline == 'Overview' ? 'disabled' }}" href="{{ path('overview') }}">Overview</a>
+                            <a class="dropdown-item {{ project is not defined ? 'disabled' }}" href="{{ path('overview') }}">Most starred</a>
                         </li>
-                        {% for project in all_projects() %}
+                        <li><hr class="dropdown-divider"></li>
+                        {% for vendor in all_projects() %}
                             <li>
-                                <a class="dropdown-item {{ project.name == loop.parent.project.name|default() ? 'disabled' }}"
-                                   href="{{ path('project', {'vendor': project.vendor}) }}">
-                                    {{ project.name }}
+                                <a class="dropdown-item {{ vendor.vendor == project.vendor|default() ? 'disabled' }}"
+                                   href="{{ path('project', {'vendor': vendor.vendor}) }}">
+                                    {{ vendor.name }}
                                 </a>
                             </li>
                         {% endfor %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ path('start') }}">Add a repository</a></li>
                     </ul>
                 </div>
             </div>
@@ -40,13 +43,13 @@
                 {% endif %}
             </h2>
             <div data-controller="chart"
-                 data-libraries="{{ selectedLibraries|map(library => library.asGraph)|json_encode|e('html_attr') }}">
+                 data-repositories="{{ selectedRepositories|map(repository => repository.asGraph)|json_encode|e('html_attr') }}">
                 <canvas id="canvas" class="img-fluid"></canvas>
                 <div class="form-group mx-3 my-4">
-                    <h3>Libraries</h3>
-                    <select class="js-library-select form-control" name="libraries[]" multiple="multiple">
-                        {% for library in libraries %}
-                            <option value="{{ library.id }}" {{ library in selectedLibraries ? 'selected="selected"' }}>{{ library.name }}</option>
+                    <h3>Repositories</h3>
+                    <select class="js-repository-select form-control" name="repositories[]" multiple="multiple">
+                        {% for repository in repositories %}
+                            <option value="{{ repository.id }}" {{ repository in selectedRepositories ? 'selected="selected"' }}>{{ repository.name }}</option>
                         {% endfor %}
                     </select>
                 </div>

@@ -1,26 +1,48 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DataFixtures;
 
-use App\Entity\Project;
+use App\ComplexityReport\Exception\SubmissionFailed;
+use App\ComplexityReport\RepositorySubmitter;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
+use Psr\Log\LoggerInterface;
 
+/**
+ * Seeds a fresh installation with a couple of well known repositories - everything else is submitted by users.
+ */
 final class AppFixtures extends Fixture
 {
+    private const SEED_REPOSITORIES = [
+        'symfony/symfony',
+        'laravel/framework',
+        'WordPress/WordPress',
+        'composer/composer',
+        'doctrine/orm',
+        'sebastianbergmann/phpunit',
+        'laminas/laminas-mvc',
+        'thephpleague/flysystem',
+        'TYPO3/typo3',
+        'Seldaek/monolog',
+    ];
+
+    public function __construct(
+        private RepositorySubmitter $submitter,
+        private LoggerInterface $logger,
+    ) {
+    }
+
     public function load(ObjectManager $manager): void
     {
-        $projects = [
-            new Project('Composer', 'https://getcomposer.org/', 'composer'),
-            new Project('Doctrine', 'https://www.doctrine-project.org/', 'doctrine'),
-            new Project('Laminas', 'https://getlaminas.org/', 'laminas'),
-            new Project('Laravel', 'https://laravel.com/', 'laravel'),
-            new Project('PHPUnit', 'https://phpunit.de/', 'phpunit'),
-            new Project('Symfony', 'https://symfony.com/', 'symfony'),
-            new Project('The PHP League', 'https://thephpleague.com/', 'league'),
-            new Project('TYPO3', 'https://typo3.org/', 'typo3'),
-        ];
-        array_map([$manager, 'persist'], $projects);
+        foreach (self::SEED_REPOSITORIES as $repository) {
+            try {
+                $this->submitter->submit($repository);
+            } catch (SubmissionFailed $exception) {
+                $this->logger->warning(sprintf('Cannot seed %s: %s', $repository, $exception->getMessage()));
+            }
+        }
 
         $manager->flush();
     }

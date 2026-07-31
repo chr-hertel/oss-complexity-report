@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport;
 
-use App\Entity\Library;
+use App\Entity\Repository;
 
 final readonly class GitController
 {
@@ -17,32 +17,46 @@ final readonly class GitController
     /**
      * @return GitTag[]
      */
-    public function loadTags(Library $library): array
+    public function loadTags(Repository $repository): array
     {
-        $repository = $this->getRepository($library);
-        $this->git->run($repository, 'fetch', '--all', '--tags', '--force');
+        $localPath = $this->getLocalPath($repository);
+        $this->git->run($localPath, 'fetch', '--all', '--tags', '--force');
 
-        return GitTag::fromNames($this->git->listTags($repository));
+        return GitTag::fromNames($this->git->listTags($localPath));
     }
 
-    public function checkoutTag(Library $library, string $name): void
+    public function checkoutTag(Repository $repository, string $name): void
     {
-        $this->git->run($this->getRepository($library), 'checkout', '--force', $name);
+        $this->git->run($this->getLocalPath($repository), 'checkout', '--force', $name);
     }
 
-    public function getLastCommitDate(Library $library): \DateTimeImmutable
+    /**
+     * Date of the commit the repository currently points at - $skip walks further back in history.
+     */
+    public function getLastCommitDate(Repository $repository, int $skip = 0): \DateTimeImmutable
     {
-        $date = $this->git->run($this->getRepository($library), 'log', '-1', '--format=%aI');
+        $arguments = ['log', '-1', '--format=%aI'];
+
+        if ($skip > 0) {
+            $arguments[] = sprintf('--skip=%d', $skip);
+        }
+
+        $date = $this->git->run($this->getLocalPath($repository), ...$arguments);
 
         return new \DateTimeImmutable(trim($date));
     }
 
-    private function getRepository(Library $library): string
+    public function isCloned(Repository $repository): bool
     {
-        $localPath = $this->repositoryPath.'/'.$library->getRepositoryPath();
+        return is_dir($this->repositoryPath.'/'.$repository->getLocalPath());
+    }
+
+    private function getLocalPath(Repository $repository): string
+    {
+        $localPath = $this->repositoryPath.'/'.$repository->getLocalPath();
 
         if (!is_dir($localPath)) {
-            $this->git->cloneRepository($library->getRepositoryUrl(), $localPath);
+            $this->git->cloneRepository($repository->getCloneUrl(), $localPath);
         }
 
         return $localPath;

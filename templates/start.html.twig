@@ -5,15 +5,91 @@
         <h2>Open Source PHP Software</h2>
         <h1>Complexity Report</h1>
     </div>
-    <div class="bg-white text-center p-3 shadow-lg">
-        <div class="btn-group-lg">
-                <a href="{{ path('overview') }}" class="mx-2 my-2 btn btn-lg btn-dark">Overview</a>
-            {% for project in all_projects() %}
-                <a href="{{ path('project', {'vendor': project.vendor}) }}"
-                   class="mx-2 my-2 btn btn-lg btn-secondary">
-                    {{ project.name }}
-                </a>
+    <div class="bg-white p-4 shadow-lg">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-9">
+                    <form action="{{ path('submit') }}" method="post" class="d-flex flex-column flex-sm-row gap-2">
+                        <input type="text" name="repository" class="form-control form-control-lg"
+                               placeholder="vendor/repository or https://github.com/vendor/repository"
+                               aria-label="GitHub repository" required>
+                        <button type="submit" class="btn btn-lg btn-dark text-nowrap">Add Repository</button>
+                    </form>
+                    <p class="text-center text-muted mt-2 mb-0">
+                        Every public repository on GitHub that is mostly written in PHP - a composer.json is not needed.
+                    </p>
+                    {% for label, messages in app.flashes(['success', 'danger']) %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ label }} mt-3 mb-0">{{ message }}</div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container my-5">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <h2 class="mb-0">Most Starred Repositories</h2>
+            <a href="{{ path('overview') }}" class="btn btn-dark">Compare them in one chart</a>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for repository in featured %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body pb-2">
+                            <h5 class="card-title mb-2">
+                                <a class="text-reset text-decoration-none"
+                                   href="{{ path('project', {'vendor': repository.project.vendor, 'repository': repository.id}) }}">
+                                    {{ repository.name }}
+                                </a>
+                            </h5>
+                            <p class="card-text text-muted">{{ repository.description }}</p>
+                        </div>
+                        <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center">
+                            <span title="{{ repository.stars }} stars on GitHub">
+                                <i class="fas fa-star text-warning"></i> {{ repository.stars|stars }}
+                            </span>
+                            <a href="{{ repository.url }}" target="_blank" rel="noreferrer" class="text-muted"
+                               title="{{ repository.name }} on GitHub">
+                                <i class="fab fa-github"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-12">
+                    <p class="text-muted mb-0">Nothing analysed yet - submit the first repository above.</p>
+                </div>
             {% endfor %}
         </div>
+
+        {% if projects is not empty %}
+            <h2 class="mt-5 mb-3">Vendors</h2>
+            <div class="d-flex flex-wrap gap-2">
+                {% for project in projects %}
+                    <a href="{{ path('project', {'vendor': project.vendor}) }}" class="btn btn-secondary">
+                        {{ project.name }}
+                        <span class="badge bg-light text-dark ms-1">{{ project.analysedRepositories|length }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if pending is not empty %}
+            <h2 class="mt-5 mb-3">Queued for Analysis</h2>
+            <p class="text-muted">
+                {% for repository in pending %}
+                    <a href="{{ repository.url }}" target="_blank" rel="noreferrer" class="text-muted">{{ repository.name }}</a>{{ not loop.last ? ',' }}
+                {% endfor %}
+            </p>
+        {% endif %}
+
+        <p class="text-center text-muted mt-5 mb-0">
+            {{ statistics.repositoryCount }} repositories of {{ statistics.projectCount }} vendors,
+            {{ statistics.tagCount|number_format }} releases and
+            {{ statistics.linesOfCode|number_format }} lines of code analysed.
+        </p>
     </div>
 {% endblock %}
