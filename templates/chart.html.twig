@@ -42,18 +42,39 @@
                     </a>
                 {% endif %}
             </h2>
-            <div data-controller="chart"
-                 data-repositories="{{ selectedRepositories|map(repository => repository.asGraph)|json_encode|e('html_attr') }}">
-                <canvas id="canvas" class="img-fluid"></canvas>
-                <div class="form-group mx-3 my-4">
-                    <h3>Repositories</h3>
-                    <select class="js-repository-select form-control" name="repositories[]" multiple="multiple">
-                        {% for repository in repositories %}
-                            <option value="{{ repository.id }}" {{ repository in selectedRepositories ? 'selected="selected"' }}>{{ repository.name }}</option>
-                        {% endfor %}
-                    </select>
+            {% if pendingRepository|default(false) %}
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="fas fa-hourglass-half"></i>
+                    {% if pendingRepository.hasData %}
+                        <strong>{{ pendingRepository.name }} is being analysed right now.</strong>
+                        {{ pendingRepository.tags|length }} of its releases are measured so far - reload this page
+                        to see the ones that followed.
+                    {% else %}
+                        <strong>{{ pendingRepository.name }} is queued for analysis.</strong>
+                        Every release of it is checked out and measured one by one, which takes a while -
+                        reload this page in a few minutes to see the first numbers.
+                    {% endif %}
                 </div>
-            </div>
+            {% elseif project is defined and repositories is empty %}
+                <div class="alert alert-warning mt-3 mb-0">
+                    None of the repositories of {{ project.name }} carries a release that could be measured.
+                </div>
+            {% endif %}
+
+            {% if repositories is not empty %}
+                <div data-controller="chart"
+                     data-repositories="{{ selectedRepositories|map(repository => repository.asGraph)|json_encode|e('html_attr') }}">
+                    <canvas id="canvas" class="img-fluid"></canvas>
+                    <div class="form-group mx-3 my-4">
+                        <h3>Repositories</h3>
+                        <select class="js-repository-select form-control" name="repositories[]" multiple="multiple">
+                            {% for repository in repositories %}
+                                <option value="{{ repository.id }}" {{ repository in selectedRepositories ? 'selected="selected"' }}>{{ repository.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </main>
 {% endblock %}
