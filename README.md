@@ -59,8 +59,9 @@ symfony console messenger:consume async -vv
 symfony console messenger:consume scheduler_default -vv
 ```
 
-The `async` transport may be consumed by several workers. Checking out a tag rewrites a working copy, so
-an analysis holds a lock per repository and a second worker on the same one waits instead of measuring
+The `async` transport may be consumed by several workers, `scheduler_default` must stay at exactly one -
+otherwise the nightly run happens more than once. Checking out a tag rewrites a working copy, so an
+analysis holds a lock per repository and a second worker on the same one waits instead of measuring
 whatever the first one just checked out. The lock is a `flock` by default (see `LOCK_DSN`), which only
 works if all workers run on the same machine - switch it to `postgresql+advisory://` if they ever do not.
 
@@ -105,61 +106,12 @@ symfony console app:data:fix -vv
 
 `messenger:stats` shows what is left to do.
 
-Deploying schema changes
-------------------------
+Schema changes
+--------------
 
-The schema is managed by doctrine/migrations and `deploy.php` runs them right before the symlink switches.
-
-The production database predates the migration history, so its baseline would try to create tables that are
-already there. It recognizes them and records itself as executed instead - nothing to do by hand.
-
-After the deploy that turns libraries into repositories, run `app:repositories:refresh` once to fill in the
-stars and descriptions the migration leaves empty.
-
-Workers in production
----------------------
-
-The workers run under supervisor and are restarted onto the new release by `deploy.php`, which expects the
-programs to be named `oss_complexity_report_consumer` and `oss_complexity_report_scheduler`:
-
-```ini
-[program:oss_complexity_report_consumer]
-command=php /var/www/oss-complexity-report/current/bin/console messenger:consume async --time-limit=3600 --env=prod
-process_name=%(program_name)s_%(process_num)02d
-numprocs=2
-user=deployer
-autostart=true
-autorestart=true
-startsecs=0
-; analysing a big repository takes minutes - let it finish instead of killing it mid-checkout
-stopwaitsecs=900
-; the worker shells out to git, so signals have to reach the whole process group
-stopasgroup=true
-killasgroup=true
-
-[program:oss_complexity_report_scheduler]
-command=php /var/www/oss-complexity-report/current/bin/console messenger:consume scheduler_default --time-limit=3600 --env=prod
-process_name=%(program_name)s_%(process_num)02d
-numprocs=1
-user=deployer
-autostart=true
-autorestart=true
-startsecs=0
-stopwaitsecs=30
-stopasgroup=true
-killasgroup=true
-```
-
-The scheduler must stay at `numprocs=1`; the consumer may be scaled up. `deploy.php` restarts both with
-`sudo supervisorctl`, so the deploy user needs to be allowed to run it.
-
-The same goes for `sudo systemctl reload php8.4-fpm`: php-fpm reaches the application through the `current`
-symlink, so opcache serves the release that was compiled under that path until the pool is reloaded - a
-deploy without it moves the symlink and changes nothing about what visitors get. Both grants together:
-
-```
-deployer ALL=(root) NOPASSWD: /usr/bin/supervisorctl, /usr/bin/systemctl reload php8.4-fpm
-```
+The schema is managed by doctrine/migrations, never by `doctrine:schema:update` - run
+`doctrine:migrations:diff` after changing an entity and `doctrine:migrations:migrate` to apply what came
+out of it. A deploy runs the pending migrations before it switches to the new release.
 
 Error Reporting
 ---------------
@@ -167,8 +119,8 @@ Error Reporting
 Errors are reported to [Sentry][sentry] - uncaught exceptions of the web app, of the console commands and
 of everything the workers run. It is configured by `SENTRY_DSN`, which is empty everywhere but production:
 without a DSN the SDK collects nothing and sends nothing, so nothing has to be switched off for local
-development. Set it in `.env.local` to try it out, and in the `.env.local` on the server - deployer shares
-that file between releases - to turn it on in production.
+development. Set it in `.env.local` to try it out, and in the environment of the deployment to turn it on
+in production.
 
 Two things are deliberately not reported: 404 and 405, which on a public site are what bots produce rather
 than what is broken, and messages that are going to be retried. A repository another worker is holding
