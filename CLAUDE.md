@@ -186,6 +186,16 @@ back button is the page as it looks when it is left, so `chart_controller.js` te
 `turbo:before-cache` as well as on disconnect. `vite.config.js` takes the public path from `ASSET_BASE`
 (set by the build task in `deploy.php`) rather than the build mode, so local production builds keep working.
 
+**Error reporting** (`config/packages/sentry.yaml`) — sentry/sentry-symfony, registered by hand since
+`allow-contrib` is false and its recipe therefore never ran. `SENTRY_DSN` is empty in the committed `.env`
+and an empty DSN makes the SDK collect and send nothing, so the bundle is a no-op outside production, where
+the DSN lives in the shared `.env.local`. Two exclusions are deliberate: 404/405 are `ignore_exceptions`
+(what bots produce, and monolog excludes the same codes), and `messenger.capture_soft_fails: false` keeps
+retried messages out - `AnalyseRepositoryHandler` throws `RecoverableMessageHandlingException` for a busy
+repository by design, so only what reaches the `failed` transport is reported. Tracing is disabled: this is
+error reporting, not performance monitoring. The `build` task in `deploy.php` writes the deployed revision
+to `SENTRY_RELEASE` in a per release `.env.prod.local` before `dotenv:dump` picks it up.
+
 ## Conventions
 
 - `declare(strict_types=1)` and `final` on every class in `src/` (the Doctrine entities are the exception

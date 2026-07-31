@@ -151,6 +151,9 @@
     "sebastian/version": {
         "version": "3.0.2"
     },
+    "sentry/sentry-symfony": {
+        "version": "5.11.0"
+    },
     "symfony/browser-kit": {
         "version": "v6.0.0-RC1"
     },

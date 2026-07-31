@@ -161,6 +161,25 @@ deploy without it moves the symlink and changes nothing about what visitors get.
 deployer ALL=(root) NOPASSWD: /usr/bin/supervisorctl, /usr/bin/systemctl reload php8.4-fpm
 ```
 
+Error Reporting
+---------------
+
+Errors are reported to [Sentry][sentry] - uncaught exceptions of the web app, of the console commands and
+of everything the workers run. It is configured by `SENTRY_DSN`, which is empty everywhere but production:
+without a DSN the SDK collects nothing and sends nothing, so nothing has to be switched off for local
+development. Set it in `.env.local` to try it out, and in the `.env.local` on the server - deployer shares
+that file between releases - to turn it on in production.
+
+Two things are deliberately not reported: 404 and 405, which on a public site are what bots produce rather
+than what is broken, and messages that are going to be retried. A repository another worker is holding
+throws by design, and github.com failing once is what the retry strategy is for - only what runs out of
+retries and lands in the failure transport is an incident.
+
+Every deploy writes the revision it puts live into `SENTRY_RELEASE`, so an error says which release it
+happened on. Tracing is off: this is error reporting, not performance monitoring.
+
+[sentry]: https://docs.sentry.io/platforms/php/guides/symfony/
+
 Submitting Repositories
 -----------------------
 
