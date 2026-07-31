@@ -55,7 +55,7 @@
                 {% endif %}
             </div>
             <h3 class="repo-card__title">
-                <a href="{{ path('organization', {'organization': repository.organization.login, 'repository': repository.id}) }}">
+                <a href="{{ path('chart', {'repositories': repository.id}) }}">
                     {{ showVendor ? repository.shortName : repository.name }}
                 </a>
             </h3>
@@ -207,7 +207,7 @@
                         <h2 data-rankings-target="title">{{ rankings|first.ranking.title }}</h2>
                     </div>
                     {% if hasData %}
-                        <a href="{{ path('overview') }}" class="btn btn--secondary">Compare in one chart</a>
+                        <a href="{{ path('chart') }}" class="btn btn--secondary">Open the chart</a>
                     {% endif %}
                 </div>
 
@@ -242,26 +242,20 @@
                 {% else %}
                     <p class="empty-state">Nothing analysed yet - submit the first repository above.</p>
                 {% endif %}
-            </section>
 
-            {% if organizations is not empty %}
-                <section class="section">
-                    <div class="section-header">
-                        <div>
-                            <div class="eyebrow">By GitHub owner</div>
-                            <h2>Organizations</h2>
-                        </div>
-                    </div>
-                    <div class="chip-row">
+                {#
+                 # The GitHub accounts behind the repositories are a lens on the same list, not a place of
+                 # their own: every one of them opens the chart with what was submitted for it.
+                 #}
+                {% if organizations is not empty %}
+                    <p class="owner-line">
+                        <span class="owner-line__label">By owner</span>
                         {% for organization in organizations %}
-                            <a href="{{ path('organization', {'organization': organization.login}) }}" class="btn btn--secondary">
-                                {{ organization.login }}
-                                <span class="badge">{{ organization.analysedRepositories|length }}</span>
-                            </a>
+                            <a href="{{ path('chart', {'repositories': organization.analysedRepositories|slice(0, chartLimit)|map(repository => repository.id)|join(',')}) }}">{{ organization.login }}</a>
                         {% endfor %}
-                    </div>
-                </section>
-            {% endif %}
+                    </p>
+                {% endif %}
+            </section>
 
             {% if pending is not empty %}
                 <section class="section">
@@ -273,8 +267,7 @@
                     </div>
                     <div class="chip-row">
                         {% for repository in pending %}
-                            <a class="chip"
-                               href="{{ path('organization', {'organization': repository.organization.login, 'repository': repository.id}) }}">
+                            <a class="chip" href="{{ path('chart', {'repositories': repository.id}) }}">
                                 {{ repository.name }}
                             </a>
                         {% endfor %}

@@ -1,44 +1,25 @@
 {% extends 'base.html.twig' %}
 
-{% block title parent() ~ ' - ' ~ headline %}
-
-{# The one control the site header carries here: which organization the chart is drawn for. #}
-{% block header_action %}
-    <div class="dropdown" {{ stimulus_controller('dropdown') }}>
-        <button type="button" class="btn btn--secondary" aria-expanded="false" aria-haspopup="true"
-                data-dropdown-target="toggle" data-action="dropdown#toggle">
-            {{ organization.login|default(headline) }}
-            <span class="btn__caret" aria-hidden="true">▾</span>
-        </button>
-        <ul class="dropdown__menu" data-dropdown-target="menu" hidden>
-            <li>
-                <a class="dropdown__item {{ organization is not defined ? 'is-disabled' }}"
-                   href="{{ path('overview') }}">Most starred</a>
-            </li>
-            <li><hr class="dropdown__divider"></li>
-            {% for owner in all_organizations() %}
-                <li>
-                    <a class="dropdown__item {{ owner.login == organization.login|default() ? 'is-disabled' }}"
-                       href="{{ path('organization', {'organization': owner.login}) }}">
-                        {{ owner.login }}
-                    </a>
-                </li>
-            {% endfor %}
-            <li><hr class="dropdown__divider"></li>
-            <li><a class="dropdown__item" href="{{ path('start') }}">Add a repository</a></li>
-        </ul>
-    </div>
-{% endblock %}
+{% block title parent() ~ ' - ' ~ selection.headline %}
 
 {% block content %}
+    {#
+     # The one chart of the report. What it is called follows from what is in it: a single repository, the
+     # account everything in it belongs to, or a comparison someone put together.
+     #}
     <main class="page">
         <div class="wrap page__body">
-            <div class="eyebrow">{{ organization is defined ? 'Organization' : 'Overview' }}</div>
+            {% set series = selection.series %}
+            {% set waiting = selection.waiting %}
+            {# nothing to draw and something on its way: the shape of the report stands in for it #}
+            {% set showSkeleton = series is empty and waiting is not empty %}
+
+            <div class="eyebrow">{{ selection.eyebrow }}</div>
             <h1 class="chart-title">
-                {{ headline }}
-                {% if organization is defined %}
-                    <a href="{{ organization.url }}" target="_blank" rel="noreferrer" class="chart-title__link"
-                       title="{{ organization.url|replace({'https://':'', '/':''}) }}">
+                {{ selection.headline }}
+                {% if selection.url %}
+                    <a href="{{ selection.url }}" target="_blank" rel="noreferrer" class="chart-title__link"
+                       title="{{ selection.url|replace({'https://':''}) }}">
                         <i class="fas fa-arrow-up-right-from-square"></i>
                     </a>
                 {% endif %}
@@ -48,38 +29,33 @@
              # A page waiting for a worker has to move on its own. Where the placeholder below is drawn it
              # polls the repository itself; everywhere else the status reloads the page now and then.
              #}
-            {% set showSkeleton = pendingRepository|default(false) and not pendingRepository.hasData and repositories is empty %}
-
-            {% if pendingRepository|default(false) %}
-                <div class="alert alert--info section"
+            {% if waiting is not empty %}
+                <div class="chart-status"
                      {% if not showSkeleton %}{{ stimulus_controller('refresh', {interval: 30000}) }}{% endif %}>
-                    {% if pendingRepository.hasData %}
-                        <strong>{{ pendingRepository.name }} is being analysed right now.</strong>
-                        {{ pendingRepository.tags|length }} of its releases are measured so far - this page
-                        updates itself as more of them come in.
-                    {% else %}
-                        <strong>{{ pendingRepository.name }} is queued for analysis.</strong>
-                        Every release of it is checked out and measured one by one, which takes a while -
-                        this page updates itself as soon as the first numbers are in.
-                    {% endif %}
-                </div>
-            {% elseif organization is defined and repositories is empty %}
-                <div class="alert alert--warning section">
-                    None of the repositories of {{ organization.login }} carries a release that could be measured.
+                    {% for repository in waiting %}
+                        <div class="alert alert--info">
+                            {% if repository.hasData %}
+                                <strong>{{ repository.name }} is being analysed right now.</strong>
+                                {{ repository.releaseCount }} of its releases are measured so far - this page
+                                updates itself as more of them come in.
+                            {% else %}
+                                <strong>{{ repository.name }} is queued for analysis.</strong>
+                                Every release of it is checked out and measured one by one, which takes a while -
+                                this page updates itself as soon as the first numbers are in.
+                            {% endif %}
+                        </div>
+                    {% endfor %}
                 </div>
             {% endif %}
 
             {#
-             # A repository that was just submitted has a page before it has numbers: the shape of the
+             # A repository that was just submitted has a chart before it has numbers: the shape of the
              # report is drawn as a placeholder, and the page swaps itself for the real thing as soon as
              # the worker measured the first release.
-             #
-             # Only when there is nothing else to draw, though - an organization that already carries
-             # analysed repositories keeps its chart, and the alert above says what happens to the new one.
              #}
             {% if showSkeleton %}
                 <div class="section skeleton"
-                     {{ stimulus_controller('skeleton', { url: path('repository', {'id': pendingRepository.id}) }) }}>
+                     {{ stimulus_controller('skeleton', { url: path('repository', {'id': waiting|first.id}) }) }}>
                     <p class="chart-lead">
                         Waiting for the first measured release - this page updates itself as soon as there
                         is one.
@@ -118,10 +94,10 @@
                         </div>
                     </section>
                 </div>
-            {% elseif repositories is not empty %}
+            {% elseif series is not empty %}
                 <div data-controller="chart"
-                     data-chart-limit-value="8"
-                     data-repositories="{{ selectedRepositories|map(repository => repository.asGraph)|json_encode|e('html_attr') }}">
+                     data-chart-limit-value="{{ chartLimit }}"
+                     data-repositories="{{ series|map(repository => repository.asGraph)|json_encode|e('html_attr') }}">
                     <p class="chart-lead">
                         Average cyclomatic complexity per analysed release.
                         <span data-chart-target="seriesCount"></span>
@@ -132,6 +108,30 @@
                             <canvas data-chart-target="canvas"></canvas>
                         </div>
                     </div>
+
+                    {#
+                     # Everything the report carries can be added here, whoever owns it - the box is the
+                     # whole navigation of this screen, and what is picked ends up in the query string.
+                     #}
+                    <section class="section repository-picker">
+                        <div class="section-header">
+                            <div>
+                                <div class="eyebrow">Chart</div>
+                                <h2>Repositories</h2>
+                            </div>
+                        </div>
+                        <select class="js-repository-select" name="repositories[]" multiple="multiple"
+                                data-chart-target="select">
+                            {# no whitespace around the name: select2 renders the raw text into its chips #}
+                            {% for repository in selection.options %}
+                                <option value="{{ repository.id }}" {{ repository in series ? 'selected="selected"' }}>{{ repository.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <p class="repository-picker__hint">
+                            Up to {{ chartLimit }} at a time, one colour each.
+                            <a href="{{ path('start') }}">Add a repository</a> the report does not carry yet.
+                        </p>
+                    </section>
 
                     <section class="section" data-chart-target="release" hidden>
                         <div class="release-head">
@@ -150,18 +150,11 @@
                             <div class="analysis" data-chart-target="analysis"></div>
                         </div>
                     </section>
-
-                    <div class="section repository-picker">
-                        <div class="eyebrow">Repositories</div>
-                        <select class="js-repository-select" name="repositories[]" multiple="multiple"
-                                data-chart-target="select">
-                            {# no whitespace around the name: select2 renders the raw text into its chips #}
-                            {% for repository in repositories %}
-                                <option value="{{ repository.id }}" {{ repository in selectedRepositories ? 'selected="selected"' }}>{{ repository.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
                 </div>
+            {% else %}
+                <p class="chart-lead empty-state">
+                    Nothing measured yet - <a href="{{ path('start') }}">add the first repository</a>.
+                </p>
             {% endif %}
         </div>
     </main>

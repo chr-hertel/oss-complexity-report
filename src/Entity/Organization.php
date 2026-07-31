@@ -101,18 +101,4 @@ class Organization
             return $repository->getStars();
         }, $this->repositories->toArray()));
     }
-
-    /**
-     * The most popular repository of an organization is the one preselected in its chart.
-     */
-    public function getMainRepository(): Repository
-    {
-        $repositories = $this->getAnalysedRepositories() ?: $this->getRepositories();
-
-        if ([] === $repositories) {
-            throw new \DomainException(sprintf('Organization "%s" does not have any repository.', $this->login));
-        }
-
-        return $repositories[0];
-    }
 }

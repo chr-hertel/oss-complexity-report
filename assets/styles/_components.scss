@@ -377,62 +377,8 @@ a.chip:hover {
     gap: var(--space-2);
 }
 
-// --- Dropdown ---------------------------------------------------------------------------------
-// Secondary toggle over a scrollable menu - the product's only navigation.
-.dropdown {
-    position: relative;
-    display: inline-block;
-
-    &__menu {
-        position: absolute;
-        top: calc(100% + 6px);
-        right: 0;
-        z-index: 20;
-        min-width: 220px;
-        max-height: 60vh;
-        overflow: auto;
-        margin: 0;
-        padding: var(--space-1) 0;
-        list-style: none;
-        font-size: var(--text-sm);
-        background: var(--surface-card);
-        border: var(--border-width) solid var(--line);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow-overlay);
-
-        &[hidden] {
-            display: none;
-        }
-    }
-
-    &__item {
-        display: block;
-        padding: var(--space-2) var(--space-4);
-        color: var(--text-body);
-        white-space: nowrap;
-        transition: background-color var(--transition);
-
-        &:hover {
-            color: var(--text-body);
-            background: var(--sunken);
-        }
-
-        &.is-disabled {
-            color: var(--text-faint);
-            pointer-events: none;
-        }
-    }
-
-    &__divider {
-        margin: var(--space-1) 0;
-        border: 0;
-        border-top: var(--border-width) solid var(--line);
-    }
-}
-
 // --- Combobox ---------------------------------------------------------------------------------
-// The search box on the start page: the design system's field over a menu of suggestions, built the
-// same way the header Dropdown is.
+// The search box on the start page: the design system's field over a menu of suggestions.
 .combobox {
     position: relative;
     flex: 1 1 auto;
@@ -873,8 +819,11 @@ a.chip:hover {
         color: var(--text-body);
     }
 
-    .select2-results__option--selected {
-        background-color: var(--surface-muted);
+    // the menu is the list of what can be added, so what is in the chart already is not on it - the
+    // chips above it are where a repository is removed again
+    .select2-results__option--selected,
+    .select2-results__option[aria-selected='true'] {
+        display: none;
     }
 
     .select2-results__option--highlighted,

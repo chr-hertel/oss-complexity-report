@@ -22,22 +22,8 @@ final class RepositoryRepository extends ServiceEntityRepository
     }
 
     /**
-     * The most popular repositories that actually have data to show.
+     * Everything that has data to show, most starred first - what the chart can be built from.
      *
-     * @return list<Repository>
-     */
-    public function findMostStarred(int $limit): array
-    {
-        /** @var list<Repository> $repositories */
-        $repositories = $this->withData()
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
-
-        return $repositories;
-    }
-
-    /**
      * @return list<Repository>
      */
     public function findAnalysed(): array
@@ -71,6 +57,39 @@ final class RepositoryRepository extends ServiceEntityRepository
             ->getResult();
 
         return $repositories;
+    }
+
+    /**
+     * The repositories behind the given ids, in the order they were asked for - unknown ids are dropped,
+     * so a link to a repository that is gone still opens a chart.
+     *
+     * @param list<int> $ids
+     *
+     * @return list<Repository>
+     */
+    public function findByIds(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        /** @var list<Repository> $repositories */
+        $repositories = $this->createQueryBuilder('r')
+            ->where('r.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->getQuery()
+            ->getResult();
+
+        $found = [];
+
+        foreach ($repositories as $repository) {
+            $found[$repository->getId()] = $repository;
+        }
+
+        return array_values(array_filter(array_map(
+            static fn (int $id) => $found[$id] ?? null,
+            $ids,
+        )));
     }
 
     /**

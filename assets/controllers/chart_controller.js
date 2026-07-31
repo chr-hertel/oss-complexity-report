@@ -202,7 +202,7 @@ export default class extends Controller {
 
         $select.select2({ width: '100%', placeholder: 'Search analysed repositories' });
         $select.on('select2:select', this.moveToEnd);
-        $select.on('select2:select select2:unselect', () => this.render());
+        $select.on('select2:select select2:unselect', () => this.render(true));
     }
 
     /**
@@ -217,9 +217,14 @@ export default class extends Controller {
         $(this).trigger('change.select2');
     }
 
-    async render() {
+    async render(picked = false) {
         const run = ++this.renders;
         const ids = $(this.selectTarget).val() || [];
+
+        if (picked) {
+            this.syncUrl(ids);
+        }
+
         const graphs = await Promise.all(ids.map((id) => this.load(id)));
 
         // a slower request must not overwrite what a later pick already drew
@@ -245,6 +250,25 @@ export default class extends Controller {
         }
 
         this.renderRelease(graphs[0]);
+    }
+
+    /**
+     * A chart is worth sharing, so what is in it belongs in the address bar - the same query string the
+     * page reads on load. Only after a pick: opening the default chart leaves its url alone.
+     */
+    syncUrl(ids) {
+        const params = new URLSearchParams(window.location.search);
+
+        if (ids.length > 0) {
+            params.set('repositories', ids.join(','));
+        } else {
+            params.delete('repositories');
+        }
+
+        // a list of ids reads better with the commas it was written with than with %2C
+        const query = params.toString().replace(/%2C/g, ',');
+
+        window.history.replaceState({}, '', query ? `?${query}` : window.location.pathname);
     }
 
     async load(id) {
