@@ -40,7 +40,7 @@ bin/console doctrine:migrations:diff              # after changing an entity
 
 # async
 bin/console messenger:consume async -vv           # the analysis queue
-bin/console messenger:consume scheduler_nightly   # the nightly release scan and star refresh
+bin/console messenger:consume scheduler_default   # the nightly release scan and star refresh
 bin/console messenger:stats                       # what is still queued
 bin/console debug:scheduler                       # next run of the recurring messages
 

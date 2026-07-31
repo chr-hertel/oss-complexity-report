@@ -19,8 +19,11 @@ use Symfony\Contracts\Cache\CacheInterface;
  *
  * Both tasks are handed over to the `async` transport instead of being handled by the worker that
  * consumes the schedule - they walk every submitted repository and would block the next trigger.
+ *
+ * It is the only schedule of the application, so it stays the unnamed default one and the worker that
+ * triggers it consumes `scheduler_default`.
  */
-#[AsSchedule('nightly')]
+#[AsSchedule]
 final readonly class Schedule implements ScheduleProviderInterface
 {
     public function __construct(
