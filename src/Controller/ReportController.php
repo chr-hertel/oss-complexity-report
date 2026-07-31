@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\ComplexityReport\ChartSelection;
 use App\ComplexityReport\Exception\SubmissionFailed;
 use App\ComplexityReport\Ranking;
 use App\ComplexityReport\RepositorySearch;
@@ -60,6 +61,7 @@ final class ReportController extends AbstractController
             'pending' => $repositoryRepository->findPending(),
             'statistics' => $statisticsLoader->load(),
             'trends' => $trendLoader->load(),
+            'chartLimit' => self::CHART_LIMIT,
         ]);
     }
 
@@ -77,10 +79,7 @@ final class ReportController extends AbstractController
                 'description' => $repository->getDescription(),
                 'stars' => $repository->getStars(),
                 'analysed' => $repository->isAnalysed(),
-                'url' => $this->generateUrl('organization', [
-                    'organization' => $repository->getOrganization()->getLogin(),
-                    'repository' => $repository->getId(),
-                ]),
+                'url' => $this->generateUrl('chart', ['repositories' => $repository->getName()]),
             ], $result->matches),
             'submittable' => null === $result->submittable ? null : ['name' => (string) $result->submittable],
         ]);
@@ -126,36 +125,65 @@ final class ReportController extends AbstractController
         return $this->toRepository($submission->repository);
     }
 
-    #[Route('overview', name: 'overview', methods: 'GET', priority: 3)]
-    public function overview(RepositoryRepository $repository): Response
+    /**
+     * The one chart of the report: `?repositories=symfony/console,laravel/framework` says which lines it
+     * draws, and anything the report carries can be added to them. Without a selection it opens on the
+     * most starred repositories.
+     */
+    #[Route('chart', name: 'chart', methods: 'GET', priority: 3)]
+    public function chart(Request $request, RepositoryRepository $repositories): Response
     {
+        $analysed = $repositories->findAnalysed();
+        $selected = $repositories->findBySlugs($this->selectedSlugs($request));
+
         return $this->render('chart.html.twig', [
-            'headline' => 'Most starred repositories',
-            'selectedRepositories' => $repository->findMostStarred(self::CHART_LIMIT),
-            'repositories' => $repository->findAnalysed(),
+            'selection' => [] === $selected
+                ? ChartSelection::mostStarred($analysed, self::CHART_LIMIT)
+                : ChartSelection::of($selected, $analysed),
+            'chartLimit' => self::CHART_LIMIT,
         ]);
     }
 
+    /**
+     * A GitHub account used to have a page of its own; it is the chart above, opened with what was
+     * submitted for that account - the links that were handed out keep working.
+     */
     #[Route('{organization}', name: 'organization', methods: 'GET', priority: 1)]
     public function organization(
         #[MapEntity(mapping: ['organization' => 'login'])] Organization $organization,
         Request $request,
     ): Response {
-        $selected = $this->selectRepository($organization, $request->query->getInt('repository'));
+        $repositories = $organization->getAnalysedRepositories() ?: $organization->getRepositories();
 
-        return $this->render('chart.html.twig', [
-            'headline' => sprintf('Organization: %s', $organization->getLogin()),
-            'organization' => $organization,
-            // a repository without releases has nothing to draw yet, the status below the headline says so
-            'selectedRepositories' => $selected->hasData() ? [$selected] : [],
-            'repositories' => $organization->getAnalysedRepositories(),
-            'pendingRepository' => $selected->isAnalysed() ? null : $selected,
-        ]);
+        // those links address a repository by the id it had when they were written
+        $preselected = $request->query->getInt('repository');
+
+        if (0 !== $preselected) {
+            $repositories = array_filter(
+                $repositories,
+                static fn (Repository $repository) => $repository->getId() === $preselected,
+            ) ?: $repositories;
+        }
+
+        $slugs = array_map(static fn (Repository $repository) => $repository->getName(), $repositories);
+
+        return $this->redirectToRoute(
+            'chart',
+            ['repositories' => implode(',', \array_slice($slugs, 0, self::CHART_LIMIT))],
+            Response::HTTP_MOVED_PERMANENTLY,
+        );
     }
 
-    #[Route('{id}', name: 'repository', requirements: ['id' => '\d+'], methods: 'GET', priority: 2)]
-    public function repository(#[MapEntity(mapping: ['id' => 'id'])] Repository $repository): JsonResponse
+    /**
+     * The releases behind one line of the chart. A repository is addressed the way github.com addresses
+     * it, and that slug is the whole route - so the select box can request it relative to the page it is
+     * on, which keeps working under a deployed sub path.
+     */
+    #[Route('{name}', name: 'repository', requirements: ['name' => '[^/]+/[^/]+'], methods: 'GET', priority: 2)]
+    public function repository(string $name, RepositoryRepository $repositories): JsonResponse
     {
+        $repository = $repositories->findBySlug($name) ?? throw $this->createNotFoundException();
+
         return new JsonResponse($repository->asGraph()->getTagData());
     }
 
@@ -175,27 +203,31 @@ final class ReportController extends AbstractController
     }
 
     /**
-     * The page of a repository is the one of its organization, with the repository preselected.
+     * The page of a repository is the chart, drawn for that one repository.
      */
     private function toRepository(Repository $repository): Response
     {
-        return $this->redirectToRoute('organization', [
-            'organization' => $repository->getOrganization()->getLogin(),
-            'repository' => $repository->getId(),
-        ], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute(
+            'chart',
+            ['repositories' => $repository->getName()],
+            Response::HTTP_SEE_OTHER,
+        );
     }
 
     /**
-     * Every repository can be picked, analysed or not - one that was just submitted has a page, too.
+     * What `?repositories=symfony/console,laravel/framework` asks for: slugs, in the order they were
+     * given, as many as the chart has colours for. Anything that is not a repository is dropped rather
+     * than answered with an error - the query string is a link people edit and share.
+     *
+     * @return list<string>
      */
-    private function selectRepository(Organization $organization, int $id): Repository
+    private function selectedSlugs(Request $request): array
     {
-        foreach ($organization->getRepositories() as $repository) {
-            if ($repository->getId() === $id) {
-                return $repository;
-            }
-        }
+        $slugs = array_filter(array_map(trim(...), explode(',', $request->query->getString('repositories'))));
 
-        return $organization->getMainRepository();
+        // `symfony/console` and `Symfony/Console` are the same repository, and one line of it is enough
+        $unique = array_unique(array_map(mb_strtolower(...), $slugs));
+
+        return \array_slice(array_values(array_intersect_key($slugs, $unique)), 0, self::CHART_LIMIT);
     }
 }

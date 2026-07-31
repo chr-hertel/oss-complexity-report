@@ -86,26 +86,39 @@ function group(title, rows) {
 
 export default class extends Controller {
     static targets = [
+        'headline',
+        'headlineLink',
         'canvas',
         'select',
-        'seriesCount',
         'release',
+        'releaseTabs',
+        'releasePanel',
         'releaseRepository',
         'releaseName',
         'releaseMeta',
         'releaseSelect',
         'analysis',
     ];
-    static values = { limit: { type: Number, default: 8 } };
 
     connect() {
+        // a chart that is still being measured has no canvas and nothing to pick from - the page says so
+        // on its own, and there is nothing here to keep up to date
+        if (!this.hasCanvasTarget) {
+            return;
+        }
+
         // what the page was rendered with; everything picked later is fetched from the JSON route once
         this.graphs = new Map();
         JSON.parse(this.element.dataset.repositories).forEach((graph) => {
-            this.graphs.set(String(graph.id), graph);
+            this.graphs.set(graph.name, graph);
         });
 
+        // `<site> - <headline>`, so what is in front of the last dash is the part that stays
+        this.site = document.title.split(' - ').slice(0, -1).join(' - ');
         this.renders = 0;
+        // the lines that can be read release by release, and which one of them is being read
+        this.series = [];
+        this.repository = null;
         this.initChart();
         this.initSelectBox();
         this.render();
@@ -126,6 +139,10 @@ export default class extends Controller {
     }
 
     teardown() {
+        if (!this.hasSelectTarget) {
+            return;
+        }
+
         this.chart?.destroy();
         this.chart = null;
 
@@ -202,7 +219,7 @@ export default class extends Controller {
 
         $select.select2({ width: '100%', placeholder: 'Search analysed repositories' });
         $select.on('select2:select', this.moveToEnd);
-        $select.on('select2:select select2:unselect', () => this.render());
+        $select.on('select2:select select2:unselect', () => this.render(true));
     }
 
     /**
@@ -217,10 +234,15 @@ export default class extends Controller {
         $(this).trigger('change.select2');
     }
 
-    async render() {
+    async render(picked = false) {
         const run = ++this.renders;
-        const ids = $(this.selectTarget).val() || [];
-        const graphs = await Promise.all(ids.map((id) => this.load(id)));
+        const slugs = $(this.selectTarget).val() || [];
+
+        if (picked) {
+            this.syncUrl(slugs);
+        }
+
+        const graphs = await Promise.all(slugs.map((slug) => this.load(slug)));
 
         // a slower request must not overwrite what a later pick already drew
         if (run !== this.renders || !this.chart) {
@@ -240,43 +262,128 @@ export default class extends Controller {
         }));
         this.chart.update();
 
-        if (this.hasSeriesCountTarget) {
-            this.seriesCountTarget.textContent = `${graphs.length} of ${this.limitValue} series shown.`;
-        }
-
-        this.renderRelease(graphs[0]);
-    }
-
-    async load(id) {
-        const key = String(id);
-
-        if (!this.graphs.has(key)) {
-            // the id is the whole route, so a relative request keeps working under a deployed sub path
-            const response = await fetch(key, { headers: { Accept: 'application/json' } });
-            const option = this.selectTarget.querySelector(`option[value="${key}"]`);
-
-            this.graphs.set(key, { id: Number(key), name: option.textContent.trim(), tags: await response.json() });
-        }
-
-        return this.graphs.get(key);
+        this.renderHeadline(slugs);
+        this.renderTabs(graphs);
     }
 
     /**
-     * The measurement below the chart follows the first series - that is the repository the page was
-     * opened for, and the one whose line is drawn in the first colour.
+     * What the page is called follows what is in the chart, by the same rule the server rendered it with
+     * - the repository itself while it is the only one, a count as soon as there are more. A single
+     * repository is a slug, and a slug is all a github.com address is, so the link follows too.
      */
-    renderRelease(graph) {
+    renderHeadline(slugs) {
+        const single = 1 === slugs.length;
+
+        this.headlineTarget.textContent = single
+            ? slugs[0]
+            : `${0 === slugs.length ? 'No' : slugs.length} repositories`;
+        document.title = `${this.site} - ${this.headlineTarget.textContent}`;
+
+        this.headlineLinkTarget.hidden = !single;
+
+        if (single) {
+            this.headlineLinkTarget.href = `https://github.com/${slugs[0]}`;
+            this.headlineLinkTarget.title = `github.com/${slugs[0]}`;
+        }
+    }
+
+    /**
+     * A chart is worth sharing, so what is in it belongs in the address bar - the same query string the
+     * page reads on load. Only after a pick: opening the default chart leaves its url alone.
+     */
+    syncUrl(slugs) {
+        const params = new URLSearchParams(window.location.search);
+
+        if (slugs.length > 0) {
+            params.set('repositories', slugs.join(','));
+        } else {
+            params.delete('repositories');
+        }
+
+        // `symfony/console,laravel/framework` is what this was typed as, and what it should stay
+        const query = params.toString().replace(/%2C/g, ',').replace(/%2F/g, '/');
+
+        window.history.replaceState({}, '', query ? `?${query}` : window.location.pathname);
+    }
+
+    async load(slug) {
+        if (!this.graphs.has(slug)) {
+            // the slug is the whole route, so a relative request keeps working under a deployed sub path
+            const response = await fetch(slug, { headers: { Accept: 'application/json' } });
+
+            this.graphs.set(slug, { name: slug, tags: await response.json() });
+        }
+
+        return this.graphs.get(slug);
+    }
+
+    /**
+     * The measurement below the chart is one tab per line: every repository in the chart can be read
+     * release by release, not only the one the page was opened with. The tab carries the colour its
+     * series is drawn in, so a line and its numbers are found by the same swatch.
+     */
+    renderTabs(graphs) {
         if (!this.hasReleaseTarget) {
             return;
         }
 
-        if (!graph || 0 === graph.tags.length) {
-            this.releaseTarget.hidden = true;
+        this.series = graphs.filter((graph) => graph.tags.length > 0);
+        this.releaseTarget.hidden = 0 === this.series.length;
 
+        if (0 === this.series.length) {
             return;
         }
 
-        this.releaseTarget.hidden = false;
+        this.releaseTabsTarget.replaceChildren(
+            ...this.series.map((graph, index) => {
+                const tab = element('button', 'tab');
+
+                tab.type = 'button';
+                tab.id = `release-tab-${index}`;
+                tab.dataset.name = graph.name;
+                tab.dataset.action = 'chart#selectRepository';
+                tab.setAttribute('role', 'tab');
+                tab.setAttribute('aria-selected', 'false');
+                tab.append(element('span', 'tab__swatch'), element('span', null, graph.name));
+
+                return tab;
+            }),
+        );
+
+        // one line is not a choice
+        this.releaseTabsTarget.hidden = this.series.length < 2;
+
+        // whoever was being read stays it, as long as its line is still in the chart
+        const read = this.series.some((graph) => graph.name === this.repository)
+            ? this.repository
+            : this.series[0].name;
+
+        this.showRepository(read);
+    }
+
+    selectRepository(event) {
+        this.showRepository(event.currentTarget.dataset.name);
+    }
+
+    showRepository(name) {
+        const graph = this.series.find((entry) => entry.name === name);
+
+        if (!graph) {
+            return;
+        }
+
+        this.repository = name;
+
+        [...this.releaseTabsTarget.children].forEach((tab) => {
+            const active = tab.dataset.name === name;
+
+            tab.setAttribute('aria-selected', active ? 'true' : 'false');
+
+            if (active) {
+                this.releasePanelTarget.setAttribute('aria-labelledby', tab.id);
+            }
+        });
+
         this.release = graph;
         this.releaseSelectTarget.replaceChildren();
 

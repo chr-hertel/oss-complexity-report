@@ -46,6 +46,26 @@
     color: var(--text-muted);
 }
 
+// The GitHub accounts under the rankings: a quiet line of links, not a section of its own.
+.owner-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    align-items: baseline;
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    border-top: var(--border-width) solid var(--line);
+
+    &__label {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        letter-spacing: var(--tracking-eyebrow);
+        text-transform: uppercase;
+    }
+}
+
 // --- Chart ------------------------------------------------------------------------------------
 .chart-title {
     display: flex;
@@ -70,11 +90,31 @@
     margin-top: var(--space-6);
 }
 
-.repository-picker {
-    max-width: 720px;
+// One alert per repository the chart is still waiting for.
+.chart-status {
+    display: grid;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+}
 
-    .eyebrow {
-        margin-bottom: var(--space-3);
+// as wide as the chart below it - the chips in it are the series it is drawn from, in the same order
+.repository-picker {
+    margin-top: var(--space-5);
+
+    &__hint {
+        margin-top: var(--space-3);
+        font-size: var(--text-sm);
+        color: var(--text-muted);
+    }
+}
+
+// The release analysis reads eyebrow → the tabs that pick a line → the release being read. With a
+// single line there is nothing to pick, and the head moves up under the eyebrow.
+.tabs--series {
+    margin-top: var(--space-3);
+
+    &:not([hidden]) + .release-head {
+        margin-top: var(--space-5);
     }
 }
 

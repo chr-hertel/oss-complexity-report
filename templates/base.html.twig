@@ -18,8 +18,7 @@
     <body>
         {#
          # The top band of every page: the mark next to the wordmark on the left, a mono nav on the
-         # right. `header_action` is the one trailing control the design system allows there - the
-         # chart screen puts its vendor dropdown into it, the start page leaves it empty.
+         # right. Two screens, so two items - what the report carries, and the chart it is read in.
          #}
         {% set route = app.request.attributes.get('_route') %}
         <header class="site-header">
@@ -35,12 +34,11 @@
                     <nav class="site-header__nav">
                         <a class="site-header__link {{ route == 'start' ? 'is-active' }}"
                            href="{{ path('start') }}">Repositories</a>
-                        <a class="site-header__link {{ route == 'overview' ? 'is-active' }}"
-                           href="{{ path('overview') }}">Compare</a>
+                        <a class="site-header__link {{ route == 'chart' ? 'is-active' }}"
+                           href="{{ path('chart') }}">Chart</a>
                         <a class="site-header__link" target="_blank" rel="noreferrer"
                            href="https://github.com/chr-hertel/oss-complexity-report">GitHub</a>
                     </nav>
-                    {% block header_action %}{% endblock %}
                 </div>
             </div>
         </header>

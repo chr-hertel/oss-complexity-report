@@ -61,7 +61,7 @@ enum Ranking: string
     public function caption(): string
     {
         return match ($this) {
-            self::Stars => 'The order the report itself is built around - stars decide what the overview chart shows.',
+            self::Stars => 'The order the report itself is built around - stars decide what the chart opens with.',
             self::Complexity => 'Average cyclomatic complexity of the latest analysed release, across all methods and functions.',
             self::Size => 'Lines of code in the latest analysed release, as phploc counts them.',
             self::Evolution => 'Change in average complexity between the first and the latest analysed release - green means the codebase got simpler, red means it got hairier.',

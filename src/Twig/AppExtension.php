@@ -4,24 +4,11 @@ declare(strict_types=1);
 
 namespace App\Twig;
 
-use App\Repository\OrganizationRepository;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
-use Twig\TwigFunction;
 
 final class AppExtension extends AbstractExtension
 {
-    public function __construct(private OrganizationRepository $repository)
-    {
-    }
-
-    public function getFunctions(): array
-    {
-        return [
-            new TwigFunction('all_organizations', [$this->repository, 'findWithData']),
-        ];
-    }
-
     public function getFilters(): array
     {
         return [

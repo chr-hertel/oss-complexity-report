@@ -10,7 +10,8 @@ release tag, runs phploc over it, and renders the result as a Chart.js line char
 
 The dataset is **submission-driven, not curated**: github.com is the only source (no packagist, no
 `composer.json` needed, so `wordpress/wordpress` works too), and `Organization` rows are derived from the
-GitHub owner of whatever was submitted. Start page and overview focus on the most starred repositories.
+GitHub owner of whatever was submitted and are a lens on the repositories, not a place of their own. Start
+page and chart focus on the most starred repositories.
 
 Requires PHP 8.4, Node (see `.nvmrc`) / Yarn and PostgreSQL 15 (`docker-compose up -d` starts one on port
 **8432**, matching `DATABASE_URL` in `.env`). `GITHUB_TOKEN` in `.env.local` is optional and only raises the
@@ -93,10 +94,10 @@ what predates that, including directories that no repository maps to anymore (th
 **Entities** (`src/Entity`, Doctrine attributes on constructor-promoted properties, no setters except
 `Tag::setCreated` for the fixers and `update()` for GitHub refreshes): `Organization` (a GitHub account,
 e.g. `symfony`) → `Repository` (a GitHub repository, e.g. `symfony/console`, holds `stars` + `analysed`) →
-`Tag` (one analysed release, holds `linesOfCode` + `averageComplexity` + `created`). `Organization` has no
-curated main library anymore — `getMainRepository()` returns its most starred analysed repository, and it
-holds nothing but the GitHub `login` it is addressed by plus an avatar: the display name and homepage it
-used to carry came from optional profile fields and named the wrong account as often as the right one.
+`Tag` (one analysed release, holds `linesOfCode` + `averageComplexity` + `created`). `Organization` is not
+a screen of its own anymore, only the account a repository is grouped under, and it holds nothing but the
+GitHub `login` it is addressed by plus an avatar: the display name and homepage it used to carry came from
+optional profile fields and named the wrong account as often as the right one.
 
 **Domain services** (`src/ComplexityReport`) — the thin `src/Command` classes only wrap these:
 
@@ -176,20 +177,37 @@ an unknown repository, a fork, too little PHP - stays a flash on the start page,
 303 turbo needs, because a human mistyping twice should not get an error page. Anything that gets through
 ends on the page of its repository, whether it was just queued or has been in the report for years.
 
-**Web** (`src/Controller/ReportController`) — routes are distinguished by `priority`, since
-`{organization}` and `{id}` both match a single segment: `overview`/`submit` (3) > `repository` (2, digits
-only, returns JSON) > `organization` (1, resolves the `Organization` entity from its `login`, optional
-`?repository=<id>` preselects one of its repositories). An organization page exists from the moment
-something was submitted for it - a repository that carries no releases yet has no chart but a status
-telling the visitor it is queued or being measured right now. `start` renders the trend in the hero, the
-submit form, the most starred repositories, the organizations and what is still queued.
-`Repository::asGraph()` returns a
-`GraphData` value object that
-JSON-serializes into what the chart expects.
+**Web** (`src/Controller/ReportController`) — two screens: `start` renders the trend in the hero, the
+submit form, the rankings, a line of GitHub owners and what is still queued, and `chart` is everything
+else. There is **one** chart page, not one per organization: `?repositories=symfony/console,nikic/iter`
+says which repositories it draws, in that order, up to `CHART_LIMIT` (the chart has eight colours), and
+anything the report carries can be added to them. Without a selection it opens on the most starred.
+Repositories are addressed by the slug they carry on github.com, never by a database id - the query string
+is a link people read, edit and share, so it says what it draws. The case does not matter, and slugs that
+are not repositories are dropped rather than answered with an error.
+`ChartSelection` is what the template reads: the series, the repositories still waiting for a worker, the
+options of the picker, and what the page is called. The screen is **not** named after the way it was
+reached - it is named after what is in it, by one rule that survives the chart being edited in place: the
+repository itself while it is the only one, a count as soon as there are more. `chart_controller.js`
+applies the same rule to the headline, its github.com link and the document title whenever the selection
+changes, which is why the rule has to stay this small. A repository has a chart from the moment it is
+submitted: no releases yet means no lines but a status telling the visitor it is queued or being measured
+right now - the one state the browser cannot rename, since nothing can be picked in it.
+
+Routes are distinguished by `priority`, since `{organization}` and the slug of a repository both match
+whatever is left: `chart`/`search`/`submit` (3) > `repository` (2, `owner/repository`, returns the releases
+as JSON - the slug is the whole route, so the select box can request it relative to the page it is on) >
+`organization` (1). The last one is the page GitHub accounts used to have, kept as a permanent redirect
+into the chart - `?repository=<id>` included, since that is how the links that were handed out address a
+repository. `Repository::asGraph()` returns a `GraphData` value object that JSON-serializes into what the
+chart expects.
 
 **Frontend** — Vite + symfony/reprise + StimulusBundle. `assets/controllers/chart_controller.js` reads the
 preselected repositories from a `data-repositories` attribute rendered by `templates/chart.html.twig`, and
-lazily fetches additional ones from the `repository` JSON route when picked in the select2 box.
+lazily fetches additional ones from the `repository` JSON route when picked in the select2 box - what is
+picked is written back into the query string, so a chart someone put together is a link. The release
+analysis below the chart is one tab per line, built from the same graphs: every repository in the chart can
+be read release by release, and a tab carries the colour of its series.
 `trend_controller.js` switches the time frame of the hero figure, which is rendered for all four windows
 at once, so nothing is fetched when one is picked.
 `refresh_controller.js` reloads the page every 30s while the status above the chart says a repository is

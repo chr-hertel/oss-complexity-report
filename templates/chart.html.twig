@@ -1,85 +1,61 @@
 {% extends 'base.html.twig' %}
 
-{% block title parent() ~ ' - ' ~ headline %}
-
-{# The one control the site header carries here: which organization the chart is drawn for. #}
-{% block header_action %}
-    <div class="dropdown" {{ stimulus_controller('dropdown') }}>
-        <button type="button" class="btn btn--secondary" aria-expanded="false" aria-haspopup="true"
-                data-dropdown-target="toggle" data-action="dropdown#toggle">
-            {{ organization.login|default(headline) }}
-            <span class="btn__caret" aria-hidden="true">▾</span>
-        </button>
-        <ul class="dropdown__menu" data-dropdown-target="menu" hidden>
-            <li>
-                <a class="dropdown__item {{ organization is not defined ? 'is-disabled' }}"
-                   href="{{ path('overview') }}">Most starred</a>
-            </li>
-            <li><hr class="dropdown__divider"></li>
-            {% for owner in all_organizations() %}
-                <li>
-                    <a class="dropdown__item {{ owner.login == organization.login|default() ? 'is-disabled' }}"
-                       href="{{ path('organization', {'organization': owner.login}) }}">
-                        {{ owner.login }}
-                    </a>
-                </li>
-            {% endfor %}
-            <li><hr class="dropdown__divider"></li>
-            <li><a class="dropdown__item" href="{{ path('start') }}">Add a repository</a></li>
-        </ul>
-    </div>
-{% endblock %}
+{% block title parent() ~ ' - ' ~ selection.headline %}
 
 {% block content %}
+    {% set series = selection.series %}
+    {% set waiting = selection.waiting %}
+    {# nothing to draw and something on its way: the shape of the report stands in for it #}
+    {% set showSkeleton = series is empty and waiting is not empty %}
+
+    {#
+     # The one chart of the report. It is not named after the way it was reached but after what is in it,
+     # and since that changes without leaving the page, the controller reaches up to the headline - which
+     # is why it wraps the whole screen rather than only the chart.
+     #}
     <main class="page">
-        <div class="wrap page__body">
-            <div class="eyebrow">{{ organization is defined ? 'Organization' : 'Overview' }}</div>
+        <div class="wrap page__body" data-controller="chart"
+             data-repositories="{{ series|map(repository => repository.asGraph)|json_encode|e('html_attr') }}">
+            <div class="eyebrow">Chart</div>
             <h1 class="chart-title">
-                {{ headline }}
-                {% if organization is defined %}
-                    <a href="{{ organization.url }}" target="_blank" rel="noreferrer" class="chart-title__link"
-                       title="{{ organization.url|replace({'https://':'', '/':''}) }}">
-                        <i class="fas fa-arrow-up-right-from-square"></i>
-                    </a>
-                {% endif %}
+                <span data-chart-target="headline">{{ selection.headline }}</span>
+                <a class="chart-title__link" target="_blank" rel="noreferrer" data-chart-target="headlineLink"
+                   {% if selection.url %}href="{{ selection.url }}" title="{{ selection.url|replace({'https://':''}) }}"{% else %}hidden{% endif %}>
+                    <i class="fas fa-arrow-up-right-from-square"></i>
+                </a>
             </h1>
 
             {#
              # A page waiting for a worker has to move on its own. Where the placeholder below is drawn it
              # polls the repository itself; everywhere else the status reloads the page now and then.
              #}
-            {% set showSkeleton = pendingRepository|default(false) and not pendingRepository.hasData and repositories is empty %}
-
-            {% if pendingRepository|default(false) %}
-                <div class="alert alert--info section"
+            {% if waiting is not empty %}
+                <div class="chart-status"
                      {% if not showSkeleton %}{{ stimulus_controller('refresh', {interval: 30000}) }}{% endif %}>
-                    {% if pendingRepository.hasData %}
-                        <strong>{{ pendingRepository.name }} is being analysed right now.</strong>
-                        {{ pendingRepository.tags|length }} of its releases are measured so far - this page
-                        updates itself as more of them come in.
-                    {% else %}
-                        <strong>{{ pendingRepository.name }} is queued for analysis.</strong>
-                        Every release of it is checked out and measured one by one, which takes a while -
-                        this page updates itself as soon as the first numbers are in.
-                    {% endif %}
-                </div>
-            {% elseif organization is defined and repositories is empty %}
-                <div class="alert alert--warning section">
-                    None of the repositories of {{ organization.login }} carries a release that could be measured.
+                    {% for repository in waiting %}
+                        <div class="alert alert--info">
+                            {% if repository.hasData %}
+                                <strong>{{ repository.name }} is being analysed right now.</strong>
+                                {{ repository.releaseCount }} of its releases are measured so far - this page
+                                updates itself as more of them come in.
+                            {% else %}
+                                <strong>{{ repository.name }} is queued for analysis.</strong>
+                                Every release of it is checked out and measured one by one, which takes a while -
+                                this page updates itself as soon as the first numbers are in.
+                            {% endif %}
+                        </div>
+                    {% endfor %}
                 </div>
             {% endif %}
 
             {#
-             # A repository that was just submitted has a page before it has numbers: the shape of the
+             # A repository that was just submitted has a chart before it has numbers: the shape of the
              # report is drawn as a placeholder, and the page swaps itself for the real thing as soon as
              # the worker measured the first release.
-             #
-             # Only when there is nothing else to draw, though - an organization that already carries
-             # analysed repositories keeps its chart, and the alert above says what happens to the new one.
              #}
             {% if showSkeleton %}
                 <div class="section skeleton"
-                     {{ stimulus_controller('skeleton', { url: path('repository', {'id': pendingRepository.id}) }) }}>
+                     {{ stimulus_controller('skeleton', { url: path('repository', {'name': waiting|first.name}) }) }}>
                     <p class="chart-lead">
                         Waiting for the first measured release - this page updates itself as soon as there
                         is one.
@@ -118,14 +94,29 @@
                         </div>
                     </section>
                 </div>
-            {% elseif repositories is not empty %}
-                <div data-controller="chart"
-                     data-chart-limit-value="8"
-                     data-repositories="{{ selectedRepositories|map(repository => repository.asGraph)|json_encode|e('html_attr') }}">
-                    <p class="chart-lead">
-                        Average cyclomatic complexity per analysed release.
-                        <span data-chart-target="seriesCount"></span>
-                    </p>
+            {% elseif series is not empty %}
+                <div>
+                    <p class="chart-lead">Average cyclomatic complexity per analysed release.</p>
+
+                    {#
+                     # What the chart is drawn from stands above it: everything the report carries can be
+                     # added here, whoever owns it - the box is the whole navigation of this screen, and
+                     # what is picked ends up in the query string. The headline says what it is, so the
+                     # box needs no second one.
+                     #}
+                    <div class="repository-picker">
+                        <select class="js-repository-select" name="repositories[]" multiple="multiple"
+                                aria-label="Repositories in this chart" data-chart-target="select">
+                            {# no whitespace around the name: select2 renders the raw text into its chips #}
+                            {% for repository in selection.options %}
+                                <option value="{{ repository.name }}" {{ repository in series ? 'selected="selected"' }}>{{ repository.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <p class="repository-picker__hint">
+                            Up to {{ chartLimit }} at a time, one colour each.
+                            <a href="{{ path('start') }}">Add a repository</a> the report does not carry yet.
+                        </p>
+                    </div>
 
                     <div class="panel chart-panel">
                         <div class="chart-canvas">
@@ -133,10 +124,17 @@
                         </div>
                     </div>
 
+                    {#
+                     # One tab per line of the chart: every repository in it can be read release by
+                     # release, not only the one the page was opened with. The tabs are built by the
+                     # controller, since what is in the chart changes without leaving the page.
+                     #}
                     <section class="section" data-chart-target="release" hidden>
+                        <div class="eyebrow">Release analysis</div>
+                        <div class="tabs tabs--series" role="tablist" aria-label="Repositories in this chart"
+                             data-chart-target="releaseTabs"></div>
                         <div class="release-head">
                             <div>
-                                <div class="eyebrow">Release analysis</div>
                                 <h2>
                                     <span class="release-head__name" data-chart-target="releaseRepository"></span>
                                     <span class="badge" data-chart-target="releaseName"></span>
@@ -146,22 +144,15 @@
                             <select class="release-select" aria-label="Release"
                                     data-chart-target="releaseSelect" data-action="chart#selectRelease"></select>
                         </div>
-                        <div class="panel panel--pad-lg">
+                        <div class="panel panel--pad-lg" role="tabpanel" data-chart-target="releasePanel">
                             <div class="analysis" data-chart-target="analysis"></div>
                         </div>
                     </section>
-
-                    <div class="section repository-picker">
-                        <div class="eyebrow">Repositories</div>
-                        <select class="js-repository-select" name="repositories[]" multiple="multiple"
-                                data-chart-target="select">
-                            {# no whitespace around the name: select2 renders the raw text into its chips #}
-                            {% for repository in repositories %}
-                                <option value="{{ repository.id }}" {{ repository in selectedRepositories ? 'selected="selected"' }}>{{ repository.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
                 </div>
+            {% else %}
+                <p class="chart-lead empty-state">
+                    Nothing measured yet - <a href="{{ path('start') }}">add the first repository</a>.
+                </p>
             {% endif %}
         </div>
     </main>
