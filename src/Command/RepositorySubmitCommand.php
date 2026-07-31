@@ -32,7 +32,7 @@ final readonly class RepositorySubmitCommand
 
         foreach ($repositories as $submitted) {
             try {
-                $repository = $this->submitter->submit($submitted);
+                $submission = $this->submitter->submit($submitted);
             } catch (SubmissionFailed $exception) {
                 $io->error($exception->getMessage());
                 $failed = true;
@@ -40,9 +40,10 @@ final readonly class RepositorySubmitCommand
             }
 
             $io->text(sprintf(
-                ' * <options=bold>%s</> (%s stars) queued for analysis',
-                $repository->getName(),
-                number_format($repository->getStars())
+                ' * <options=bold>%s</> (%s stars) %s',
+                $submission->repository->getName(),
+                number_format($submission->repository->getStars()),
+                $submission->queued ? 'queued for analysis' : 'already part of the report'
             ));
         }
 

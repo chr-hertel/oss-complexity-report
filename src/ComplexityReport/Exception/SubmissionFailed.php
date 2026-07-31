@@ -22,11 +22,6 @@ final class SubmissionFailed extends \RuntimeException
         return new self(sprintf('There is no public repository github.com/%s.', $identifier));
     }
 
-    public static function alreadySubmitted(string $identifier): self
-    {
-        return new self(sprintf('Repository %s has been submitted already.', $identifier));
-    }
-
     public static function notSubmitted(string $identifier): self
     {
         return new self(sprintf('Repository %s is not part of the report.', $identifier));

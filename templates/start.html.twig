@@ -83,7 +83,8 @@
             <h2 class="mt-5 mb-3">Queued for Analysis</h2>
             <p class="text-muted">
                 {% for repository in pending %}
-                    <a href="{{ repository.url }}" target="_blank" rel="noreferrer" class="text-muted">{{ repository.name }}</a>{{ not loop.last ? ',' }}
+                    <a href="{{ path('project', {'vendor': repository.project.vendor, 'repository': repository.id}) }}"
+                       class="text-muted">{{ repository.name }}</a>{{ not loop.last ? ',' }}
                 {% endfor %}
             </p>
         {% endif %}

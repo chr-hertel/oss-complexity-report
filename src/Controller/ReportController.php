@@ -65,19 +65,16 @@ final class ReportController extends AbstractController
         }
 
         try {
-            $repository = $submitter->submit((string) $request->request->get('repository', ''));
+            $submission = $submitter->submit((string) $request->request->get('repository', ''));
         } catch (SubmissionFailed $exception) {
             $this->addFlash('danger', $exception->getMessage());
 
             return $this->redirectToRoute('start');
         }
 
-        $this->addFlash('success', sprintf(
-            'Thanks! %s is queued and will show up here as soon as its releases are analysed.',
-            $repository->getName()
-        ));
-
-        return $this->redirectToRoute('start');
+        // a submission always ends on the page of its repository, which says what is happening to it -
+        // a known one is simply already there
+        return $this->toRepository($submission->repository);
     }
 
     #[Route('overview', name: 'overview', methods: 'GET', priority: 3)]
@@ -95,17 +92,15 @@ final class ReportController extends AbstractController
         #[MapEntity(mapping: ['vendor' => 'vendor'])] Project $project,
         Request $request,
     ): Response {
-        $repositories = $project->getAnalysedRepositories();
-
-        if ([] === $repositories) {
-            throw $this->createNotFoundException(sprintf('None of the repositories of %s is analysed yet.', $project->getVendor()));
-        }
+        $selected = $this->selectRepository($project, $request->query->getInt('repository'));
 
         return $this->render('chart.html.twig', [
             'headline' => sprintf('Project: %s', $project->getName()),
             'project' => $project,
-            'selectedRepositories' => [$this->selectRepository($project, $request->query->getInt('repository'))],
-            'repositories' => $repositories,
+            // a repository without releases has nothing to draw yet, the status below the headline says so
+            'selectedRepositories' => $selected->hasData() ? [$selected] : [],
+            'repositories' => $project->getAnalysedRepositories(),
+            'pendingRepository' => $selected->isAnalysed() ? null : $selected,
         ]);
     }
 
@@ -115,9 +110,23 @@ final class ReportController extends AbstractController
         return new JsonResponse($repository->asGraph()->getTagData());
     }
 
+    /**
+     * The page of a repository is the one of its project, with the repository preselected.
+     */
+    private function toRepository(Repository $repository): Response
+    {
+        return $this->redirectToRoute('project', [
+            'vendor' => $repository->getProject()->getVendor(),
+            'repository' => $repository->getId(),
+        ]);
+    }
+
+    /**
+     * Every repository can be picked, analysed or not - one that was just submitted has a page, too.
+     */
     private function selectRepository(Project $project, int $id): Repository
     {
-        foreach ($project->getAnalysedRepositories() as $repository) {
+        foreach ($project->getRepositories() as $repository) {
             if ($repository->getId() === $id) {
                 return $repository;
             }

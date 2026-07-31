@@ -36,13 +36,25 @@ final class RepositorySubmitter
     ) {
     }
 
-    public function submit(string $input): Repository
+    public function submit(string $input): Submission
     {
-        $data = $this->client->getRepository(RepositoryIdentifier::fromInput($input));
+        $submitted = RepositoryIdentifier::fromInput($input);
+
+        // a repository the report already carries costs neither API quota nor a second row
+        $known = $this->repositoryRepository->findOneByName((string) $submitted);
+
+        if (null !== $known) {
+            return Submission::known($known);
+        }
+
+        $data = $this->client->getRepository($submitted);
         $identifier = (string) $data->identifier;
 
-        if (null !== $this->repositoryRepository->findOneByName($identifier)) {
-            throw SubmissionFailed::alreadySubmitted($identifier);
+        // github.com resolves names case insensitively, so what it returns can differ from what was pasted
+        $known = $this->repositoryRepository->findOneByName($identifier);
+
+        if (null !== $known) {
+            return Submission::known($known);
         }
 
         if ($data->fork) {
@@ -67,7 +79,7 @@ final class RepositorySubmitter
 
         $this->logger->info(sprintf('Submitted repository %s for analysis', $identifier));
 
-        return $repository;
+        return Submission::queued($repository);
     }
 
     private function loadProject(string $vendor): Project

@@ -100,9 +100,12 @@ main library anymore — `getMainRepository()` returns its most starred analysed
 - `GitHub/GitHubClient` — the only external source, wraps `api.github.com` (repository, owner, languages)
   behind a 1h cache. `GitHub/RepositoryIdentifier::fromInput()` parses everything users may paste
   (`vendor/repo`, https/ssh urls, deep links) and rejects any host but github.com.
-- `RepositorySubmitter` — validates a submission (unknown, duplicate, fork, empty, less than
-  `MIN_PHP_SHARE` PHP), creates the `Project` for its owner on the fly and dispatches `AnalyseRepository`.
-  Rejections are `Exception\SubmissionFailed`, whose messages are written to be shown to the submitter.
+- `RepositorySubmitter` — validates a submission (unknown, fork, empty, less than `MIN_PHP_SHARE` PHP),
+  creates the `Project` for its owner on the fly and dispatches `AnalyseRepository`. Rejections are
+  `Exception\SubmissionFailed`, whose messages are written to be shown to the submitter. A repository the
+  report already carries is **not** one of them: `submit()` returns a `Submission` that says whether this
+  submission is what queued it, so pasting a known repository is how people look it up — it is answered
+  from the database, before github.com is asked at all.
 - `RepositoryRefresher` — re-reads stars and metadata for everything submitted.
 - `ReleaseScanner` — which releases of a repository are missing: skips anything `GitTag::isPreRelease()`
   (contains `-`) or `isPatchRelease()` (not a plain `X.Y` / `X.Y.0` version) and anything already stored.
@@ -143,12 +146,15 @@ then spends one token of the `submission` rate limiter (5 per 15 minutes and IP)
 (`config/packages/csrf.yaml`): the token is a double submit cookie written by Symfony's `csrf-protection`
 Stimulus controller, which is why the hidden field carries `data-controller="csrf-protection"` and why
 reading the report never starts a session. Both rejections are flashes, not exceptions - a human mistyping
-twice should not get an error page.
+twice should not get an error page. Anything that gets through ends on the page of its repository, whether
+it was just queued or has been in the report for years.
 
 **Web** (`src/Controller/ReportController`) — routes are distinguished by `priority`, since `{vendor}` and
 `{id}` both match a single segment: `overview`/`submit` (3) > `repository` (2, digits only, returns JSON) >
 `project` (1, resolves the `Project` entity from the `vendor` route parameter, optional `?repository=<id>`
-preselects one of its repositories). `start` renders the submit form, the most starred repositories, the
+preselects one of its repositories). A project page exists from the moment something was submitted for it -
+a repository that carries no releases yet has no chart but a status telling the visitor it is queued or
+being measured right now. `start` renders the submit form, the most starred repositories, the
 vendors and what is still queued. `Repository::asGraph()` returns a `GraphData` value object that
 JSON-serializes into what the chart expects.
 
