@@ -1,98 +1,221 @@
 {% extends 'base.html.twig' %}
 
-{% block content %}
-    <div class="headline text-center">
-        <h2>Open Source PHP Software</h2>
-        <h1>Complexity Report</h1>
+{#
+ # The metrics under a card follow the ranking it is shown in: whatever the tab sorts by comes first,
+ # so the order the cards are in is readable off the cards themselves.
+ #}
+{% macro metrics(repository, ranking) %}
+    {% set stars %}
+        <span class="metric metric--star" title="{{ repository.stars }} stars on GitHub">
+            <i class="fas fa-star"></i>{{ repository.stars|stars }}
+        </span>
+    {% endset %}
+    {% set complexity %}
+        <span class="metric" title="Average cyclomatic complexity of the latest analysed release">
+            <span class="metric__label">Ø</span>{{ repository.complexity|number_format(2) }}
+        </span>
+    {% endset %}
+    {% set linesOfCode %}
+        <span class="metric" title="{{ repository.linesOfCode|number_format }} lines of code in the latest analysed release">
+            <span class="metric__label">LOC</span>{{ repository.linesOfCode|compact_number }}
+        </span>
+    {% endset %}
+    {% set releases %}
+        <span class="metric" title="Releases analysed so far">
+            <span class="metric__label">RELEASES</span>{{ repository.releaseCount }}
+        </span>
+    {% endset %}
+    {% set evolution %}
+        <span class="metric metric--{{ repository.evolution|trend_tone }}"
+              title="Change in average complexity since {{ repository.firstTag.name }} - down is an improvement">
+            <span class="metric__label">since {{ repository.firstTag.created|date('Y') }}</span>{{ repository.evolution|signed_percent }}
+        </span>
+    {% endset %}
+
+    {% if ranking == 'stars' %}
+        {{ stars }}{{ complexity }}{{ evolution }}
+    {% elseif ranking == 'complexity' %}
+        {{ complexity }}{{ linesOfCode }}{{ evolution }}
+    {% elseif ranking == 'size' %}
+        {{ linesOfCode }}{{ releases }}{{ stars }}
+    {% else %}
+        {{ evolution }}{{ complexity }}{{ stars }}
+    {% endif %}
+{% endmacro %}
+
+{% macro card(repository, ranking, rank) %}
+    {# `wordpress/wordpress` would read its own name twice, so the vendor line is dropped for those #}
+    {% set showVendor = repository.organization.login|lower != repository.shortName|lower %}
+    <div class="repo-card">
+        <div class="repo-card__body">
+            <div class="repo-card__head">
+                <span class="repo-card__rank">{{ rank < 10 ? '0' }}{{ rank }}</span>
+                {% if showVendor %}
+                    <span class="repo-card__vendor">{{ repository.organization.login }}</span>
+                {% endif %}
+            </div>
+            <h3 class="repo-card__title">
+                <a href="{{ path('organization', {'organization': repository.organization.login, 'repository': repository.id}) }}">
+                    {{ showVendor ? repository.shortName : repository.name }}
+                </a>
+            </h3>
+            <p class="repo-card__text">{{ repository.description }}</p>
+        </div>
+        <div class="repo-card__meta">
+            {{ _self.metrics(repository, ranking) }}
+            <a href="{{ repository.url }}" target="_blank" rel="noreferrer" class="repo-card__github"
+               title="{{ repository.name }} on GitHub">
+                <i class="fab fa-github"></i>
+            </a>
+        </div>
     </div>
-    <div class="bg-white p-4 shadow-lg">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-9">
-                    <form action="{{ path('submit') }}" method="post" class="d-flex flex-column flex-sm-row gap-2">
+{% endmacro %}
+
+{% block content %}
+    <main class="page">
+        <header class="hero">
+            <div class="wrap">
+                <div class="logo logo--hero">
+                    <div class="logo__kicker">Open Source PHP Software</div>
+                    <div class="logo__title">Complexity Report</div>
+                </div>
+                <p class="hero__subline">
+                    How the cyclomatic complexity of PHP open source software evolved over time - one line
+                    per release, measured with phploc.
+                </p>
+            </div>
+        </header>
+
+        <div class="band">
+            <div class="wrap submit-band">
+                <div class="submit-band__intro">
+                    <div class="eyebrow">Add a repository</div>
+                    <p class="submit-band__hint">
+                        Every public repository on GitHub that is mostly written in PHP - a composer.json is
+                        not needed.
+                    </p>
+                </div>
+                <div class="submit-band__form">
+                    <form action="{{ path('submit') }}" method="post" class="submit-form">
                         <input type="hidden" name="_token" value="{{ csrf_token('submit') }}"
                                data-controller="csrf-protection">
-                        <input type="text" name="repository" class="form-control form-control-lg"
+                        <input type="text" name="repository" class="field field--lg"
                                placeholder="owner/repository or https://github.com/owner/repository"
                                aria-label="GitHub repository" required>
-                        <button type="submit" class="btn btn-lg btn-dark text-nowrap">Add Repository</button>
+                        <button type="submit" class="btn btn--lg">Add repository</button>
                     </form>
-                    <p class="text-center text-muted mt-2 mb-0">
-                        Every public repository on GitHub that is mostly written in PHP - a composer.json is not needed.
-                    </p>
                     {% for label, messages in app.flashes(['success', 'danger']) %}
                         {% for message in messages %}
-                            <div class="alert alert-{{ label }} mt-3 mb-0">{{ message }}</div>
+                            <div class="alert alert--{{ label }}">{{ message }}</div>
                         {% endfor %}
                     {% endfor %}
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="container my-5">
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-            <h2 class="mb-0">Most Starred Repositories</h2>
-            <a href="{{ path('overview') }}" class="btn btn-dark">Compare them in one chart</a>
-        </div>
+        <div class="wrap page__body">
+            <section {{ stimulus_controller('rankings') }}>
+                <div class="section-header">
+                    <div>
+                        <div class="eyebrow">Rankings</div>
+                        <h2 data-rankings-target="title">{{ rankings|first.ranking.title }}</h2>
+                    </div>
+                    {% if hasData %}
+                        <a href="{{ path('overview') }}" class="btn btn--secondary">Compare in one chart</a>
+                    {% endif %}
+                </div>
 
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            {% for repository in featured %}
-                <div class="col">
-                    <div class="card repository-card h-100 shadow-sm">
-                        <div class="card-body pb-2">
-                            <h5 class="card-title mb-2">
-                                <a class="text-reset text-decoration-none"
-                                   href="{{ path('organization', {'organization': repository.organization.login, 'repository': repository.id}) }}">
-                                    {{ repository.name }}
-                                </a>
-                            </h5>
-                            <p class="card-text text-muted">{{ repository.description }}</p>
+                {% if hasData %}
+                    <div class="tabs" role="tablist">
+                        {% for entry in rankings %}
+                            <button type="button" class="tab" role="tab" id="tab-{{ entry.ranking.value }}"
+                                    aria-controls="ranking-{{ entry.ranking.value }}"
+                                    aria-selected="{{ loop.first ? 'true' : 'false' }}"
+                                    data-rankings-target="tab" data-title="{{ entry.ranking.title }}"
+                                    data-action="rankings#select">
+                                {{ entry.ranking.label }}
+                                {% if entry.ranking.hint %}
+                                    <span class="tab__hint">{{ entry.ranking.hint }}</span>
+                                {% endif %}
+                            </button>
+                        {% endfor %}
+                    </div>
+
+                    {% for entry in rankings %}
+                        <div class="ranking" role="tabpanel" id="ranking-{{ entry.ranking.value }}"
+                             aria-labelledby="tab-{{ entry.ranking.value }}"
+                             data-rankings-target="panel" {{ not loop.first ? 'hidden' }}>
+                            <p class="ranking__caption">{{ entry.ranking.caption }}</p>
+                            <div class="repo-grid">
+                                {% for repository in entry.repositories %}
+                                    {{ _self.card(repository, entry.ranking.value, loop.index) }}
+                                {% endfor %}
+                            </div>
                         </div>
-                        <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center">
-                            <span title="{{ repository.stars }} stars on GitHub">
-                                <i class="fas fa-star text-warning"></i> {{ repository.stars|stars }}
-                            </span>
-                            <a href="{{ repository.url }}" target="_blank" rel="noreferrer" class="text-muted"
-                               title="{{ repository.name }} on GitHub">
-                                <i class="fab fa-github"></i>
-                            </a>
+                    {% endfor %}
+                {% else %}
+                    <p class="empty-state">Nothing analysed yet - submit the first repository above.</p>
+                {% endif %}
+            </section>
+
+            {% if organizations is not empty %}
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <div class="eyebrow">By GitHub owner</div>
+                            <h2>Organizations</h2>
                         </div>
                     </div>
-                </div>
-            {% else %}
-                <div class="col-12">
-                    <p class="text-muted mb-0">Nothing analysed yet - submit the first repository above.</p>
-                </div>
-            {% endfor %}
-        </div>
+                    <div class="chip-row">
+                        {% for organization in organizations %}
+                            <a href="{{ path('organization', {'organization': organization.login}) }}" class="btn btn--secondary">
+                                {{ organization.login }}
+                                <span class="badge">{{ organization.analysedRepositories|length }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
 
-        {% if organizations is not empty %}
-            <h2 class="mt-5 mb-3">Organizations</h2>
-            <div class="d-flex flex-wrap gap-2">
-                {% for organization in organizations %}
-                    <a href="{{ path('organization', {'organization': organization.login}) }}" class="btn btn-secondary">
-                        {{ organization.login }}
-                        <span class="badge bg-light text-dark ms-1">{{ organization.analysedRepositories|length }}</span>
-                    </a>
-                {% endfor %}
+            {% if pending is not empty %}
+                <section class="section">
+                    <div class="section-header">
+                        <div>
+                            <div class="eyebrow">Waiting for a worker</div>
+                            <h2>Queued for analysis</h2>
+                        </div>
+                    </div>
+                    <div class="chip-row">
+                        {% for repository in pending %}
+                            <a class="chip"
+                               href="{{ path('organization', {'organization': repository.organization.login, 'repository': repository.id}) }}">
+                                {{ repository.name }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
+            <div class="section">
+                <dl class="stats">
+                    <div>
+                        <dt class="stats__label">Repositories</dt>
+                        <dd class="stats__value">{{ statistics.repositoryCount|number_format }}</dd>
+                    </div>
+                    <div>
+                        <dt class="stats__label">Organizations</dt>
+                        <dd class="stats__value">{{ statistics.organizationCount|number_format }}</dd>
+                    </div>
+                    <div>
+                        <dt class="stats__label">Releases</dt>
+                        <dd class="stats__value">{{ statistics.tagCount|number_format }}</dd>
+                    </div>
+                    <div>
+                        <dt class="stats__label">Lines of code</dt>
+                        <dd class="stats__value">{{ statistics.linesOfCode|number_format }}</dd>
+                    </div>
+                </dl>
             </div>
-        {% endif %}
-
-        {% if pending is not empty %}
-            <h2 class="mt-5 mb-3">Queued for Analysis</h2>
-            <p class="text-muted">
-                {% for repository in pending %}
-                    <a href="{{ path('organization', {'organization': repository.organization.login, 'repository': repository.id}) }}"
-                       class="text-muted">{{ repository.name }}</a>{{ not loop.last ? ',' }}
-                {% endfor %}
-            </p>
-        {% endif %}
-
-        <p class="text-center text-muted mt-5 mb-0">
-            {{ statistics.repositoryCount }} repositories of {{ statistics.organizationCount }} organizations,
-            {{ statistics.tagCount|number_format }} releases and
-            {{ statistics.linesOfCode|number_format }} lines of code analysed.
-        </p>
-    </div>
+        </div>
+    </main>
 {% endblock %}

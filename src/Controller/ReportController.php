@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\ComplexityReport\Exception\SubmissionFailed;
+use App\ComplexityReport\Ranking;
 use App\ComplexityReport\RepositorySubmitter;
 use App\ComplexityReport\StatisticsLoader;
 use App\Entity\Organization;
@@ -37,8 +38,16 @@ final class ReportController extends AbstractController
         OrganizationRepository $organizationRepository,
         StatisticsLoader $statisticsLoader,
     ): Response {
+        // one query for every ranking - they all sort the same set, only by a different measurement
+        $analysed = $repositoryRepository->findAnalysedWithTags();
+
+        $rankings = array_map(static function (Ranking $ranking) use ($analysed) {
+            return ['ranking' => $ranking, 'repositories' => $ranking->sort($analysed, self::FEATURED_LIMIT)];
+        }, Ranking::all());
+
         return $this->render('start.html.twig', [
-            'featured' => $repositoryRepository->findMostStarred(self::FEATURED_LIMIT),
+            'rankings' => $rankings,
+            'hasData' => [] !== $analysed,
             'organizations' => $organizationRepository->findWithData(),
             'pending' => $repositoryRepository->findPending(),
             'statistics' => $statisticsLoader->load(),

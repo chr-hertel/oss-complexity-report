@@ -3,48 +3,54 @@
 {% block title parent() ~ ' - ' ~ headline %}
 
 {% block content %}
-    <main {{ stimulus_controller('swup', { containers: ['#nav', '#swup'] }) }}>
-        <div class="bg-white p-3 shadow-lg">
-            <div class="container d-flex justify-content-between">
+    <main class="page" {{ stimulus_controller('swup', { containers: ['#nav', '#swup'] }) }}>
+        <div class="band band--md">
+            <div class="wrap chart-header">
                 <a class="logo" href="{{ path('start') }}">
-                    <h2 class="mb-0">Open Source PHP Software</h2>
-                    <h1 class="mb-0">Complexity Report</h1>
+                    <div class="logo__kicker">Open Source PHP Software</div>
+                    <div class="logo__title">Complexity Report</div>
                 </a>
-                <div id="nav" class="dropdown btn-group-lg mt-2">
-                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                <div id="nav" class="dropdown" {{ stimulus_controller('dropdown') }}>
+                    <button type="button" class="btn btn--secondary" aria-expanded="false" aria-haspopup="true"
+                            data-dropdown-target="toggle" data-action="dropdown#toggle">
                         {{ organization.login|default(headline) }}
+                        <span class="btn__caret" aria-hidden="true">▾</span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-right overflow-auto" style="max-height: 70vh" aria-labelledby="dropdownMenuButton">
+                    <ul class="dropdown__menu" data-dropdown-target="menu" hidden>
                         <li>
-                            <a class="dropdown-item {{ organization is not defined ? 'disabled' }}" href="{{ path('overview') }}">Most starred</a>
+                            <a class="dropdown__item {{ organization is not defined ? 'is-disabled' }}"
+                               href="{{ path('overview') }}">Most starred</a>
                         </li>
-                        <li><hr class="dropdown-divider"></li>
+                        <li><hr class="dropdown__divider"></li>
                         {% for owner in all_organizations() %}
                             <li>
-                                <a class="dropdown-item {{ owner.login == organization.login|default() ? 'disabled' }}"
+                                <a class="dropdown__item {{ owner.login == organization.login|default() ? 'is-disabled' }}"
                                    href="{{ path('organization', {'organization': owner.login}) }}">
                                     {{ owner.login }}
                                 </a>
                             </li>
                         {% endfor %}
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{{ path('start') }}">Add a repository</a></li>
+                        <li><hr class="dropdown__divider"></li>
+                        <li><a class="dropdown__item" href="{{ path('start') }}">Add a repository</a></li>
                     </ul>
                 </div>
             </div>
         </div>
-        <div id="swup" class="container mt-5">
-            <h2 class="mb-0">{{ headline }}
+
+        <div id="swup" class="wrap page__body">
+            <div class="eyebrow">{{ organization is defined ? 'Organization' : 'Overview' }}</div>
+            <h1 class="chart-title">
+                {{ headline }}
                 {% if organization is defined %}
-                    <a href="{{ organization.url }}" target="_blank" class="text-secondary"
-                       title="{{ organization.url|replace({'https://':''}) }}">
-                        <i class="fas fa-external-link-square-alt h6"></i>
+                    <a href="{{ organization.url }}" target="_blank" rel="noreferrer" class="chart-title__link"
+                       title="{{ organization.url|replace({'https://':'', '/':''}) }}">
+                        <i class="fas fa-arrow-up-right-from-square"></i>
                     </a>
                 {% endif %}
-            </h2>
+            </h1>
+
             {% if pendingRepository|default(false) %}
-                <div class="alert alert-info mt-3 mb-0" {{ stimulus_controller('refresh', {interval: 30000}) }}>
-                    <i class="fas fa-hourglass-half"></i>
+                <div class="alert alert--info section" {{ stimulus_controller('refresh', {interval: 30000}) }}>
                     {% if pendingRepository.hasData %}
                         <strong>{{ pendingRepository.name }} is being analysed right now.</strong>
                         {{ pendingRepository.tags|length }} of its releases are measured so far - this page
@@ -56,18 +62,49 @@
                     {% endif %}
                 </div>
             {% elseif organization is defined and repositories is empty %}
-                <div class="alert alert-warning mt-3 mb-0">
+                <div class="alert alert--warning section">
                     None of the repositories of {{ organization.login }} carries a release that could be measured.
                 </div>
             {% endif %}
 
             {% if repositories is not empty %}
                 <div data-controller="chart"
+                     data-chart-limit-value="8"
                      data-repositories="{{ selectedRepositories|map(repository => repository.asGraph)|json_encode|e('html_attr') }}">
-                    <canvas id="canvas" class="img-fluid"></canvas>
-                    <div class="form-group mx-3 my-4">
-                        <h3>Repositories</h3>
-                        <select class="js-repository-select form-control" name="repositories[]" multiple="multiple">
+                    <p class="chart-lead">
+                        Average cyclomatic complexity per analysed release.
+                        <span data-chart-target="seriesCount"></span>
+                    </p>
+
+                    <div class="panel chart-panel">
+                        <div class="chart-canvas">
+                            <canvas data-chart-target="canvas"></canvas>
+                        </div>
+                    </div>
+
+                    <section class="section" data-chart-target="release" hidden>
+                        <div class="release-head">
+                            <div>
+                                <div class="eyebrow">Release analysis</div>
+                                <h2>
+                                    <span class="release-head__name" data-chart-target="releaseRepository"></span>
+                                    <span class="badge" data-chart-target="releaseName"></span>
+                                </h2>
+                                <div class="release-head__meta" data-chart-target="releaseMeta"></div>
+                            </div>
+                            <select class="release-select" aria-label="Release"
+                                    data-chart-target="releaseSelect" data-action="chart#selectRelease"></select>
+                        </div>
+                        <div class="panel panel--pad-lg">
+                            <div class="analysis" data-chart-target="analysis"></div>
+                        </div>
+                    </section>
+
+                    <div class="section repository-picker">
+                        <div class="eyebrow">Repositories</div>
+                        <select class="js-repository-select" name="repositories[]" multiple="multiple"
+                                data-chart-target="select">
+                            {# no whitespace around the name: select2 renders the raw text into its chips #}
                             {% for repository in repositories %}
                                 <option value="{{ repository.id }}" {{ repository in selectedRepositories ? 'selected="selected"' }}>{{ repository.name }}</option>
                             {% endfor %}

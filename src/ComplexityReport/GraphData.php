@@ -26,7 +26,9 @@ final class GraphData implements \JsonSerializable
     }
 
     /**
-     * @return list<array{name: string, x: string, y: float}>
+     * `x` is what the chart plots, `date` and `loc` are what the release analysis below it reads.
+     *
+     * @return list<array{name: string, x: string, date: string, y: float, loc: int}>
      */
     public function getTagData(): array
     {
@@ -34,17 +36,21 @@ final class GraphData implements \JsonSerializable
             return [
                 'name' => $tag->getName(),
                 'x' => $tag->getCreated()->format(self::DATE_FORMAT),
+                'date' => $tag->getCreated()->format('Y-m-d'),
                 'y' => round($tag->getAverageComplexity(), 2),
+                'loc' => $tag->getLinesOfCode(),
             ];
         }, $this->repository->getTags()));
     }
 
     /**
-     * @return array{name: string, tags: list<array{name: string, x: string, y: float}>, labels: list<string>}
+     * @return array{id: int, name: string, tags: list<array{name: string, x: string, date: string, y: float, loc: int}>, labels: list<string>}
      */
     public function jsonSerialize(): array
     {
         return [
+            // the select box identifies a repository by id, so the preselected data has to carry it too
+            'id' => $this->repository->getId(),
             'name' => $this->repository->getName(),
             'tags' => $this->getTagData(),
             'labels' => $this->getLabels(),

@@ -1,0 +1,197 @@
+// Reset, page frame and the brand primitives - Band, Hero, Logo, SiteFooter from the design system.
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--surface-page);
+    color: var(--text-body);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading-body);
+    -webkit-font-smoothing: antialiased;
+
+    // the footer sits at the bottom of short pages instead of halfway up
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+body > main,
+body > .page {
+    flex: 1 0 auto;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-weight: var(--weight-semibold);
+    color: var(--text-heading);
+    letter-spacing: var(--tracking-tight);
+    line-height: var(--leading-heading);
+}
+
+p {
+    margin: 0;
+}
+
+a {
+    color: var(--link);
+    text-decoration: none;
+
+    &:hover {
+        color: var(--link-hover);
+    }
+}
+
+button {
+    font: inherit;
+}
+
+canvas {
+    max-width: 100%;
+}
+
+// Full-width surface separated by hairlines rather than shadow.
+.band {
+    padding: var(--space-6) 0;
+    background: var(--surface-band);
+    border-bottom: var(--border-width) solid var(--line);
+
+    &--md {
+        padding: var(--space-4) 0;
+    }
+
+    &--muted {
+        background: var(--surface-muted);
+    }
+}
+
+.wrap {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 0 var(--gutter);
+}
+
+// Start-page header: quiet, left-aligned, closed by a hairline.
+.hero {
+    padding: var(--hero-pad-top) 0 var(--hero-pad-bottom);
+    background: var(--surface-band);
+    border-bottom: var(--border-width) solid var(--line);
+
+    &__subline {
+        max-width: 52ch;
+        margin-top: var(--space-5);
+        font-size: var(--text-lg);
+        color: var(--text-muted);
+    }
+}
+
+// The wordmark: a tracked-out mono kicker over the semibold product name. There is no logo file in
+// the repository - this lockup is the brand.
+.logo {
+    display: block;
+    color: inherit;
+
+    &:hover {
+        color: inherit;
+    }
+
+    &__kicker {
+        margin-bottom: 2px;
+        font-family: var(--font-mono);
+        font-size: var(--logo-kicker);
+        font-weight: var(--weight-medium);
+        letter-spacing: var(--tracking-eyebrow);
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    &__title {
+        font-size: var(--logo-title);
+        font-weight: var(--weight-semibold);
+        letter-spacing: var(--tracking-heading);
+        line-height: var(--leading-heading);
+        color: var(--text-heading);
+    }
+
+    &--hero &__kicker {
+        margin-bottom: var(--space-4);
+        font-size: var(--text-eyebrow);
+    }
+
+    &--hero &__title {
+        font-size: var(--text-hero);
+    }
+}
+
+.eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.section {
+    margin-top: var(--space-8);
+
+    &-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-4);
+        align-items: flex-end;
+        justify-content: space-between;
+        margin-bottom: var(--space-5);
+
+        h2 {
+            margin-top: var(--space-2);
+            font-size: var(--text-h2);
+        }
+    }
+}
+
+// The footer of every page: hairline above, mono-quiet copy.
+.site-footer {
+    flex: 0 0 auto;
+    margin-top: var(--space-9);
+    background: var(--surface-band);
+    border-top: var(--border-width) solid var(--line);
+
+    &__inner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        justify-content: space-between;
+        max-width: var(--container);
+        margin: 0 auto;
+        padding: var(--space-5) var(--gutter);
+        font-size: var(--text-sm);
+        color: var(--text-muted);
+    }
+
+    a {
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--line-strong);
+    }
+}
+
+@media (max-width: 640px) {
+    :root {
+        --text-hero: 38px;
+        --hero-pad-top: var(--space-8);
+    }
+}

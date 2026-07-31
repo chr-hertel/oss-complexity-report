@@ -49,6 +49,31 @@ final class RepositoryRepository extends ServiceEntityRepository
     }
 
     /**
+     * Everything that has data, with its releases already loaded.
+     *
+     * The rankings on the start page read the first and the latest release of every repository, which is
+     * one query for all of them instead of one per repository.
+     *
+     * @return list<Repository>
+     */
+    public function findAnalysedWithTags(): array
+    {
+        /** @var list<Repository> $repositories */
+        $repositories = $this->createQueryBuilder('r')
+            ->addSelect('t')
+            ->innerJoin('r.tags', 't')
+            ->orderBy('r.stars', 'DESC')
+            ->addOrderBy('r.name', 'ASC')
+            // spelled out rather than left to the association's OrderBy, so the first and the last
+            // element of the collection are the first and the latest release in every Doctrine version
+            ->addOrderBy('t.created', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $repositories;
+    }
+
+    /**
      * Submitted repositories that are waiting for their first analysis.
      *
      * @return list<Repository>

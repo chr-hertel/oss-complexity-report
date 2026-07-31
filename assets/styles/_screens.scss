@@ -1,0 +1,131 @@
+// Layout of the two screens the product has - StartScreen.jsx and ChartScreen.jsx in the design
+// project. Everything they are built from lives in _components.scss.
+
+.page__body {
+    padding-top: var(--space-8);
+}
+
+// --- Start ------------------------------------------------------------------------------------
+.submit-band {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    align-items: flex-start;
+    justify-content: space-between;
+
+    &__intro {
+        max-width: 34ch;
+    }
+
+    &__hint {
+        margin-top: var(--space-2);
+        font-size: var(--text-sm);
+        color: var(--text-muted);
+    }
+
+    &__form {
+        flex: 1 1 420px;
+        max-width: 560px;
+    }
+
+    .alert {
+        margin-top: var(--space-3);
+    }
+}
+
+.submit-form {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.ranking {
+    &__caption {
+        max-width: 70ch;
+        margin: var(--space-4) 0 var(--space-5);
+        font-size: var(--text-sm);
+        color: var(--text-muted);
+    }
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.empty-state {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+// --- Chart ------------------------------------------------------------------------------------
+.chart-header {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chart-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+    font-size: var(--text-h2);
+
+    &__link {
+        font-size: 13px;
+        color: var(--text-faint);
+    }
+}
+
+.chart-lead {
+    margin-top: var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.chart-panel {
+    margin-top: var(--space-6);
+}
+
+.repository-picker {
+    max-width: 720px;
+
+    .eyebrow {
+        margin-bottom: var(--space-3);
+    }
+}
+
+// The design puts a Dropdown here; a native select is the same control with keyboard behaviour that
+// does not have to be rebuilt, dressed as the secondary button it looks like.
+.release-select {
+    padding: var(--control-pad-y) calc(var(--control-pad-x) + 14px) var(--control-pad-y) var(--control-pad-x);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    line-height: 1.4;
+    color: var(--action-secondary-fg);
+    background-color: var(--action-secondary-bg);
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--ink-500) 50%),
+        linear-gradient(135deg, var(--ink-500) 50%, transparent 50%);
+    background-position:
+        right 15px top 50%,
+        right 10px top 50%;
+    background-size:
+        5px 5px,
+        5px 5px;
+    background-repeat: no-repeat;
+    border: var(--border-width) solid var(--action-secondary-border);
+    border-radius: var(--radius);
+    appearance: none;
+    cursor: pointer;
+
+    &:hover {
+        background-color: var(--action-secondary-bg-hover);
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+    }
+}
