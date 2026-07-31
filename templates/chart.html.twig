@@ -55,7 +55,7 @@
              #}
             {% if showSkeleton %}
                 <div class="section skeleton"
-                     {{ stimulus_controller('skeleton', { url: path('repository', {'id': waiting|first.id}) }) }}>
+                     {{ stimulus_controller('skeleton', { url: path('repository', {'name': waiting|first.name}) }) }}>
                     <p class="chart-lead">
                         Waiting for the first measured release - this page updates itself as soon as there
                         is one.
@@ -124,7 +124,7 @@
                                 data-chart-target="select">
                             {# no whitespace around the name: select2 renders the raw text into its chips #}
                             {% for repository in selection.options %}
-                                <option value="{{ repository.id }}" {{ repository in series ? 'selected="selected"' }}>{{ repository.name }}</option>
+                                <option value="{{ repository.name }}" {{ repository in series ? 'selected="selected"' }}>{{ repository.name }}</option>
                             {% endfor %}
                         </select>
                         <p class="repository-picker__hint">

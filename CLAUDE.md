@@ -179,21 +179,25 @@ ends on the page of its repository, whether it was just queued or has been in th
 
 **Web** (`src/Controller/ReportController`) — two screens: `start` renders the trend in the hero, the
 submit form, the rankings, a line of GitHub owners and what is still queued, and `chart` is everything
-else. There is **one** chart page, not one per organization: `?repositories=3,7` says which repositories
-it draws, in that order, up to `CHART_LIMIT` (the chart has eight colours), and anything the report carries
-can be added to them. Without a selection it opens on the most starred. Ids that are not repositories are
-dropped rather than answered with an error - the query string is a link people edit and share.
+else. There is **one** chart page, not one per organization: `?repositories=symfony/console,nikic/iter`
+says which repositories it draws, in that order, up to `CHART_LIMIT` (the chart has eight colours), and
+anything the report carries can be added to them. Without a selection it opens on the most starred.
+Repositories are addressed by the slug they carry on github.com, never by a database id - the query string
+is a link people read, edit and share, so it says what it draws. The case does not matter, and slugs that
+are not repositories are dropped rather than answered with an error.
 `ChartSelection` is what the template reads: the series, the repositories still waiting for a worker, the
 options of the picker, and what the page is called - a single repository is named by its name, a chart that
 stays within one GitHub account by that account, anything else is a comparison. A repository has a chart
 from the moment it is submitted: no releases yet means no lines but a status telling the visitor it is
 queued or being measured right now.
 
-Routes are distinguished by `priority`, since `{organization}` and `{id}` both match a single segment:
-`chart`/`search`/`submit` (3) > `repository` (2, digits only, returns JSON) > `organization` (1). The
-latter is the page GitHub accounts used to have, kept as a permanent redirect into the chart so the links
-that were handed out keep working. `Repository::asGraph()` returns a `GraphData` value object that
-JSON-serializes into what the chart expects.
+Routes are distinguished by `priority`, since `{organization}` and the slug of a repository both match
+whatever is left: `chart`/`search`/`submit` (3) > `repository` (2, `owner/repository`, returns the releases
+as JSON - the slug is the whole route, so the select box can request it relative to the page it is on) >
+`organization` (1). The last one is the page GitHub accounts used to have, kept as a permanent redirect
+into the chart - `?repository=<id>` included, since that is how the links that were handed out address a
+repository. `Repository::asGraph()` returns a `GraphData` value object that JSON-serializes into what the
+chart expects.
 
 **Frontend** — Vite + symfony/reprise + StimulusBundle. `assets/controllers/chart_controller.js` reads the
 preselected repositories from a `data-repositories` attribute rendered by `templates/chart.html.twig`, and

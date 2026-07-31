@@ -44,13 +44,12 @@ final class GraphData implements \JsonSerializable
     }
 
     /**
-     * @return array{id: int, name: string, tags: list<array{name: string, x: string, date: string, y: float, loc: int}>, labels: list<string>}
+     * @return array{name: string, tags: list<array{name: string, x: string, date: string, y: float, loc: int}>, labels: list<string>}
      */
     public function jsonSerialize(): array
     {
         return [
-            // the select box identifies a repository by id, so the preselected data has to carry it too
-            'id' => $this->repository->getId(),
+            // the select box addresses a repository by its slug, which is the name it is drawn under
             'name' => $this->repository->getName(),
             'tags' => $this->getTagData(),
             'labels' => $this->getLabels(),

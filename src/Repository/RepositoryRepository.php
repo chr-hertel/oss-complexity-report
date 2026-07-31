@@ -60,36 +60,42 @@ final class RepositoryRepository extends ServiceEntityRepository
     }
 
     /**
-     * The repositories behind the given ids, in the order they were asked for - unknown ids are dropped,
-     * so a link to a repository that is gone still opens a chart.
+     * The repositories behind the given `owner/repository` slugs, in the order they were asked for -
+     * unknown ones are dropped, so a link to a repository that is gone still opens a chart. github.com
+     * does not care about the case of a slug, and neither does a link somebody typed by hand.
      *
-     * @param list<int> $ids
+     * @param list<string> $slugs
      *
      * @return list<Repository>
      */
-    public function findByIds(array $ids): array
+    public function findBySlugs(array $slugs): array
     {
-        if ([] === $ids) {
+        if ([] === $slugs) {
             return [];
         }
 
         /** @var list<Repository> $repositories */
         $repositories = $this->createQueryBuilder('r')
-            ->where('r.id IN (:ids)')
-            ->setParameter('ids', $ids)
+            ->where('LOWER(r.name) IN (:slugs)')
+            ->setParameter('slugs', array_map(mb_strtolower(...), $slugs))
             ->getQuery()
             ->getResult();
 
         $found = [];
 
         foreach ($repositories as $repository) {
-            $found[$repository->getId()] = $repository;
+            $found[mb_strtolower($repository->getName())] = $repository;
         }
 
         return array_values(array_filter(array_map(
-            static fn (int $id) => $found[$id] ?? null,
-            $ids,
+            static fn (string $slug) => $found[mb_strtolower($slug)] ?? null,
+            $slugs,
         )));
+    }
+
+    public function findBySlug(string $slug): ?Repository
+    {
+        return $this->findBySlugs([$slug])[0] ?? null;
     }
 
     /**

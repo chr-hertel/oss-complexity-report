@@ -102,7 +102,7 @@ export default class extends Controller {
         // what the page was rendered with; everything picked later is fetched from the JSON route once
         this.graphs = new Map();
         JSON.parse(this.element.dataset.repositories).forEach((graph) => {
-            this.graphs.set(String(graph.id), graph);
+            this.graphs.set(graph.name, graph);
         });
 
         this.renders = 0;
@@ -219,13 +219,13 @@ export default class extends Controller {
 
     async render(picked = false) {
         const run = ++this.renders;
-        const ids = $(this.selectTarget).val() || [];
+        const slugs = $(this.selectTarget).val() || [];
 
         if (picked) {
-            this.syncUrl(ids);
+            this.syncUrl(slugs);
         }
 
-        const graphs = await Promise.all(ids.map((id) => this.load(id)));
+        const graphs = await Promise.all(slugs.map((slug) => this.load(slug)));
 
         // a slower request must not overwrite what a later pick already drew
         if (run !== this.renders || !this.chart) {
@@ -256,33 +256,30 @@ export default class extends Controller {
      * A chart is worth sharing, so what is in it belongs in the address bar - the same query string the
      * page reads on load. Only after a pick: opening the default chart leaves its url alone.
      */
-    syncUrl(ids) {
+    syncUrl(slugs) {
         const params = new URLSearchParams(window.location.search);
 
-        if (ids.length > 0) {
-            params.set('repositories', ids.join(','));
+        if (slugs.length > 0) {
+            params.set('repositories', slugs.join(','));
         } else {
             params.delete('repositories');
         }
 
-        // a list of ids reads better with the commas it was written with than with %2C
-        const query = params.toString().replace(/%2C/g, ',');
+        // `symfony/console,laravel/framework` is what this was typed as, and what it should stay
+        const query = params.toString().replace(/%2C/g, ',').replace(/%2F/g, '/');
 
         window.history.replaceState({}, '', query ? `?${query}` : window.location.pathname);
     }
 
-    async load(id) {
-        const key = String(id);
+    async load(slug) {
+        if (!this.graphs.has(slug)) {
+            // the slug is the whole route, so a relative request keeps working under a deployed sub path
+            const response = await fetch(slug, { headers: { Accept: 'application/json' } });
 
-        if (!this.graphs.has(key)) {
-            // the id is the whole route, so a relative request keeps working under a deployed sub path
-            const response = await fetch(key, { headers: { Accept: 'application/json' } });
-            const option = this.selectTarget.querySelector(`option[value="${key}"]`);
-
-            this.graphs.set(key, { id: Number(key), name: option.textContent.trim(), tags: await response.json() });
+            this.graphs.set(slug, { name: slug, tags: await response.json() });
         }
 
-        return this.graphs.get(key);
+        return this.graphs.get(slug);
     }
 
     /**

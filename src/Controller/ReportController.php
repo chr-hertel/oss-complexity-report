@@ -79,7 +79,7 @@ final class ReportController extends AbstractController
                 'description' => $repository->getDescription(),
                 'stars' => $repository->getStars(),
                 'analysed' => $repository->isAnalysed(),
-                'url' => $this->generateUrl('chart', ['repositories' => $repository->getId()]),
+                'url' => $this->generateUrl('chart', ['repositories' => $repository->getName()]),
             ], $result->matches),
             'submittable' => null === $result->submittable ? null : ['name' => (string) $result->submittable],
         ]);
@@ -126,14 +126,15 @@ final class ReportController extends AbstractController
     }
 
     /**
-     * The one chart of the report: `?repositories=3,7` says which lines it draws, and anything the report
-     * carries can be added to them. Without a selection it opens on the most starred repositories.
+     * The one chart of the report: `?repositories=symfony/console,laravel/framework` says which lines it
+     * draws, and anything the report carries can be added to them. Without a selection it opens on the
+     * most starred repositories.
      */
     #[Route('chart', name: 'chart', methods: 'GET', priority: 3)]
     public function chart(Request $request, RepositoryRepository $repositories): Response
     {
         $analysed = $repositories->findAnalysed();
-        $selected = $repositories->findByIds($this->selectedIds($request));
+        $selected = $repositories->findBySlugs($this->selectedSlugs($request));
 
         return $this->render('chart.html.twig', [
             'selection' => [] === $selected
@@ -152,23 +153,37 @@ final class ReportController extends AbstractController
         #[MapEntity(mapping: ['organization' => 'login'])] Organization $organization,
         Request $request,
     ): Response {
+        $repositories = $organization->getAnalysedRepositories() ?: $organization->getRepositories();
+
+        // those links address a repository by the id it had when they were written
         $preselected = $request->query->getInt('repository');
 
-        $ids = 0 !== $preselected ? [$preselected] : array_map(
-            static fn (Repository $repository) => $repository->getId(),
-            $organization->getAnalysedRepositories() ?: $organization->getRepositories(),
-        );
+        if (0 !== $preselected) {
+            $repositories = array_filter(
+                $repositories,
+                static fn (Repository $repository) => $repository->getId() === $preselected,
+            ) ?: $repositories;
+        }
+
+        $slugs = array_map(static fn (Repository $repository) => $repository->getName(), $repositories);
 
         return $this->redirectToRoute(
             'chart',
-            ['repositories' => implode(',', \array_slice($ids, 0, self::CHART_LIMIT))],
+            ['repositories' => implode(',', \array_slice($slugs, 0, self::CHART_LIMIT))],
             Response::HTTP_MOVED_PERMANENTLY,
         );
     }
 
-    #[Route('{id}', name: 'repository', requirements: ['id' => '\d+'], methods: 'GET', priority: 2)]
-    public function repository(#[MapEntity(mapping: ['id' => 'id'])] Repository $repository): JsonResponse
+    /**
+     * The releases behind one line of the chart. A repository is addressed the way github.com addresses
+     * it, and that slug is the whole route - so the select box can request it relative to the page it is
+     * on, which keeps working under a deployed sub path.
+     */
+    #[Route('{name}', name: 'repository', requirements: ['name' => '[^/]+/[^/]+'], methods: 'GET', priority: 2)]
+    public function repository(string $name, RepositoryRepository $repositories): JsonResponse
     {
+        $repository = $repositories->findBySlug($name) ?? throw $this->createNotFoundException();
+
         return new JsonResponse($repository->asGraph()->getTagData());
     }
 
@@ -194,25 +209,25 @@ final class ReportController extends AbstractController
     {
         return $this->redirectToRoute(
             'chart',
-            ['repositories' => $repository->getId()],
+            ['repositories' => $repository->getName()],
             Response::HTTP_SEE_OTHER,
         );
     }
 
     /**
-     * What `?repositories=3,7` asks for: ids, in the order they were given, as many as the chart has
-     * colours for. Anything that is not a repository id is dropped rather than answered with an error -
-     * the query string is a link people edit and share.
+     * What `?repositories=symfony/console,laravel/framework` asks for: slugs, in the order they were
+     * given, as many as the chart has colours for. Anything that is not a repository is dropped rather
+     * than answered with an error - the query string is a link people edit and share.
      *
-     * @return list<int>
+     * @return list<string>
      */
-    private function selectedIds(Request $request): array
+    private function selectedSlugs(Request $request): array
     {
-        $ids = array_filter(array_map(
-            intval(...),
-            explode(',', $request->query->getString('repositories')),
-        ));
+        $slugs = array_filter(array_map(trim(...), explode(',', $request->query->getString('repositories'))));
 
-        return \array_slice(array_values(array_unique($ids)), 0, self::CHART_LIMIT);
+        // `symfony/console` and `Symfony/Console` are the same repository, and one line of it is enough
+        $unique = array_unique(array_map(mb_strtolower(...), $slugs));
+
+        return \array_slice(array_values(array_intersect_key($slugs, $unique)), 0, self::CHART_LIMIT);
     }
 }

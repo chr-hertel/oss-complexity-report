@@ -55,7 +55,7 @@
                 {% endif %}
             </div>
             <h3 class="repo-card__title">
-                <a href="{{ path('chart', {'repositories': repository.id}) }}">
+                <a href="{{ path('chart', {'repositories': repository.name}) }}">
                     {{ showVendor ? repository.shortName : repository.name }}
                 </a>
             </h3>
@@ -251,7 +251,7 @@
                     <p class="owner-line">
                         <span class="owner-line__label">By owner</span>
                         {% for organization in organizations %}
-                            <a href="{{ path('chart', {'repositories': organization.analysedRepositories|slice(0, chartLimit)|map(repository => repository.id)|join(',')}) }}">{{ organization.login }}</a>
+                            <a href="{{ path('chart', {'repositories': organization.analysedRepositories|slice(0, chartLimit)|map(repository => repository.name)|join(',')}) }}">{{ organization.login }}</a>
                         {% endfor %}
                     </p>
                 {% endif %}
@@ -267,7 +267,7 @@
                     </div>
                     <div class="chip-row">
                         {% for repository in pending %}
-                            <a class="chip" href="{{ path('chart', {'repositories': repository.id}) }}">
+                            <a class="chip" href="{{ path('chart', {'repositories': repository.name}) }}">
                                 {{ repository.name }}
                             </a>
                         {% endfor %}
