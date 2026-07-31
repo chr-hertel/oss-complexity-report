@@ -46,8 +46,7 @@ bin/console messenger:stats                       # what is still queued
 bin/console debug:scheduler                       # next run of the recurring messages
 
 # frontend — Vite, wired into Twig by symfony/reprise
-yarn dev-server     # vite dev server with HMR, reprise points Twig at it
-yarn dev            # one-off development build
+yarn dev            # vite dev server with HMR, reprise points Twig at it
 yarn build          # production build (deploy.php sets ASSET_BASE for the sub path)
 yarn check-style    # prettier over assets/
 ```
