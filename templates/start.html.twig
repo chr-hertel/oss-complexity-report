@@ -159,6 +159,11 @@
         <div class="band">
             <div class="wrap submit-band">
                 {#
+                 # The label announces the box before it is reached, the hint keeps reading under it:
+                 # what may be typed in only matters once the box is there.
+                 #}
+                <div class="eyebrow submit-band__label">Find or add a repository</div>
+                {#
                  # One box for both jobs. Picking a suggestion opens that repository, and anything the
                  # report does not carry yet is posted to `submit`, which queues it and opens its page.
                  # Without javascript the form still posts whatever was typed, which is what it did
@@ -187,17 +192,10 @@
                         <div class="alert alert--{{ label }}">{{ message }}</div>
                     {% endfor %}
                 {% endfor %}
-                {#
-                 # The box comes first and the words under it: the input is what the band is for, the
-                 # label and the hint only say what may be typed into it.
-                 #}
-                <div class="submit-band__intro">
-                    <div class="eyebrow">Find or add a repository</div>
-                    <p class="submit-band__hint">
-                        Everything the report carries, plus every public repository on GitHub that is mostly
-                        written in PHP - a composer.json is not needed.
-                    </p>
-                </div>
+                <p class="submit-band__hint">
+                    Everything the report carries, plus every public repository on GitHub that is mostly
+                    written in PHP - a composer.json is not needed.
+                </p>
             </div>
         </div>
 
