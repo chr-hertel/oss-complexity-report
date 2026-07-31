@@ -40,7 +40,7 @@ Recreate Dataset
 # resetting database and caches
 symfony console doctrine:database:drop --force
 symfony console doctrine:database:create
-symfony console doctrine:schema:create
+symfony console doctrine:migrations:migrate
 symfony console cache:pool:clear cache.app
 
 # submits a couple of well known repositories to start with
@@ -52,6 +52,22 @@ symfony console app:data:aggregate -vv
 # fix some data issues
 symfony console app:data:fix -vv
 ```
+
+Deploying schema changes
+------------------------
+
+The schema is managed by doctrine/migrations and `deploy.php` runs them right before the symlink switches.
+
+The production database predates the migration history, so its baseline has to be marked as executed once,
+otherwise the first migration tries to create tables that are already there:
+
+```bash
+symfony console doctrine:migrations:sync-metadata-storage
+symfony console doctrine:migrations:version 'DoctrineMigrations\Version20260731011704' --add
+```
+
+After the deploy that turns libraries into repositories, run `app:repositories:refresh` once to fill in the
+stars and descriptions the migration leaves empty.
 
 Submitting Repositories
 -----------------------

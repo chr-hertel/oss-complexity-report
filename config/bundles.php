@@ -11,4 +11,5 @@ return [
     Symfony\Bundle\WebProfilerBundle\WebProfilerBundle::class => ['dev' => true, 'test' => true],
     Symfony\UX\StimulusBundle\StimulusBundle::class => ['all' => true],
     Symfony\Reprise\RepriseBundle::class => ['all' => true],
+    Doctrine\Bundle\MigrationsBundle\DoctrineMigrationsBundle::class => ['all' => true],
 ];

@@ -10,6 +10,7 @@
         "ext-iconv": "*",
         "doctrine/doctrine-bundle": "^3.0",
         "doctrine/doctrine-fixtures-bundle": "^4.3",
+        "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.5",
         "phploc/phploc": "^7.0",
         "symfony/console": "^8.1",

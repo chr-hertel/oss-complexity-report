@@ -27,4 +27,8 @@ task('build', function () {
 });
 
 after('deploy:cache:clear', 'build');
+
+// Schema changes go live with the release that needs them, so migrate right before the symlink switches.
+before('deploy:symlink', 'database:migrate');
+
 after('deploy:failed', 'deploy:unlock');

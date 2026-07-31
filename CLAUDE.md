@@ -36,6 +36,7 @@ bin/console lint:yaml config --parse-tags
 bin/console lint:twig templates
 bin/console lint:container
 bin/console doctrine:schema:validate --skip-sync   # CI skips the sync check
+bin/console doctrine:migrations:diff              # after changing an entity
 
 # frontend — Vite, wired into Twig by symfony/reprise
 yarn dev-server     # vite dev server with HMR, reprise points Twig at it
@@ -54,7 +55,7 @@ Order matters; each command depends on the previous one:
 ```bash
 bin/console doctrine:database:drop --force
 bin/console doctrine:database:create
-bin/console doctrine:schema:create      # no migrations — schema is created from entity attributes
+bin/console doctrine:migrations:migrate # schema is managed by doctrine/migrations, not schema:create
 bin/console cache:pool:clear cache.app
 
 bin/console doctrine:fixtures:load -n   # submits the seed repositories in AppFixtures (hits the GitHub API)
