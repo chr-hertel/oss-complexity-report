@@ -154,9 +154,6 @@
     "sentry/sentry-symfony": {
         "version": "5.11.0"
     },
-    "symfony/browser-kit": {
-        "version": "v6.0.0-RC1"
-    },
     "symfony/cache": {
         "version": "v6.0.0-RC1"
     },
@@ -177,9 +174,6 @@
         "files": [
             "bin/console"
         ]
-    },
-    "symfony/css-selector": {
-        "version": "v6.0.0-RC1"
     },
     "symfony/debug-bundle": {
         "version": "6.0",
@@ -203,9 +197,6 @@
         "version": "v2.5.0"
     },
     "symfony/doctrine-bridge": {
-        "version": "v6.0.0-RC1"
-    },
-    "symfony/dom-crawler": {
         "version": "v6.0.0-RC1"
     },
     "symfony/dotenv": {
@@ -458,9 +449,6 @@
     },
     "symfony/yaml": {
         "version": "v6.0.0-RC1"
-    },
-    "twig/extra-bundle": {
-        "version": "v3.3.4"
     },
     "twig/twig": {
         "version": "v3.3.4"

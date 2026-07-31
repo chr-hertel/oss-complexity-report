@@ -92,14 +92,6 @@ canvas {
     padding: var(--space-6) 0;
     background: var(--surface-band);
     border-bottom: var(--border-width) solid var(--line);
-
-    &--md {
-        padding: var(--space-4) 0;
-    }
-
-    &--muted {
-        background: var(--surface-muted);
-    }
 }
 
 .wrap {

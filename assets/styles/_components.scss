@@ -55,13 +55,6 @@
         cursor: default;
         pointer-events: none;
     }
-
-    &__caret {
-        margin-left: var(--space-1);
-        font-size: 10px;
-        line-height: 1;
-        opacity: 0.6;
-    }
 }
 
 // --- TextInput --------------------------------------------------------------------------------
@@ -694,11 +687,6 @@ a.chip:hover {
     &__label {
         font-size: var(--text-sm);
         color: var(--text-body);
-
-        &--indent {
-            padding-left: var(--space-4);
-            color: var(--text-muted);
-        }
     }
 
     &__value {
