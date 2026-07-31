@@ -47,21 +47,21 @@ final readonly class RepositoryRemover
             $this->entityManager->remove($tag);
         }
 
-        $project = $repository->getProject();
-        // read while the row is still there - a project reached through its repository is a lazy proxy,
-        // and initializing one after its deletion throws instead of returning what it used to hold
-        $vendor = $project->getVendor();
+        $organization = $repository->getOrganization();
+        // read while the row is still there - an organization reached through its repository is a lazy
+        // proxy, and initializing one after its deletion throws instead of returning what it used to hold
+        $login = $organization->getLogin();
 
         $this->entityManager->remove($repository);
         $this->entityManager->flush();
 
-        // projects are derived from what was submitted, so a vendor without repositories is nothing to show.
-        // Counted rather than read off the project: its collection still holds what was just deleted.
-        if (0 === $this->repositoryRepository->count(['project' => $project])) {
-            $this->entityManager->remove($project);
+        // organizations are derived from what was submitted, so one without repositories is nothing to
+        // show. Counted rather than read off it: its collection still holds what was just deleted.
+        if (0 === $this->repositoryRepository->count(['organization' => $organization])) {
+            $this->entityManager->remove($organization);
             $this->entityManager->flush();
 
-            $this->logger->info(sprintf('Removed project %s along with its last repository', $vendor));
+            $this->logger->info(sprintf('Removed organization %s along with its last repository', $login));
         }
 
         $this->logger->info(sprintf('Removed repository %s from the report', $identifier));

@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport\GitHub;
 
+/**
+ * The account a repository belongs to, as far as github.com states it.
+ *
+ * Deliberately down to the login and the avatar: the display name and the homepage an account may carry
+ * are optional profile fields, and passing them off as the name of an organization was wrong as often as
+ * it was right - `league` is a stranger to `thephpleague`, `phpunit` to `sebastianbergmann`.
+ */
 final class OwnerData
 {
     public function __construct(
         public readonly string $login,
-        public readonly string $name,
-        public readonly string $url,
         public readonly ?string $avatarUrl,
     ) {
     }
@@ -19,20 +24,9 @@ final class OwnerData
      */
     public static function fromApiResponse(array $data): self
     {
-        $login = (string) $data['login'];
-        $name = isset($data['name']) ? (string) $data['name'] : $login;
-        $blog = isset($data['blog']) ? (string) $data['blog'] : '';
-
         return new self(
-            $login,
-            $name,
-            '' !== $blog ? self::normalizeUrl($blog) : (string) $data['html_url'],
+            (string) $data['login'],
             isset($data['avatar_url']) ? (string) $data['avatar_url'] : null,
         );
-    }
-
-    private static function normalizeUrl(string $url): string
-    {
-        return str_starts_with($url, 'http') ? $url : 'https://'.$url;
     }
 }

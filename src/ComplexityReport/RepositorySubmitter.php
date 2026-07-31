@@ -7,10 +7,10 @@ namespace App\ComplexityReport;
 use App\ComplexityReport\Exception\SubmissionFailed;
 use App\ComplexityReport\GitHub\GitHubClient;
 use App\ComplexityReport\GitHub\RepositoryIdentifier;
-use App\Entity\Project;
+use App\Entity\Organization;
 use App\Entity\Repository;
 use App\Message\AnalyseRepository;
-use App\Repository\ProjectRepository;
+use App\Repository\OrganizationRepository;
 use App\Repository\RepositoryRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -29,7 +29,7 @@ final class RepositorySubmitter
     public function __construct(
         private GitHubClient $client,
         private RepositoryRepository $repositoryRepository,
-        private ProjectRepository $projectRepository,
+        private OrganizationRepository $organizationRepository,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $messageBus,
         private LoggerInterface $logger,
@@ -69,7 +69,7 @@ final class RepositorySubmitter
             throw SubmissionFailed::noPhpRepository($identifier);
         }
 
-        $repository = Repository::fromGitHub($data, $this->loadProject($data->identifier->owner));
+        $repository = Repository::fromGitHub($data, $this->loadOrganization($data->identifier->owner));
 
         $this->entityManager->persist($repository);
         $this->entityManager->flush();
@@ -82,19 +82,19 @@ final class RepositorySubmitter
         return Submission::queued($repository);
     }
 
-    private function loadProject(string $vendor): Project
+    private function loadOrganization(string $login): Organization
     {
-        $project = $this->projectRepository->findOneByVendor($vendor);
+        $organization = $this->organizationRepository->findOneByLogin($login);
 
-        if (null !== $project) {
-            return $project;
+        if (null !== $organization) {
+            return $organization;
         }
 
-        $project = Project::fromGitHub($this->client->getOwner($vendor));
-        $this->entityManager->persist($project);
+        $organization = Organization::fromGitHub($this->client->getOwner($login));
+        $this->entityManager->persist($organization);
 
-        $this->logger->info(sprintf('Added project %s', $vendor));
+        $this->logger->info(sprintf('Added organization %s', $login));
 
-        return $project;
+        return $organization;
     }
 }

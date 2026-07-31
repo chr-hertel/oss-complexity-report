@@ -5,16 +5,21 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\ComplexityReport\GitHub\OwnerData;
-use App\Repository\ProjectRepository;
+use App\Repository\OrganizationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * A GitHub owner - projects are not curated anymore but derived from the repositories that were submitted.
+ * The GitHub account a repository belongs to - an organization like `symfony`, or a user like `nikic`.
+ *
+ * Organizations are not curated but derived from the repositories that were submitted, so the only thing
+ * they carry is what github.com states about them: the login they are addressed by and their avatar. The
+ * display name and homepage this used to hold came from optional profile fields and were wrong as often
+ * as they were right - the login is what identifies an account.
  */
-#[ORM\Entity(repositoryClass: ProjectRepository::class)]
-class Project
+#[ORM\Entity(repositoryClass: OrganizationRepository::class)]
+class Organization
 {
     #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
     private int $id;
@@ -22,16 +27,12 @@ class Project
     /**
      * @var Collection<int, Repository>
      */
-    #[ORM\OneToMany(targetEntity: Repository::class, mappedBy: 'project')]
+    #[ORM\OneToMany(targetEntity: Repository::class, mappedBy: 'organization')]
     private Collection $repositories;
 
     public function __construct(
         #[ORM\Column(unique: true)]
-        private readonly string $vendor,
-        #[ORM\Column]
-        private string $name,
-        #[ORM\Column]
-        private string $url,
+        private readonly string $login,
         #[ORM\Column(nullable: true)]
         private ?string $avatarUrl = null,
     ) {
@@ -40,29 +41,22 @@ class Project
 
     public static function fromGitHub(OwnerData $owner): self
     {
-        return new self($owner->login, $owner->name, $owner->url, $owner->avatarUrl);
+        return new self($owner->login, $owner->avatarUrl);
     }
 
     public function update(OwnerData $owner): void
     {
-        $this->name = $owner->name;
-        $this->url = $owner->url;
         $this->avatarUrl = $owner->avatarUrl;
     }
 
-    public function getName(): string
+    public function getLogin(): string
     {
-        return $this->name;
+        return $this->login;
     }
 
     public function getUrl(): string
     {
-        return $this->url;
-    }
-
-    public function getVendor(): string
-    {
-        return $this->vendor;
+        return sprintf('https://github.com/%s', $this->login);
     }
 
     public function getAvatarUrl(): ?string
@@ -109,14 +103,14 @@ class Project
     }
 
     /**
-     * The most popular repository of a vendor is the one preselected in its chart.
+     * The most popular repository of an organization is the one preselected in its chart.
      */
     public function getMainRepository(): Repository
     {
         $repositories = $this->getAnalysedRepositories() ?: $this->getRepositories();
 
         if ([] === $repositories) {
-            throw new \DomainException(sprintf('Project "%s" does not have any repository.', $this->name));
+            throw new \DomainException(sprintf('Organization "%s" does not have any repository.', $this->login));
         }
 
         return $repositories[0];

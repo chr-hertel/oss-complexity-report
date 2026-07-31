@@ -27,7 +27,7 @@ final readonly class StatisticsCommand
 
         $io->listing([
             sprintf('<options=bold>%d</> repositories', $statistics->repositoryCount),
-            sprintf('<options=bold>%d</> vendors', $statistics->projectCount),
+            sprintf('<options=bold>%d</> organizations', $statistics->organizationCount),
             sprintf('<options=bold>%s</> tags', number_format($statistics->tagCount)),
             sprintf('<options=bold>%s</> lines of code', number_format($statistics->linesOfCode)),
         ]);

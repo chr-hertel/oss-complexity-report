@@ -13,7 +13,7 @@
                         <input type="hidden" name="_token" value="{{ csrf_token('submit') }}"
                                data-controller="csrf-protection">
                         <input type="text" name="repository" class="form-control form-control-lg"
-                               placeholder="vendor/repository or https://github.com/vendor/repository"
+                               placeholder="owner/repository or https://github.com/owner/repository"
                                aria-label="GitHub repository" required>
                         <button type="submit" class="btn btn-lg btn-dark text-nowrap">Add Repository</button>
                     </form>
@@ -43,7 +43,7 @@
                         <div class="card-body pb-2">
                             <h5 class="card-title mb-2">
                                 <a class="text-reset text-decoration-none"
-                                   href="{{ path('project', {'vendor': repository.project.vendor, 'repository': repository.id}) }}">
+                                   href="{{ path('organization', {'organization': repository.organization.login, 'repository': repository.id}) }}">
                                     {{ repository.name }}
                                 </a>
                             </h5>
@@ -67,13 +67,13 @@
             {% endfor %}
         </div>
 
-        {% if projects is not empty %}
-            <h2 class="mt-5 mb-3">Vendors</h2>
+        {% if organizations is not empty %}
+            <h2 class="mt-5 mb-3">Organizations</h2>
             <div class="d-flex flex-wrap gap-2">
-                {% for project in projects %}
-                    <a href="{{ path('project', {'vendor': project.vendor}) }}" class="btn btn-secondary">
-                        {{ project.name }}
-                        <span class="badge bg-light text-dark ms-1">{{ project.analysedRepositories|length }}</span>
+                {% for organization in organizations %}
+                    <a href="{{ path('organization', {'organization': organization.login}) }}" class="btn btn-secondary">
+                        {{ organization.login }}
+                        <span class="badge bg-light text-dark ms-1">{{ organization.analysedRepositories|length }}</span>
                     </a>
                 {% endfor %}
             </div>
@@ -83,14 +83,14 @@
             <h2 class="mt-5 mb-3">Queued for Analysis</h2>
             <p class="text-muted">
                 {% for repository in pending %}
-                    <a href="{{ path('project', {'vendor': repository.project.vendor, 'repository': repository.id}) }}"
+                    <a href="{{ path('organization', {'organization': repository.organization.login, 'repository': repository.id}) }}"
                        class="text-muted">{{ repository.name }}</a>{{ not loop.last ? ',' }}
                 {% endfor %}
             </p>
         {% endif %}
 
         <p class="text-center text-muted mt-5 mb-0">
-            {{ statistics.repositoryCount }} repositories of {{ statistics.projectCount }} vendors,
+            {{ statistics.repositoryCount }} repositories of {{ statistics.organizationCount }} organizations,
             {{ statistics.tagCount|number_format }} releases and
             {{ statistics.linesOfCode|number_format }} lines of code analysed.
         </p>

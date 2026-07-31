@@ -5,7 +5,8 @@ Measures how the cyclomatic complexity of PHP open source software evolved over 
 
 Every repository on github.com that is mostly written in PHP can be submitted - a `composer.json` is not
 needed, so `wordpress/wordpress` works just as well as `symfony/console`. Submitted repositories are
-grouped by their GitHub vendor, and the start page and the overview chart focus on the most starred ones.
+grouped by the GitHub account that owns them, and the start page and the overview chart focus on the most
+starred ones.
 
 Requirements
 ------------

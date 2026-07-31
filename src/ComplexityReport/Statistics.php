@@ -7,16 +7,16 @@ namespace App\ComplexityReport;
 final class Statistics
 {
     public function __construct(
-        public readonly int $projectCount,
+        public readonly int $organizationCount,
         public readonly int $repositoryCount,
         public readonly int $tagCount,
         public readonly int $linesOfCode,
     ) {
     }
 
-    public function getProjectCount(): int
+    public function getOrganizationCount(): int
     {
-        return $this->projectCount;
+        return $this->organizationCount;
     }
 
     public function getRepositoryCount(): int

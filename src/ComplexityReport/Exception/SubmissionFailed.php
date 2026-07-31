@@ -12,7 +12,7 @@ final class SubmissionFailed extends \RuntimeException
     public static function invalidInput(string $input): self
     {
         return new self(sprintf(
-            'Cannot read a GitHub repository from "%s" - please use the format vendor/repository.',
+            'Cannot read a GitHub repository from "%s" - please use the format owner/repository.',
             $input
         ));
     }

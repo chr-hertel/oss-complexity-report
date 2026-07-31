@@ -49,7 +49,7 @@ final class RepositoryDataTest extends TestCase
         self::assertTrue($data->fork);
     }
 
-    public function testItPrefersTheWebsiteOfAnOwner(): void
+    public function testItMapsAnOwnerResponse(): void
     {
         $owner = OwnerData::fromApiResponse([
             'login' => 'symfony',
@@ -59,11 +59,12 @@ final class RepositoryDataTest extends TestCase
             'avatar_url' => 'https://avatars.githubusercontent.com/u/143937',
         ]);
 
-        self::assertSame('Symfony', $owner->name);
-        self::assertSame('https://symfony.com', $owner->url);
+        // the profile name and the blog an account may carry are not what identifies it
+        self::assertSame('symfony', $owner->login);
+        self::assertSame('https://avatars.githubusercontent.com/u/143937', $owner->avatarUrl);
     }
 
-    public function testItFallsBackToTheGitHubProfileOfAnOwner(): void
+    public function testItAcceptsAnOwnerWithoutAnAvatar(): void
     {
         $owner = OwnerData::fromApiResponse([
             'login' => 'Seldaek',
@@ -73,8 +74,7 @@ final class RepositoryDataTest extends TestCase
             'avatar_url' => null,
         ]);
 
-        self::assertSame('Seldaek', $owner->name);
-        self::assertSame('https://github.com/Seldaek', $owner->url);
+        self::assertSame('Seldaek', $owner->login);
         self::assertNull($owner->avatarUrl);
     }
 }
