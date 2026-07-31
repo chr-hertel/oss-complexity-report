@@ -58,8 +58,9 @@
                     <p>
                         Anyone can submit a repository - github.com is the only source, and no
                         <code>composer.json</code> is needed. A submission is turned down when the
-                        repository is unknown, a fork, empty, larger than 10&nbsp;MB or less than 20%
-                        PHP; everything else is queued for a worker.
+                        repository is unknown, a fork, empty, larger than 10&nbsp;GB, or less than 20%
+                        PHP by the language breakdown github.com reports for it; everything else is
+                        queued for a worker.
                     </p>
                     <p>
                         The worker clones it and checks out its release tags one after another. Only
