@@ -10,6 +10,8 @@
             <div class="row justify-content-center">
                 <div class="col-lg-9">
                     <form action="{{ path('submit') }}" method="post" class="d-flex flex-column flex-sm-row gap-2">
+                        <input type="hidden" name="_token" value="{{ csrf_token('submit') }}"
+                               data-controller="csrf-protection">
                         <input type="text" name="repository" class="form-control form-control-lg"
                                placeholder="vendor/repository or https://github.com/vendor/repository"
                                aria-label="GitHub repository" required>

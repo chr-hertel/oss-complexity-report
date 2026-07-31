@@ -16,6 +16,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class ReportController extends AbstractController
@@ -45,8 +46,24 @@ final class ReportController extends AbstractController
     }
 
     #[Route('submit', name: 'submit', methods: 'POST', priority: 3)]
-    public function submit(Request $request, RepositorySubmitter $submitter): Response
-    {
+    public function submit(
+        Request $request,
+        RepositorySubmitter $submitter,
+        RateLimiterFactoryInterface $submissionLimiter,
+    ): Response {
+        if (!$this->isCsrfTokenValid('submit', (string) $request->request->get('_token'))) {
+            $this->addFlash('danger', 'That form expired - please submit the repository again.');
+
+            return $this->redirectToRoute('start');
+        }
+
+        // every submission spends github.com API quota and ends in a clone, so it is worth a limit
+        if (!$submissionLimiter->create($request->getClientIp())->consume()->isAccepted()) {
+            $this->addFlash('danger', 'That is a lot of repositories at once - please try again in a few minutes.');
+
+            return $this->redirectToRoute('start');
+        }
+
         try {
             $repository = $submitter->submit((string) $request->request->get('repository', ''));
         } catch (SubmissionFailed $exception) {

@@ -65,6 +65,17 @@ works if all workers run on the same machine - switch it to `postgresql+advisory
 
 Failed messages are kept: `messenger:failed:show` lists them, `messenger:failed:retry` puts them back.
 
+### Disk usage
+
+Clones in `repositories/` are scratch space, not a cache. A working copy is only needed while releases are
+measured - looking for new ones reads refs from github.com - so an analysis removes it when it is done, and
+a repository that never releases again never occupies disk. That bounds the disk by what is being analysed
+instead of by everything ever submitted, at the price of cloning again when a repository does release.
+
+`app:repositories:clean` removes what predates that: working copies from before this behaviour, from
+repositories that were renamed, and from workers that were killed mid-analysis. It skips whatever is being
+analysed right now, so it is safe to run while workers are busy.
+
 [messenger]: https://symfony.com/doc/current/messenger.html
 [scheduler]: https://symfony.com/doc/current/scheduler.html
 
@@ -159,6 +170,10 @@ Submitting queues the repository for analysis right away, so it shows up as soon
 Every night the schedule looks for releases that are missing and refreshes the stars, which means there
 is nothing left to run by hand - `app:releases:scan` and `app:repositories:refresh` only trigger the same
 work earlier.
+
+The form is protected by a stateless CSRF token - a double submit cookie written by the `csrf-protection`
+Stimulus controller, so readers of the report never get a session - and submissions are limited to five per
+quarter of an hour and IP, since each one spends github.com API quota and ends in a clone.
 
 Set `GITHUB_TOKEN` in `.env.local` to raise the github.com API rate limit from 60 to 5.000 requests per
 hour. The token only reads public data, so it does not need any scope.

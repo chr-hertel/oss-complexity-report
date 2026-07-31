@@ -77,10 +77,15 @@ needs the queue to be empty (`messenger:stats`) to see all the data.
 Day-to-day there is no rebuild and nothing to run by hand: submitting dispatches the analysis, and the
 nightly schedule looks for new releases and refreshes stars.
 
-Analysis is slow (clones every submitted repository) and leans on the `cache.app` filesystem pool: GitHub
-responses expire after 1h, but **per-tag phploc analyses are cached without expiry**. Stale or wrong
-numbers usually mean the pool needs clearing, not that the code is broken. Clones live in
-`repositories/<vendor>/<repository>` (gitignored, a shared dir in deployment).
+Analysis is slow (clones the repository) and leans on the `cache.app` filesystem pool: GitHub responses
+expire after 1h, but **per-tag phploc analyses are cached without expiry**. Stale or wrong numbers usually
+mean the pool needs clearing, not that the code is broken.
+
+Clones live in `repositories/<vendor>/<repository>` (gitignored, a shared dir in deployment) and are
+**scratch space, not a cache** — `RepositoryAnalyser` removes the working copy when it is done, so the disk
+is bounded by what is being analysed rather than by everything ever submitted. It also asks the remote
+before cloning at all, so an up-to-date repository costs one `ls-remote`. `app:repositories:clean` sweeps
+what predates that, including directories that no repository maps to anymore (the packagist-era names).
 
 ## Architecture
 
@@ -109,8 +114,10 @@ main library anymore — `getMainRepository()` returns its most starred analysed
 - `Git` / `GitController` / `CodeAnalyser` — `Git` shells out via symfony/process and logs every call on the
   `git` monolog channel; it pins `GIT_TERMINAL_PROMPT=0` so a repository that went private fails instead of
   blocking a worker on a credential prompt. `GitController` adds the domain layer (clone on first use, load
-  tags local and remote, checkout, last commit date). Metrics come from phploc's `Analyser` (`loc`,
-  `classCcnAvg`). Both receive the `$repositoryPath` bound globally in `config/services.yaml`.
+  tags local and remote, checkout, last commit date, remove/list working copies). Metrics come from phploc's
+  `Analyser` (`loc`, `classCcnAvg`). Both receive the `$repositoryPath` bound globally in
+  `config/services.yaml`.
+- `WorkingCopyLock` — one lock per repository, taken by everything that touches its working copy.
 - `DataFixer` + `DataFixer/*Fixer` — post-processing for datasets where git history lies (Laminas tags all
   dated at the Zend→Laminas import, PHPUnit tags with a bogus 2006 date, Laravel minors that distort the
   chart). They must no-op when their repository was never submitted. Implementing `FixerInterface` is
@@ -130,6 +137,13 @@ running them in the schedule worker.
 shared working copy, so a second worker on the same repository would silently measure the wrong code. A
 busy repository throws `RecoverableMessageHandlingException` and is retried — deliberately without
 consuming the retry budget, since being busy is not a failure.
+
+**Submitting** is the only write the web exposes, so `submit` checks a CSRF token before anything else and
+then spends one token of the `submission` rate limiter (5 per 15 minutes and IP). CSRF is **stateless**
+(`config/packages/csrf.yaml`): the token is a double submit cookie written by Symfony's `csrf-protection`
+Stimulus controller, which is why the hidden field carries `data-controller="csrf-protection"` and why
+reading the report never starts a session. Both rejections are flashes, not exceptions - a human mistyping
+twice should not get an error page.
 
 **Web** (`src/Controller/ReportController`) — routes are distinguished by `priority`, since `{vendor}` and
 `{id}` both match a single segment: `overview`/`submit` (3) > `repository` (2, digits only, returns JSON) >

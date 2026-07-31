@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\ComplexityReport;
 
 use App\Entity\Repository;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
 
 final readonly class GitController
 {
     public function __construct(
         private Git $git,
+        private Filesystem $filesystem,
         private string $repositoryPath,
     ) {
     }
@@ -60,6 +63,63 @@ final readonly class GitController
     public function isCloned(Repository $repository): bool
     {
         return is_dir($this->repositoryPath.'/'.$repository->getLocalPath());
+    }
+
+    /**
+     * A working copy is scratch space: it is only needed while releases are measured, and looking for new
+     * ones does not need it at all (see loadRemoteTags()). Dropping it afterwards bounds the disk by what
+     * is being analysed instead of by everything ever submitted - a repository that releases again is
+     * cloned again, which happens a few times a year, not nightly.
+     */
+    public function removeWorkingCopy(string $localPath): void
+    {
+        $path = $this->repositoryPath.'/'.$localPath;
+
+        if (!is_dir($path)) {
+            return;
+        }
+
+        $this->filesystem->remove($path);
+
+        // git clone recreates the vendor directory, so an empty one left behind is just noise
+        $vendorPath = \dirname($path);
+
+        if ($this->isEmptyDirectory($vendorPath)) {
+            $this->filesystem->remove($vendorPath);
+        }
+    }
+
+    /**
+     * Every working copy on disk as `vendor/repository`, including the ones left behind by repositories
+     * that are not submitted under that name anymore.
+     *
+     * @return list<string>
+     */
+    public function listWorkingCopies(): array
+    {
+        if (!is_dir($this->repositoryPath)) {
+            return [];
+        }
+
+        $finder = (new Finder())
+            ->directories()
+            ->in($this->repositoryPath)
+            ->depth(1);
+
+        $workingCopies = [];
+
+        foreach ($finder as $directory) {
+            $workingCopies[] = $directory->getRelativePathname();
+        }
+
+        sort($workingCopies);
+
+        return $workingCopies;
+    }
+
+    private function isEmptyDirectory(string $path): bool
+    {
+        return is_dir($path) && !(new \FilesystemIterator($path))->valid();
     }
 
     private function getLocalPath(Repository $repository): string

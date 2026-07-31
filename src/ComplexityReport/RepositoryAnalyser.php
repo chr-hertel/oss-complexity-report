@@ -32,20 +32,34 @@ final readonly class RepositoryAnalyser
      */
     public function analyse(Repository $repository): int
     {
-        $measured = 0;
-
-        foreach ($this->releaseScanner->scanWorkingCopy($repository) as $tag) {
-            $this->logger->info(sprintf('Collecting data for %s tag %s', $repository->getName(), $tag->getName()));
-
-            $repository->addTag($tag, $this->collectTagData($repository, $tag));
-
-            // flushed per release so a tag that cannot be analysed only costs its own work on the next try
+        // asking the remote costs a moment, cloning costs minutes and gigabytes - so ask first
+        if ([] === $this->releaseScanner->scanRemote($repository)) {
+            $this->logger->debug(sprintf('Nothing to measure for %s', $repository->getName()));
+            $repository->markAnalysed();
             $this->entityManager->flush();
-            ++$measured;
+
+            return 0;
         }
 
-        $repository->markAnalysed();
-        $this->entityManager->flush();
+        $measured = 0;
+
+        try {
+            foreach ($this->releaseScanner->scanWorkingCopy($repository) as $tag) {
+                $this->logger->info(sprintf('Collecting data for %s tag %s', $repository->getName(), $tag->getName()));
+
+                $repository->addTag($tag, $this->collectTagData($repository, $tag));
+
+                // flushed per release so a tag that cannot be analysed only costs its own work on the next try
+                $this->entityManager->flush();
+                ++$measured;
+            }
+
+            $repository->markAnalysed();
+            $this->entityManager->flush();
+        } finally {
+            // also on failure: the retry clones again, but an abandoned working copy would stay forever
+            $this->gitController->removeWorkingCopy($repository->getLocalPath());
+        }
 
         return $measured;
     }

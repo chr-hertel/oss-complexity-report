@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\MessageHandler;
 
 use App\ComplexityReport\RepositoryAnalyser;
+use App\ComplexityReport\WorkingCopyLock;
 use App\Message\AnalyseRepository;
 use App\Repository\RepositoryRepository;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 
@@ -23,7 +23,7 @@ final readonly class AnalyseRepositoryHandler
     public function __construct(
         private RepositoryRepository $repositoryRepository,
         private RepositoryAnalyser $repositoryAnalyser,
-        private LockFactory $lockFactory,
+        private WorkingCopyLock $workingCopyLock,
         private LoggerInterface $logger,
     ) {
     }
@@ -40,7 +40,7 @@ final readonly class AnalyseRepositoryHandler
 
         // checking out a tag rewrites the working copy, so two workers on the same repository would
         // measure whatever the other one checked out last - wrong numbers instead of a visible failure
-        $lock = $this->lockFactory->createLock(sprintf('analyse-%s', $repository->getLocalPath()));
+        $lock = $this->workingCopyLock->create($repository);
 
         if (!$lock->acquire()) {
             // being busy is not a failure, so this deliberately retries beyond max_retries - the lock is
