@@ -97,8 +97,10 @@
     margin-top: var(--space-6);
 }
 
-// as wide as the chart it fills - the chips in it are the series above, in the same order
+// as wide as the chart below it - the chips in it are the series it is drawn from, in the same order
 .repository-picker {
+    margin-top: var(--space-5);
+
     &__hint {
         margin-top: var(--space-3);
         font-size: var(--text-sm);

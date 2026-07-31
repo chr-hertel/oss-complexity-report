@@ -103,25 +103,15 @@
                         <span data-chart-target="seriesCount"></span>
                     </p>
 
-                    <div class="panel chart-panel">
-                        <div class="chart-canvas">
-                            <canvas data-chart-target="canvas"></canvas>
-                        </div>
-                    </div>
-
                     {#
-                     # Everything the report carries can be added here, whoever owns it - the box is the
-                     # whole navigation of this screen, and what is picked ends up in the query string.
+                     # What the chart is drawn from stands above it: everything the report carries can be
+                     # added here, whoever owns it - the box is the whole navigation of this screen, and
+                     # what is picked ends up in the query string. The headline says what it is, so the
+                     # box needs no second one.
                      #}
-                    <section class="section repository-picker">
-                        <div class="section-header">
-                            <div>
-                                <div class="eyebrow">Chart</div>
-                                <h2>Repositories</h2>
-                            </div>
-                        </div>
+                    <div class="repository-picker">
                         <select class="js-repository-select" name="repositories[]" multiple="multiple"
-                                data-chart-target="select">
+                                aria-label="Repositories in this chart" data-chart-target="select">
                             {# no whitespace around the name: select2 renders the raw text into its chips #}
                             {% for repository in selection.options %}
                                 <option value="{{ repository.name }}" {{ repository in series ? 'selected="selected"' }}>{{ repository.name }}</option>
@@ -131,7 +121,13 @@
                             Up to {{ chartLimit }} at a time, one colour each.
                             <a href="{{ path('start') }}">Add a repository</a> the report does not carry yet.
                         </p>
-                    </section>
+                    </div>
+
+                    <div class="panel chart-panel">
+                        <div class="chart-canvas">
+                            <canvas data-chart-target="canvas"></canvas>
+                        </div>
+                    </div>
 
                     <section class="section" data-chart-target="release" hidden>
                         <div class="release-head">
