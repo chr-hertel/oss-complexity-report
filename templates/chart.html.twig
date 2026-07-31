@@ -3,26 +3,26 @@
 {% block title parent() ~ ' - ' ~ selection.headline %}
 
 {% block content %}
+    {% set series = selection.series %}
+    {% set waiting = selection.waiting %}
+    {# nothing to draw and something on its way: the shape of the report stands in for it #}
+    {% set showSkeleton = series is empty and waiting is not empty %}
+
     {#
-     # The one chart of the report. What it is called follows from what is in it: a single repository, the
-     # account everything in it belongs to, or a comparison someone put together.
+     # The one chart of the report. It is not named after the way it was reached but after what is in it,
+     # and since that changes without leaving the page, the controller reaches up to the headline - which
+     # is why it wraps the whole screen rather than only the chart.
      #}
     <main class="page">
-        <div class="wrap page__body">
-            {% set series = selection.series %}
-            {% set waiting = selection.waiting %}
-            {# nothing to draw and something on its way: the shape of the report stands in for it #}
-            {% set showSkeleton = series is empty and waiting is not empty %}
-
-            <div class="eyebrow">{{ selection.eyebrow }}</div>
+        <div class="wrap page__body" data-controller="chart"
+             data-repositories="{{ series|map(repository => repository.asGraph)|json_encode|e('html_attr') }}">
+            <div class="eyebrow">Chart</div>
             <h1 class="chart-title">
-                {{ selection.headline }}
-                {% if selection.url %}
-                    <a href="{{ selection.url }}" target="_blank" rel="noreferrer" class="chart-title__link"
-                       title="{{ selection.url|replace({'https://':''}) }}">
-                        <i class="fas fa-arrow-up-right-from-square"></i>
-                    </a>
-                {% endif %}
+                <span data-chart-target="headline">{{ selection.headline }}</span>
+                <a class="chart-title__link" target="_blank" rel="noreferrer" data-chart-target="headlineLink"
+                   {% if selection.url %}href="{{ selection.url }}" title="{{ selection.url|replace({'https://':''}) }}"{% else %}hidden{% endif %}>
+                    <i class="fas fa-arrow-up-right-from-square"></i>
+                </a>
             </h1>
 
             {#
@@ -95,13 +95,8 @@
                     </section>
                 </div>
             {% elseif series is not empty %}
-                <div data-controller="chart"
-                     data-chart-limit-value="{{ chartLimit }}"
-                     data-repositories="{{ series|map(repository => repository.asGraph)|json_encode|e('html_attr') }}">
-                    <p class="chart-lead">
-                        Average cyclomatic complexity per analysed release.
-                        <span data-chart-target="seriesCount"></span>
-                    </p>
+                <div>
+                    <p class="chart-lead">Average cyclomatic complexity per analysed release.</p>
 
                     {#
                      # What the chart is drawn from stands above it: everything the report carries can be

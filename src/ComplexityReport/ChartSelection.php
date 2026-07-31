@@ -4,28 +4,26 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport;
 
-use App\Entity\Organization;
 use App\Entity\Repository;
 
 /**
  * What the chart screen was opened with: the repositories it draws, and everything else that could be
  * added to them.
  *
- * The screen is one page for three readings - a single repository, the repositories of one GitHub
- * account, and any comparison someone put together - so what it is called follows from what is picked
- * rather than from the route it was reached by.
+ * The screen does not know how it was reached and does not name itself after it. What it is called
+ * follows from what is in the chart, by one rule that holds for every way it can be filled - the
+ * repository itself while it is the only one, a count as soon as there are more. The browser keeps that
+ * name up to date while repositories are added and removed, which is why the rule has to be this small.
  */
 final readonly class ChartSelection
 {
     /**
      * @param list<Repository> $selected the repositories the chart was opened with, in the order it draws them
      * @param list<Repository> $analysed everything that carries releases, most starred first
-     * @param bool             $picked   whether the selection was asked for, rather than the default chart
      */
     private function __construct(
         private array $selected,
         private array $analysed,
-        private bool $picked,
     ) {
     }
 
@@ -36,7 +34,7 @@ final readonly class ChartSelection
      */
     public static function mostStarred(array $analysed, int $limit): self
     {
-        return new self(array_slice($analysed, 0, $limit), $analysed, false);
+        return new self(array_slice($analysed, 0, $limit), $analysed);
     }
 
     /**
@@ -45,7 +43,7 @@ final readonly class ChartSelection
      */
     public static function of(array $selected, array $analysed): self
     {
-        return new self($selected, $analysed, true);
+        return new self($selected, $analysed);
     }
 
     /**
@@ -83,63 +81,36 @@ final readonly class ChartSelection
         return array_values(array_filter($this->selected, static fn (Repository $repository) => !$repository->isAnalysed()));
     }
 
-    /**
-     * The single GitHub account everything selected belongs to - `null` as soon as the chart mixes owners.
-     */
-    public function getOwner(): ?Organization
+    public function getHeadline(): string
     {
-        $owner = null;
+        $subjects = $this->getSubjects();
 
-        foreach ($this->selected as $repository) {
-            if (null !== $owner && $owner !== $repository->getOrganization()) {
-                return null;
-            }
-
-            $owner = $repository->getOrganization();
-        }
-
-        return $owner;
-    }
-
-    /**
-     * What kind of thing the headline names.
-     */
-    public function getEyebrow(): string
-    {
-        return match (true) {
-            !$this->picked => 'Overview',
-            1 === \count($this->selected) => 'Repository',
-            null !== $this->getOwner() => 'GitHub owner',
-            default => 'Comparison',
+        return match (\count($subjects)) {
+            0 => 'No repositories',
+            1 => $subjects[0]->getName(),
+            default => sprintf('%d repositories', \count($subjects)),
         };
     }
 
-    public function getHeadline(): string
-    {
-        if (!$this->picked) {
-            return 'Most starred repositories';
-        }
-
-        if (1 === \count($this->selected)) {
-            return $this->selected[0]->getName();
-        }
-
-        return $this->getOwner()?->getLogin() ?? sprintf('%d repositories compared', \count($this->selected));
-    }
-
     /**
-     * The page on github.com behind the headline, when it names something that has one.
+     * The repository on github.com while the chart is of exactly one - the same link the browser builds
+     * from the slug when the selection changes, since a slug is all a github.com address is.
      */
     public function getUrl(): ?string
     {
-        if (!$this->picked) {
-            return null;
-        }
+        $subjects = $this->getSubjects();
 
-        if (1 === \count($this->selected)) {
-            return $this->selected[0]->getUrl();
-        }
+        return 1 === \count($subjects) ? $subjects[0]->getUrl() : null;
+    }
 
-        return $this->getOwner()?->getUrl();
+    /**
+     * What the chart is of: the lines it draws, or - while it has none - what it is waiting for, which
+     * is the one state the browser cannot rename, since nothing can be picked in it.
+     *
+     * @return list<Repository>
+     */
+    private function getSubjects(): array
+    {
+        return $this->getSeries() ?: $this->getWaiting();
     }
 }

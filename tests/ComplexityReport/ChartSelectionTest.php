@@ -20,8 +20,7 @@ final class ChartSelectionTest extends TestCase
         $selection = ChartSelection::mostStarred($analysed, 2);
 
         self::assertSame([$analysed[0], $analysed[1]], $selection->getSeries());
-        self::assertSame('Overview', $selection->getEyebrow());
-        self::assertSame('Most starred repositories', $selection->getHeadline());
+        self::assertSame('2 repositories', $selection->getHeadline());
         self::assertNull($selection->getUrl());
     }
 
@@ -31,31 +30,31 @@ final class ChartSelectionTest extends TestCase
 
         $selection = ChartSelection::of([$repository], [$repository]);
 
-        self::assertSame('Repository', $selection->getEyebrow());
         self::assertSame('symfony/console', $selection->getHeadline());
         self::assertSame('https://github.com/symfony/console', $selection->getUrl());
     }
 
-    public function testRepositoriesOfOneAccountAreNamedByTheirOwner(): void
+    /**
+     * The account everything belongs to used to name the chart, which is a name the browser cannot keep
+     * up to date - a count is a count however the chart was filled.
+     */
+    public function testSeveralRepositoriesAreCounted(): void
     {
         $console = self::analysed('symfony/console');
         $kernel = self::analysed('symfony/http-kernel', $console->getOrganization());
 
         $selection = ChartSelection::of([$console, $kernel], [$console, $kernel]);
 
-        self::assertSame('GitHub owner', $selection->getEyebrow());
-        self::assertSame('symfony', $selection->getHeadline());
-        self::assertSame('https://github.com/symfony', $selection->getUrl());
+        self::assertSame('2 repositories', $selection->getHeadline());
+        self::assertNull($selection->getUrl());
     }
 
-    public function testAChartOfSeveralAccountsIsAComparison(): void
+    public function testAChartOfNothingSaysSo(): void
     {
-        $selected = [self::analysed('symfony/console'), self::analysed('laravel/framework')];
+        $selection = ChartSelection::mostStarred([], 8);
 
-        $selection = ChartSelection::of($selected, $selected);
-
-        self::assertSame('Comparison', $selection->getEyebrow());
-        self::assertSame('2 repositories compared', $selection->getHeadline());
+        self::assertSame([], $selection->getSeries());
+        self::assertSame('No repositories', $selection->getHeadline());
         self::assertNull($selection->getUrl());
     }
 
@@ -81,6 +80,19 @@ final class ChartSelectionTest extends TestCase
         self::assertSame([$queued], $selection->getWaiting());
         // it has nothing to plot, so it is not an option of the chart either
         self::assertSame([$console], $selection->getOptions());
+        // and the chart is of what it draws, not of what it is still waiting for
+        self::assertSame('symfony/console', $selection->getHeadline());
+    }
+
+    public function testAChartWithoutALineIsNamedAfterWhatItWaitsFor(): void
+    {
+        $queued = self::repository('symfony/uid');
+
+        $selection = ChartSelection::of([$queued], []);
+
+        self::assertSame([], $selection->getSeries());
+        self::assertSame('symfony/uid', $selection->getHeadline());
+        self::assertSame('https://github.com/symfony/uid', $selection->getUrl());
     }
 
     public function testARepositoryThatIsHalfwayThroughIsDrawnAndWaitedFor(): void

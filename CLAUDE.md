@@ -186,10 +186,13 @@ Repositories are addressed by the slug they carry on github.com, never by a data
 is a link people read, edit and share, so it says what it draws. The case does not matter, and slugs that
 are not repositories are dropped rather than answered with an error.
 `ChartSelection` is what the template reads: the series, the repositories still waiting for a worker, the
-options of the picker, and what the page is called - a single repository is named by its name, a chart that
-stays within one GitHub account by that account, anything else is a comparison. A repository has a chart
-from the moment it is submitted: no releases yet means no lines but a status telling the visitor it is
-queued or being measured right now.
+options of the picker, and what the page is called. The screen is **not** named after the way it was
+reached - it is named after what is in it, by one rule that survives the chart being edited in place: the
+repository itself while it is the only one, a count as soon as there are more. `chart_controller.js`
+applies the same rule to the headline, its github.com link and the document title whenever the selection
+changes, which is why the rule has to stay this small. A repository has a chart from the moment it is
+submitted: no releases yet means no lines but a status telling the visitor it is queued or being measured
+right now - the one state the browser cannot rename, since nothing can be picked in it.
 
 Routes are distinguished by `priority`, since `{organization}` and the slug of a repository both match
 whatever is left: `chart`/`search`/`submit` (3) > `repository` (2, `owner/repository`, returns the releases

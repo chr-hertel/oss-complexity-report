@@ -86,9 +86,10 @@ function group(title, rows) {
 
 export default class extends Controller {
     static targets = [
+        'headline',
+        'headlineLink',
         'canvas',
         'select',
-        'seriesCount',
         'release',
         'releaseTabs',
         'releasePanel',
@@ -98,15 +99,22 @@ export default class extends Controller {
         'releaseSelect',
         'analysis',
     ];
-    static values = { limit: { type: Number, default: 8 } };
 
     connect() {
+        // a chart that is still being measured has no canvas and nothing to pick from - the page says so
+        // on its own, and there is nothing here to keep up to date
+        if (!this.hasCanvasTarget) {
+            return;
+        }
+
         // what the page was rendered with; everything picked later is fetched from the JSON route once
         this.graphs = new Map();
         JSON.parse(this.element.dataset.repositories).forEach((graph) => {
             this.graphs.set(graph.name, graph);
         });
 
+        // `<site> - <headline>`, so what is in front of the last dash is the part that stays
+        this.site = document.title.split(' - ').slice(0, -1).join(' - ');
         this.renders = 0;
         // the lines that can be read release by release, and which one of them is being read
         this.series = [];
@@ -131,6 +139,10 @@ export default class extends Controller {
     }
 
     teardown() {
+        if (!this.hasSelectTarget) {
+            return;
+        }
+
         this.chart?.destroy();
         this.chart = null;
 
@@ -250,11 +262,29 @@ export default class extends Controller {
         }));
         this.chart.update();
 
-        if (this.hasSeriesCountTarget) {
-            this.seriesCountTarget.textContent = `${graphs.length} of ${this.limitValue} series shown.`;
-        }
-
+        this.renderHeadline(slugs);
         this.renderTabs(graphs);
+    }
+
+    /**
+     * What the page is called follows what is in the chart, by the same rule the server rendered it with
+     * - the repository itself while it is the only one, a count as soon as there are more. A single
+     * repository is a slug, and a slug is all a github.com address is, so the link follows too.
+     */
+    renderHeadline(slugs) {
+        const single = 1 === slugs.length;
+
+        this.headlineTarget.textContent = single
+            ? slugs[0]
+            : `${0 === slugs.length ? 'No' : slugs.length} repositories`;
+        document.title = `${this.site} - ${this.headlineTarget.textContent}`;
+
+        this.headlineLinkTarget.hidden = !single;
+
+        if (single) {
+            this.headlineLinkTarget.href = `https://github.com/${slugs[0]}`;
+            this.headlineLinkTarget.title = `github.com/${slugs[0]}`;
+        }
     }
 
     /**
