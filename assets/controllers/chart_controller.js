@@ -89,6 +89,7 @@ export default class extends Controller {
         'headline',
         'headlineLink',
         'canvas',
+        'resetZoom',
         'select',
         'release',
         'releaseTabs',
@@ -164,6 +165,12 @@ export default class extends Controller {
             options: {
                 maintainAspectRatio: false,
                 interaction: { mode: 'nearest', intersect: false },
+                // whatever the tooltip is pointing at is what a click reads below the chart, so the
+                // point that answers the click is the one the pointer already named
+                onClick: (event, elements) => this.pickPoint(elements),
+                onHover: (event, elements) => {
+                    this.canvasTarget.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+                },
                 plugins: {
                     legend: {
                         position: 'bottom',
@@ -191,8 +198,13 @@ export default class extends Controller {
                         },
                     },
                     zoom: {
-                        pan: { enabled: true },
-                        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' },
+                        pan: { enabled: true, onPanComplete: () => this.reflectZoom() },
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: true },
+                            mode: 'xy',
+                            onZoomComplete: () => this.reflectZoom(),
+                        },
                     },
                 },
                 scales: {
@@ -212,6 +224,47 @@ export default class extends Controller {
                 },
             },
         });
+    }
+
+    /**
+     * Zooming has no address bar to go back in, so the way out of it is a button - and one that is
+     * only there while there is something to undo, since an untouched chart has nothing to reset.
+     */
+    reflectZoom() {
+        if (this.hasResetZoomTarget) {
+            this.resetZoomTarget.hidden = !this.chart?.isZoomedOrPanned();
+        }
+    }
+
+    resetZoom() {
+        this.chart?.resetZoom();
+        this.reflectZoom();
+    }
+
+    /**
+     * A point in the chart is a release, and the release analysis below is where a release is read -
+     * so clicking one opens it there: its repository becomes the tab being read, and the point itself
+     * the release, whichever line it belongs to.
+     */
+    pickPoint(elements) {
+        const point = elements[0];
+
+        if (!point || !this.hasReleaseTarget) {
+            return;
+        }
+
+        this.showRepository(this.chart.data.datasets[point.datasetIndex].label, point.index);
+        this.revealRelease();
+    }
+
+    /**
+     * The chart fills the screen it is clicked in, so the answer to a click is usually below the fold -
+     * scrolled to only then, since nothing should move under someone who can already see it.
+     */
+    revealRelease() {
+        if (this.releaseTarget.getBoundingClientRect().top > window.innerHeight - 120) {
+            this.releaseTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     initSelectBox() {
@@ -261,6 +314,7 @@ export default class extends Controller {
             backgroundColor: SERIES_COLORS[index % SERIES_COLORS.length],
         }));
         this.chart.update();
+        this.reflectZoom();
 
         this.renderHeadline(slugs);
         this.renderTabs(graphs);
@@ -365,7 +419,11 @@ export default class extends Controller {
         this.showRepository(event.currentTarget.dataset.name);
     }
 
-    showRepository(name) {
+    /**
+     * Reading a repository starts at its newest release, unless the reader said which one - clicking a
+     * point in the chart does.
+     */
+    showRepository(name, index = null) {
         const graph = this.series.find((entry) => entry.name === name);
 
         if (!graph) {
@@ -395,7 +453,7 @@ export default class extends Controller {
             this.releaseSelectTarget.prepend(option);
         });
 
-        this.showRelease(graph.tags.length - 1);
+        this.showRelease(null === index ? graph.tags.length - 1 : index);
     }
 
     selectRelease(event) {

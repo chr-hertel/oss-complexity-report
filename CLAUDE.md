@@ -207,7 +207,11 @@ preselected repositories from a `data-repositories` attribute rendered by `templ
 lazily fetches additional ones from the `repository` JSON route when picked in the select2 box - what is
 picked is written back into the query string, so a chart someone put together is a link. The release
 analysis below the chart is one tab per line, built from the same graphs: every repository in the chart can
-be read release by release, and a tab carries the colour of its series.
+be read release by release, and a tab carries the colour of its series - and since a point in the chart
+*is* a release, clicking one opens it there: the line it belongs to becomes the tab being read and the
+point the release, scrolled to only when the section is off screen. The chart zooms and pans
+(chartjs-plugin-zoom), which the address bar knows nothing about, so the way back is the `.chart-reset`
+button floating over it - rendered `hidden` and shown by the controller only while `isZoomedOrPanned()`.
 `trend_controller.js` switches the time frame of the hero figure, which is rendered for all four windows
 at once, so nothing is fetched when one is picked.
 `refresh_controller.js` reloads the page every 30s while the status above the chart says a repository is

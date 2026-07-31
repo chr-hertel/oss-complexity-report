@@ -96,7 +96,10 @@
                 </div>
             {% elseif series is not empty %}
                 <div>
-                    <p class="chart-lead">Average cyclomatic complexity per analysed release.</p>
+                    <p class="chart-lead">
+                        Average cyclomatic complexity per analysed release. Scroll to zoom, drag to pan,
+                        and click a release to read it below.
+                    </p>
 
                     {#
                      # What the chart is drawn from stands above it: everything the report carries can be
@@ -121,6 +124,15 @@
                     <div class="panel chart-panel">
                         <div class="chart-canvas">
                             <canvas data-chart-target="canvas"></canvas>
+                            {#
+                             # Zooming leaves the chart somewhere the browser knows nothing about, so the
+                             # way back is a button - shown by the controller only while there is a zoom
+                             # or a pan to undo.
+                             #}
+                            <button type="button" class="chart-reset" data-chart-target="resetZoom"
+                                    data-action="chart#resetZoom" hidden>
+                                <i class="fas fa-arrows-to-dot"></i> Reset zoom
+                            </button>
                         </div>
                     </div>
 
