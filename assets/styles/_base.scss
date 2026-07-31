@@ -195,6 +195,18 @@ canvas {
         margin-top: var(--space-4);
         font-size: var(--text-lg);
         color: var(--hero-muted);
+
+        // the brand coloured link of the site would sink into the brand ground, so what names the
+        // tool is the sentence itself, underlined, and brightens to the hero text on hover
+        a {
+            color: inherit;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+
+            &:hover {
+                color: var(--hero-fg);
+            }
+        }
     }
 
     // the mark has no height of its own to stretch, so it stays centred against the intro
