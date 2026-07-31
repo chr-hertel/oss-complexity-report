@@ -16,9 +16,23 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 final class GitHubClient
 {
-    private const API_URL = 'https://api.github.com';
-    private const CACHE_TTL = 3600;
-    private const LOG_RESPONSE_LENGTH = 500;
+    private const string API_URL = 'https://api.github.com';
+    private const int CACHE_TTL = 3600;
+    private const int LOG_RESPONSE_LENGTH = 500;
+
+    /**
+     * A name github.com does not know is remembered too, and for much shorter.
+     *
+     * The api quota is what the whole report runs on, and a request for a repository that does not exist
+     * spends it just like any other - so asking for names that never existed must not be free. Short,
+     * because a repository that gets created should not stay unknown for the rest of the hour.
+     */
+    private const int MISSING_CACHE_TTL = 300;
+
+    /**
+     * Marks a cached miss. Not a field github.com sends, so it cannot be one of its own answers.
+     */
+    private const string MISSING = '__not_found';
 
     public function __construct(
         private HttpClientInterface $httpClient,
@@ -71,13 +85,19 @@ final class GitHubClient
         }
 
         if (!$item->isHit()) {
-            $item->set($this->fetch($path, (string) $subject));
-            $item->expiresAfter(self::CACHE_TTL);
+            $fetched = $this->fetch($path, (string) $subject);
+
+            $item->set($fetched);
+            $item->expiresAfter(isset($fetched[self::MISSING]) ? self::MISSING_CACHE_TTL : self::CACHE_TTL);
             $this->cache->save($item);
         }
 
         /** @var array<string, mixed> $data */
         $data = $item->get();
+
+        if (isset($data[self::MISSING])) {
+            throw SubmissionFailed::unknownRepository((string) $subject);
+        }
 
         return $data;
     }
@@ -103,7 +123,7 @@ final class GitHubClient
             $response = $exception->getResponse();
 
             if (404 === $response->getStatusCode()) {
-                throw SubmissionFailed::unknownRepository($subject);
+                return [self::MISSING => true];
             }
 
             // Whoever submitted the repository is told to try again later, but a refusal is rarely
@@ -126,8 +146,13 @@ final class GitHubClient
         }
     }
 
+    /**
+     * `|` rather than `_`, which is a character a repository may be named with: `/repos/a/b/languages`
+     * and `/repos/a/b_languages` are two different requests and used to share one cache entry, so one
+     * of them was answered with the other one's response.
+     */
     private function cacheKey(string $path): string
     {
-        return 'github_'.str_replace('/', '_', trim($path, '/'));
+        return 'github|'.str_replace('/', '|', trim($path, '/'));
     }
 }

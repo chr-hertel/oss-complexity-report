@@ -22,6 +22,12 @@ final readonly class RepositorySearch
      */
     private const int MIN_LENGTH = 2;
 
+    /**
+     * Above the longest `owner/repository` github.com can hold, nothing is being looked up - and the box
+     * is answered without asking the database to match a query nobody typed.
+     */
+    private const int MAX_LENGTH = 200;
+
     public function __construct(private RepositoryRepository $repositories)
     {
     }
@@ -29,8 +35,9 @@ final readonly class RepositorySearch
     public function search(string $input, int $limit): SearchResult
     {
         $query = trim($input);
+        $length = mb_strlen($query);
 
-        if (mb_strlen($query) < self::MIN_LENGTH) {
+        if ($length < self::MIN_LENGTH || $length > self::MAX_LENGTH) {
             return new SearchResult([]);
         }
 

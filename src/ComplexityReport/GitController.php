@@ -39,9 +39,13 @@ final readonly class GitController
         return GitTag::fromRefs($this->git->listRemoteTags($repository->getCloneUrl()));
     }
 
+    /**
+     * A tag is checked out under its full ref: what is measured should be the tag and never a branch that
+     * happens to share its name, and a ref spelled out this way cannot be read as an option either.
+     */
     public function checkoutTag(Repository $repository, string $name): void
     {
-        $this->git->run($this->getLocalPath($repository), 'checkout', '--force', $name);
+        $this->git->run($this->getLocalPath($repository), 'checkout', '--force', sprintf('refs/tags/%s', $name));
     }
 
     /**

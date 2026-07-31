@@ -84,8 +84,9 @@ final class ReportController extends AbstractController
     }
 
     /**
-     * Every answer to the form is a redirect, and every one of them says 303: turbo follows the answer
-     * to a submission itself, and only a See Other tells it to read the page that follows with a GET.
+     * Every answer a visitor gets is a redirect, and every one of them says 303: turbo follows the answer
+     * to a submission itself, and only a See Other tells it to read the page that follows with a GET. The
+     * two refusals below are the exception - see refuse().
      */
     #[Route('submit', name: 'submit', methods: 'POST', priority: 3)]
     public function submit(
@@ -93,17 +94,20 @@ final class ReportController extends AbstractController
         RepositorySubmitter $submitter,
         RateLimiterFactoryInterface $submissionLimiter,
     ): Response {
-        if (!$this->isCsrfTokenValid('submit', (string) $request->request->get('_token'))) {
-            $this->addFlash('danger', 'That form expired - please submit the repository again.');
+        // every submission spends github.com API quota and ends in a clone, so it is worth a limit -
+        // and it is spent before anything else, because the checks below are not free either
+        $limit = $submissionLimiter->create($request->getClientIp())->consume();
 
-            return $this->redirectToRoute('start', status: Response::HTTP_SEE_OTHER);
+        if (!$limit->isAccepted()) {
+            return $this->refuse(
+                'That is a lot of repositories at once - please try again in a few minutes.',
+                Response::HTTP_TOO_MANY_REQUESTS,
+                ['Retry-After' => max(0, $limit->getRetryAfter()->getTimestamp() - time())]
+            );
         }
 
-        // every submission spends github.com API quota and ends in a clone, so it is worth a limit
-        if (!$submissionLimiter->create($request->getClientIp())->consume()->isAccepted()) {
-            $this->addFlash('danger', 'That is a lot of repositories at once - please try again in a few minutes.');
-
-            return $this->redirectToRoute('start', status: Response::HTTP_SEE_OTHER);
+        if (!$this->isCsrfTokenValid('submit', (string) $request->request->get('_token'))) {
+            return $this->refuse('That form expired - please submit the repository again.', Response::HTTP_BAD_REQUEST);
         }
 
         try {
@@ -150,6 +154,21 @@ final class ReportController extends AbstractController
     public function repository(#[MapEntity(mapping: ['id' => 'id'])] Repository $repository): JsonResponse
     {
         return new JsonResponse($repository->asGraph()->getTagData());
+    }
+
+    /**
+     * A refusal that never touches the session.
+     *
+     * Every other answer to a submission is a flash on the start page, which is what a human should read.
+     * A flash starts a session though, and these two refusals are the ones a script runs into rather than
+     * a visitor: a request over the limit, and one without a token. Answering those with a flash would
+     * write a session per request, for as many requests as someone cares to send.
+     *
+     * @param array<string, int|string> $headers
+     */
+    private function refuse(string $message, int $status, array $headers = []): Response
+    {
+        return new Response($message, $status, $headers + ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
 
     /**
