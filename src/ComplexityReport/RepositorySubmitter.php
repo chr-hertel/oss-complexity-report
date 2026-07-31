@@ -88,7 +88,7 @@ final class RepositorySubmitter
         }
 
         // asked once the repository itself is worth taking, so a full queue costs no further api quota
-        if ($this->repositoryRepository->countPending() >= self::MAX_PENDING) {
+        if (!$this->isAcceptingSubmissions()) {
             throw SubmissionFailed::tooManySubmissions();
         }
 
@@ -107,6 +107,22 @@ final class RepositorySubmitter
         $this->logger->info(sprintf('Submitted repository %s for analysis', $identifier));
 
         return Submission::queued($repository);
+    }
+
+    /**
+     * Whether another repository would be taken in right now.
+     *
+     * The web has no use for this - a visitor submits one repository and is told why it was refused. Someone
+     * filling the report from a list does: it is the difference between waiting for the queue to drain and
+     * burning API quota on submissions that are going to be refused anyway.
+     *
+     * Impure on purpose: what it answers is how far a worker has got, so asking twice is the point.
+     *
+     * @phpstan-impure
+     */
+    public function isAcceptingSubmissions(): bool
+    {
+        return $this->repositoryRepository->countPending() < self::MAX_PENDING;
     }
 
     private function loadOrganization(string $login): Organization

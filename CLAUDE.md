@@ -76,6 +76,13 @@ Submitting is what dispatches `AnalyseRepository`, so nothing queues the seed re
 releases are still missing. `app:data:fix` needs the queue to be empty (`messenger:stats`) to see all the
 data.
 
+Filling a fresh instance with more than the fixtures is `app:repository:submit --file --wait`, pointed at
+`data/top-php-repositories.txt` (an operator list, not part of the dataset definition — nothing reads it on
+its own). It goes through `RepositorySubmitter` like any other submission, so the same rejections apply, and
+`--wait` blocks on `MAX_PENDING` instead of giving up on the rest of the list — which means it only makes
+progress while a worker is consuming `async`. Re-running it is free: repositories the report already carries
+come back as `Submission::known`.
+
 Day-to-day there is no rebuild and nothing to run by hand: submitting dispatches the analysis, and the
 nightly schedule looks for new releases and refreshes stars.
 
