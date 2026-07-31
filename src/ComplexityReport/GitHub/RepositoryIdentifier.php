@@ -14,7 +14,9 @@ final class RepositoryIdentifier implements \Stringable
     private const string SEGMENT_PATTERN = '#^[A-Za-z0-9._-]+$#';
 
     /**
-     * github.com caps an account at 39 and a repository at 100 characters.
+     * One cap for both segments, at the longer of the two limits github.com has - an account may be 39
+     * characters, a repository 100. Telling them apart would not buy anything: what matters is that a
+     * segment has a length at all, not which of the two is stricter.
      */
     private const int MAX_SEGMENT_LENGTH = 100;
 

@@ -60,8 +60,16 @@ final readonly class SourceFiles
                 continue;
             }
 
-            if (filesize($path) > self::MAX_FILE_SIZE) {
-                $this->skip($candidate->getRelativePathname(), $repositoryName, 'it is too large to measure');
+            $size = filesize($path);
+
+            // a size that cannot be read is not a small file - this list decides what is read into
+            // memory, so what it cannot measure it leaves out
+            if (false === $size || $size > self::MAX_FILE_SIZE) {
+                $this->skip(
+                    $candidate->getRelativePathname(),
+                    $repositoryName,
+                    false === $size ? 'its size cannot be read' : 'it is too large to measure'
+                );
 
                 continue;
             }

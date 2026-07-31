@@ -147,12 +147,15 @@ final class GitHubClient
     }
 
     /**
-     * `|` rather than `_`, which is a character a repository may be named with: `/repos/a/b/languages`
-     * and `/repos/a/b_languages` are two different requests and used to share one cache entry, so one
-     * of them was answered with the other one's response.
+     * The path is hashed rather than spelled out.
+     *
+     * A repository may be named with every character a path could be joined by, so `/repos/a/b/languages`
+     * and `/repos/a/b_languages` used to share one entry and one of them was answered with the other one's
+     * response. A hash cannot collide by naming, and it stays within the characters PSR-6 asks a pool to
+     * accept - which the separator that would read nicer here does not.
      */
     private function cacheKey(string $path): string
     {
-        return 'github|'.str_replace('/', '|', trim($path, '/'));
+        return 'github_'.hash('xxh128', trim($path, '/'));
     }
 }
