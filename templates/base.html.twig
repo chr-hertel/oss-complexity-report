@@ -45,7 +45,74 @@
             </div>
         </header>
         {% block content %}{% endblock %}
+        {#
+         # What the chart does not say by itself, on every page rather than on a page of its own: how a
+         # number gets into it, and what that number is worth. The second half is the one that matters -
+         # a line going up reads as a verdict unless it says next to it that this is one metric among
+         # many, and that parts of the data are known to be off.
+         #}
         <footer class="site-footer">
+            <div class="wrap site-footer__about">
+                <section class="site-footer__section">
+                    <h2 class="eyebrow">How the report is made</h2>
+                    <p>
+                        Anyone can submit a repository - github.com is the only source, and no
+                        <code>composer.json</code> is needed. A submission is turned down when the
+                        repository is unknown, a fork, empty, larger than 10&nbsp;MB or less than 20%
+                        PHP; everything else is queued for a worker.
+                    </p>
+                    <p>
+                        The worker clones it and checks out its release tags one after another. Only
+                        major and minor releases are measured (<code>5.4</code>, <code>5.4.0</code>) -
+                        patch releases and pre-releases (anything carrying a <code>-</code>) are skipped,
+                        as are a handful of releases whose date git cannot tell straight. On every
+                        checkout,
+                        <a href="https://github.com/sebastianbergmann/phploc" target="_blank" rel="noreferrer">phploc</a>
+                        reads every <code>.php</code> file of the working copy and leaves two numbers
+                        behind: lines of code, and the average cyclomatic complexity of a class, dated by
+                        the last commit that tag points at. The clone is deleted afterwards, the numbers
+                        stay.
+                    </p>
+                    <p>
+                        From then on the report keeps itself current: every night it refreshes stars and
+                        asks github.com which releases are missing, so a new minor turns up in the chart
+                        by itself - and a repository that did not release is not even cloned.
+                    </p>
+                </section>
+                <section class="site-footer__section">
+                    <h2 class="eyebrow">About cyclomatic complexity</h2>
+                    <p>
+                        Cyclomatic complexity counts the paths through a piece of code: one, plus one for
+                        every branch - <code>if</code>, <code>case</code>, <code>while</code>,
+                        <code>for</code>, <code>catch</code>, <code>&amp;&amp;</code>, <code>||</code>.
+                        Code without a single condition scores 1. What is charted here is the average
+                        over all classes of a release, so it says how branchy the average class of a
+                        library is - not how large it is, and not how good it is.
+                    </p>
+                    <p>
+                        It is one metric, and worth what a metric is worth. It travels well as a rough
+                        measure of how many paths a test suite has to cover, and badly as a verdict: a
+                        clear class holding one big <code>match</code> outscores a tangle of indirection
+                        nobody can follow, and pushing branches into polymorphism lowers the figure
+                        without lowering the thinking. The shape of a line over the years says more than
+                        any point on it.
+                    </p>
+                    <p>
+                        The data has its glitches, too. Whatever sits in a repository at a tag is
+                        measured, so committed dependencies, generated code and test suites count towards
+                        the average. Libraries that were split, renamed or imported from another version
+                        control system - Zend&nbsp;→&nbsp;Laminas, the early PHPUnit tags - carry dates
+                        and jumps their git history cannot explain. And a gap in a line is a release
+                        that was left out or could not be measured - not one that never happened.
+                    </p>
+                    <p class="site-footer__links">
+                        Further reading:
+                        <a href="https://en.wikipedia.org/wiki/Cyclomatic_complexity" target="_blank" rel="noreferrer">Wikipedia</a>,
+                        <a href="https://ieeexplore.ieee.org/document/1702388" target="_blank" rel="noreferrer">McCabe, A Complexity Measure (1976)</a>,
+                        <a href="https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-235.pdf" target="_blank" rel="noreferrer">NIST 500-235</a>.
+                    </p>
+                </section>
+            </div>
             <div class="site-footer__inner">
                 <span>Made with ♥ in Berlin by
                     <a href="https://x.com/chr_hertel" target="_blank" rel="noreferrer">@chr_hertel</a>
