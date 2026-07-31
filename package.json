@@ -2,8 +2,7 @@
     "devDependencies": {
         "@fortawesome/fontawesome-free": "^7.3.1",
         "@hotwired/stimulus": "^3.0.0",
-        "@swup/fade-theme": "^1.0",
-        "@swup/forms-plugin": "^2.0",
+        "@hotwired/turbo": "^8.0.23",
         "@symfony/reprise": "^0.6.0",
         "chart.js": "^4.5",
         "chartjs-adapter-moment": "^1.0.0",
@@ -13,7 +12,6 @@
         "prettier": "^3.9",
         "sass": "^1.53.0",
         "select2": "^4.1.0-rc.0",
-        "swup": "^3.1",
         "vite": "^7.0.0"
     },
     "license": "MIT",

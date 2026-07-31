@@ -83,6 +83,10 @@ final class ReportController extends AbstractController
         ]);
     }
 
+    /**
+     * Every answer to the form is a redirect, and every one of them says 303: turbo follows the answer
+     * to a submission itself, and only a See Other tells it to read the page that follows with a GET.
+     */
     #[Route('submit', name: 'submit', methods: 'POST', priority: 3)]
     public function submit(
         Request $request,
@@ -92,14 +96,14 @@ final class ReportController extends AbstractController
         if (!$this->isCsrfTokenValid('submit', (string) $request->request->get('_token'))) {
             $this->addFlash('danger', 'That form expired - please submit the repository again.');
 
-            return $this->redirectToRoute('start');
+            return $this->redirectToRoute('start', status: Response::HTTP_SEE_OTHER);
         }
 
         // every submission spends github.com API quota and ends in a clone, so it is worth a limit
         if (!$submissionLimiter->create($request->getClientIp())->consume()->isAccepted()) {
             $this->addFlash('danger', 'That is a lot of repositories at once - please try again in a few minutes.');
 
-            return $this->redirectToRoute('start');
+            return $this->redirectToRoute('start', status: Response::HTTP_SEE_OTHER);
         }
 
         try {
@@ -107,7 +111,7 @@ final class ReportController extends AbstractController
         } catch (SubmissionFailed $exception) {
             $this->addFlash('danger', $exception->getMessage());
 
-            return $this->redirectToRoute('start');
+            return $this->redirectToRoute('start', status: Response::HTTP_SEE_OTHER);
         }
 
         // a submission always ends on the page of its repository, which says what is happening to it -
@@ -156,7 +160,7 @@ final class ReportController extends AbstractController
         return $this->redirectToRoute('organization', [
             'organization' => $repository->getOrganization()->getLogin(),
             'repository' => $repository->getId(),
-        ]);
+        ], Response::HTTP_SEE_OTHER);
     }
 
     /**
