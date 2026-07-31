@@ -27,6 +27,11 @@ final class SubmissionFailed extends \RuntimeException
         return new self(sprintf('Repository %s has been submitted already.', $identifier));
     }
 
+    public static function notSubmitted(string $identifier): self
+    {
+        return new self(sprintf('Repository %s is not part of the report.', $identifier));
+    }
+
     public static function noPhpRepository(string $identifier): self
     {
         return new self(sprintf('Repository %s does not contain enough PHP code to be analysed.', $identifier));
