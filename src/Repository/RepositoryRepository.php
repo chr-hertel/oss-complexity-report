@@ -169,16 +169,6 @@ final class RepositoryRepository extends ServiceEntityRepository
     /**
      * @return list<int>
      */
-    public function findPendingIds(): array
-    {
-        return $this->idsOf(
-            $this->createQueryBuilder('r')->where('r.analysed IS NULL')->orderBy('r.submitted', 'ASC')
-        );
-    }
-
-    /**
-     * @return list<int>
-     */
     private function idsOf(QueryBuilder $queryBuilder): array
     {
         /** @var list<array{id: int}> $rows */

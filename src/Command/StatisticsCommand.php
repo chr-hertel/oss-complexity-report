@@ -8,7 +8,7 @@ use App\ComplexityReport\StatisticsLoader;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand('app:statistics')]
+#[AsCommand('app:statistics', 'Counts what the report carries')]
 final readonly class StatisticsCommand
 {
     public function __construct(

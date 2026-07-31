@@ -90,20 +90,19 @@ symfony console doctrine:database:create
 symfony console doctrine:migrations:migrate
 symfony console cache:pool:clear cache.app
 
-# submits a couple of well known repositories to start with
+# submits a couple of well known repositories to start with - submitting queues them right away
 symfony console doctrine:fixtures:load -n
 
-# queues every submitted repository ...
-symfony console app:data:aggregate
-
-# ... and this clones and analyses them - the long one, run it until the queue is empty
+# this clones and analyses them - the long one, run it until the queue is empty
 symfony console messenger:consume async -vv
 
-# fix some data issues
+# fix the datasets where git history lies
 symfony console app:data:fix -vv
 ```
 
-`messenger:stats` shows what is left to do.
+`messenger:stats` shows what is left to do. Nothing queues the analysis by hand: a submission dispatches
+it, and `app:releases:scan` picks up whatever a run left unfinished, since it asks github.com for the
+releases a repository is still missing.
 
 Deploying schema changes
 ------------------------
@@ -113,8 +112,9 @@ The schema is managed by doctrine/migrations and `deploy.php` runs them right be
 The production database predates the migration history, so its baseline would try to create tables that are
 already there. It recognizes them and records itself as executed instead - nothing to do by hand.
 
-After the deploy that turns libraries into repositories, run `app:repositories:refresh` once to fill in the
-stars and descriptions the migration leaves empty.
+A migration that leaves a column of an existing row empty is filled in by `app:repositories:refresh`,
+which re-reads every submitted repository from github.com - the nightly schedule does it anyway, this
+only means not waiting for the night.
 
 Workers in production
 ---------------------

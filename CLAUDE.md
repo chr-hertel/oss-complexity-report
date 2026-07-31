@@ -66,15 +66,16 @@ bin/console doctrine:database:create
 bin/console doctrine:migrations:migrate # schema is managed by doctrine/migrations, not schema:create
 bin/console cache:pool:clear cache.app
 
-bin/console doctrine:fixtures:load -n   # submits the seed repositories in AppFixtures (hits the GitHub API)
-bin/console app:data:aggregate          # queues an AnalyseRepository message per repository
+bin/console doctrine:fixtures:load -n   # submits the seed repositories in AppFixtures, which queues them
 bin/console messenger:consume async -vv # the actual work: clone, checkout tags, phploc → Tag rows
 bin/console app:data:fix -vv            # per-repository data corrections
 bin/console app:statistics              # counts + total LOC
 ```
 
-`app:data:aggregate` only dispatches — nothing happens until a worker consumes `async`, and `app:data:fix`
-needs the queue to be empty (`messenger:stats`) to see all the data.
+Submitting is what dispatches `AnalyseRepository`, so nothing queues the seed repositories by hand —
+`app:releases:scan` is how a run that was interrupted is picked up again, since it asks github.com which
+releases are still missing. `app:data:fix` needs the queue to be empty (`messenger:stats`) to see all the
+data.
 
 Day-to-day there is no rebuild and nothing to run by hand: submitting dispatches the analysis, and the
 nightly schedule looks for new releases and refreshes stars.
@@ -123,9 +124,13 @@ optional profile fields and named the wrong account as often as the right one.
   `TagRepository::findReleasePoints()`, cached in `cache.app` for an hour under a key that carries the
   day, since the windows move with it.
 - `ReleaseScanner` — which releases of a repository are missing: skips anything `GitTag::isPreRelease()`
-  (contains `-`) or `isPatchRelease()` (not a plain `X.Y` / `X.Y.0` version) and anything already stored.
-  `scanRemote()` reads refs with `git ls-remote` (no clone, no working copy), `scanWorkingCopy()` fetches
-  the clone first.
+  (contains `-`) or `isPatchRelease()` (not a plain `X.Y` / `X.Y.0` version), anything `ExcludedReleases`
+  leaves out and anything already stored. `scanRemote()` reads refs with `git ls-remote` (no clone, no
+  working copy), `scanWorkingCopy()` fetches the clone first.
+- `ExcludedReleases` — the releases the report does not measure although they are proper minors (Laravel
+  minors released out of order, everything PHPUnit tagged before 3.0 onto one 2006 import date). It is
+  what the scanner asks, because deleting such a release afterwards does not hold: not stored is what
+  "missing" means to the scanner, so the next nightly run cloned the repository and measured it back in.
 - `RepositoryAnalyser` — measures those releases: checkout, phploc, `Tag`. Flushes after every release so a
   retry only redoes what is left, then `markAnalysed()`. It does **not** guard the working copy — that is
   the handler's job.
@@ -142,9 +147,11 @@ optional profile fields and named the wrong account as often as the right one.
   counted into the report) and what is too large to be source code. Links **within** the copy are ordinary
   and stay.
 - `WorkingCopyLock` — one lock per repository, taken by everything that touches its working copy.
-- `DataFixer` + `DataFixer/*Fixer` — post-processing for datasets where git history lies (Laminas tags all
-  dated at the Zend→Laminas import, PHPUnit tags with a bogus 2006 date, Laravel minors that distort the
-  chart). They must no-op when their repository was never submitted. Implementing `FixerInterface` is
+- `DataFixer` + `DataFixer/*Fixer` — post-processing for datasets where git history lies: `Laminas
+  VersionFixer` reads the date git still knows for tags that all sit on the Zend→Laminas import, and
+  `ExcludedReleaseFixer` clears releases measured before `ExcludedReleases` listed them. A fixer corrects
+  what is stored — keeping a release out of the report is the scanner's job, not a delete that the next
+  scan undoes. They must no-op when their repository was never submitted. Implementing `FixerInterface` is
   enough: `_instanceof` in `config/services.yaml` tags it `complexity_report.data_fixer` and injects it
   into `DataFixer`.
 

@@ -8,7 +8,7 @@ use App\ComplexityReport\DataFixer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand('app:data:fix')]
+#[AsCommand('app:data:fix', 'Corrects the datasets whose git history lies')]
 final readonly class DataFixerCommand
 {
     public function __construct(

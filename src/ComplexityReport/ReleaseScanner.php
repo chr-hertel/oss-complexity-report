@@ -14,6 +14,7 @@ final readonly class ReleaseScanner
 {
     public function __construct(
         private GitController $gitController,
+        private ExcludedReleases $excludedReleases,
         private LoggerInterface $logger,
     ) {
     }
@@ -49,6 +50,11 @@ final readonly class ReleaseScanner
 
         foreach ($tags as $tag) {
             if ($tag->isPreRelease() || $tag->isPatchRelease()) {
+                continue;
+            }
+
+            // a release the report leaves out is missing on purpose, not missing yet
+            if ($this->excludedReleases->contains($repository, $tag)) {
                 continue;
             }
 
