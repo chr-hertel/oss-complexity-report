@@ -4,33 +4,16 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport;
 
-final class Statistics
+/**
+ * What the report carries, as the start page and `app:statistics` count it.
+ */
+final readonly class Statistics
 {
     public function __construct(
-        public readonly int $organizationCount,
-        public readonly int $repositoryCount,
-        public readonly int $tagCount,
-        public readonly int $linesOfCode,
+        public int $organizationCount,
+        public int $repositoryCount,
+        public int $tagCount,
+        public int $linesOfCode,
     ) {
-    }
-
-    public function getOrganizationCount(): int
-    {
-        return $this->organizationCount;
-    }
-
-    public function getRepositoryCount(): int
-    {
-        return $this->repositoryCount;
-    }
-
-    public function getTagCount(): int
-    {
-        return $this->tagCount;
-    }
-
-    public function getLinesOfCode(): int
-    {
-        return $this->linesOfCode;
     }
 }
