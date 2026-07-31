@@ -103,7 +103,56 @@
                         </div>
                     </dl>
                 </div>
-                {{ include('mark.html.twig', {size: 168, ground: false, class: 'hero__mark'}) }}
+                {#
+                 # The report in one number: what the average complexity of everything it tracks did
+                 # within the chosen time frame. All four are rendered, so switching one on is a matter
+                 # of hiding the others - without javascript the year to date figure is the one that
+                 # stands. Nothing measured yet means nothing to roll up, and the mark closes the row
+                 # like it did before.
+                 #}
+                {% if hasData %}
+                    <div class="hero-trend" {{ stimulus_controller('trend') }}>
+                        <div class="hero-trend__label">Average complexity</div>
+                        {% for trend in trends %}
+                            <div class="hero-trend__figure" role="tabpanel" id="trend-{{ trend.window.value }}"
+                                 aria-labelledby="trend-tab-{{ trend.window.value }}"
+                                 data-trend-target="panel" {{ not loop.first ? 'hidden' }}>
+                                {% if trend.hasData %}
+                                    <div class="hero-trend__value hero-trend__value--{{ trend.change|trend_tone }}">
+                                        {{ trend.change|signed_percent }}
+                                    </div>
+                                    <p class="hero-trend__caption">
+                                        Ø {{ trend.from|number_format(2) }} → {{ trend.to|number_format(2) }}
+                                        across {{ trend.repositoryCount|number_format }}
+                                        {{ trend.repositoryCount == 1 ? 'library' : 'libraries' }}
+                                        <span class="hero-trend__since">
+                                            {{ trend.since ? 'since %s'|format(trend.since|date('F j, Y')) : 'since their own first release' }}
+                                        </span>
+                                    </p>
+                                {% else %}
+                                    <div class="hero-trend__value hero-trend__value--flat">–</div>
+                                    <p class="hero-trend__caption">
+                                        Nothing was measured before this time frame opened.
+                                    </p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        <div class="hero-trend__windows" role="tablist" aria-label="Time frame">
+                            {% for trend in trends %}
+                                <button type="button" class="hero-trend__window" role="tab"
+                                        id="trend-tab-{{ trend.window.value }}"
+                                        aria-controls="trend-{{ trend.window.value }}"
+                                        aria-selected="{{ loop.first ? 'true' : 'false' }}"
+                                        title="{{ trend.window.title }}"
+                                        data-trend-target="tab" data-action="trend#select">
+                                    {{ trend.window.label }}
+                                </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    {{ include('mark.html.twig', {size: 168, ground: false, class: 'hero__mark'}) }}
+                {% endif %}
             </div>
         </header>
 
