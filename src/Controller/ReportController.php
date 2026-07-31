@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\ComplexityReport\Exception\SubmissionFailed;
+use App\ComplexityReport\Ranking;
+use App\ComplexityReport\RepositorySearch;
 use App\ComplexityReport\RepositorySubmitter;
 use App\ComplexityReport\StatisticsLoader;
 use App\Entity\Organization;
@@ -31,17 +33,53 @@ final class ReportController extends AbstractController
      */
     private const int FEATURED_LIMIT = 9;
 
+    /**
+     * Number of suggestions the search box offers while someone types.
+     */
+    private const int SEARCH_LIMIT = 8;
+
     #[Route('', name: 'start', methods: 'GET')]
     public function start(
         RepositoryRepository $repositoryRepository,
         OrganizationRepository $organizationRepository,
         StatisticsLoader $statisticsLoader,
     ): Response {
+        // one query for every ranking - they all sort the same set, only by a different measurement
+        $analysed = $repositoryRepository->findAnalysedWithTags();
+
+        $rankings = array_map(static function (Ranking $ranking) use ($analysed) {
+            return ['ranking' => $ranking, 'repositories' => $ranking->sort($analysed, self::FEATURED_LIMIT)];
+        }, Ranking::all());
+
         return $this->render('start.html.twig', [
-            'featured' => $repositoryRepository->findMostStarred(self::FEATURED_LIMIT),
+            'rankings' => $rankings,
+            'hasData' => [] !== $analysed,
             'organizations' => $organizationRepository->findWithData(),
             'pending' => $repositoryRepository->findPending(),
             'statistics' => $statisticsLoader->load(),
+        ]);
+    }
+
+    /**
+     * Suggestions for the search box: what the report carries, plus what the input could be submitted as.
+     */
+    #[Route('search', name: 'search', methods: 'GET', priority: 3)]
+    public function search(Request $request, RepositorySearch $search): JsonResponse
+    {
+        $result = $search->search((string) $request->query->get('q', ''), self::SEARCH_LIMIT);
+
+        return new JsonResponse([
+            'repositories' => array_map(fn (Repository $repository) => [
+                'name' => $repository->getName(),
+                'description' => $repository->getDescription(),
+                'stars' => $repository->getStars(),
+                'analysed' => $repository->isAnalysed(),
+                'url' => $this->generateUrl('organization', [
+                    'organization' => $repository->getOrganization()->getLogin(),
+                    'repository' => $repository->getId(),
+                ]),
+            ], $result->matches),
+            'submittable' => null === $result->submittable ? null : ['name' => (string) $result->submittable],
         ]);
     }
 

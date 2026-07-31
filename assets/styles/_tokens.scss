@@ -1,0 +1,181 @@
+// Design tokens, mirrored from the Claude Design project "Complexity Report"
+// (tokens/colors.css, typography.css, spacing.css, elevation.css, semantic.css).
+//
+// Kept as custom properties with the names the design system uses, so a later sync is a diff of this
+// file rather than a hunt through the stylesheet.
+
+:root {
+    // Brand - the heritage slate of the product, kept as the single accent
+    --brand: #3f4c6b;
+    --brand-strong: #33405c;
+    --brand-tint: #eef1f6;
+
+    // Ink ramp
+    --ink-900: #101720;
+    --ink-800: #1c2531;
+    --ink-700: #2f3a49;
+    --ink-500: #5a6675;
+    --ink-400: #8a94a2;
+
+    // Surfaces & lines
+    --white: #ffffff;
+    --page: #f6f7f9;
+    --sunken: #eef1f4;
+    --line: #e3e7ec;
+    --line-strong: #cfd5de;
+
+    // Feedback
+    --success-bg: #eaf2ed;
+    --success-border: #cbded3;
+    --success-text: #2f6b4f;
+    --danger-bg: #fbedec;
+    --danger-border: #f0d3d1;
+    --danger-text: #8e3b36;
+
+    // Not in the design system: its Alert only covers success and danger, while the report also tells
+    // you that a repository is still queued and that a vendor has nothing to measure. Mixed towards the
+    // brand and the star accent so both stay inside the palette above.
+    --info-bg: var(--brand-tint);
+    --info-border: #dde3ee;
+    --info-text: var(--brand-strong);
+    --warning-bg: #f9f3e6;
+    --warning-border: #ecdfc2;
+    --warning-text: #7a5c22;
+
+    // Trend - lower complexity is better, higher is worse
+    --trend-good: #2f6b4f;
+    --trend-good-bg: #eaf2ed;
+    --trend-bad: #a2453a;
+    --trend-bad-bg: #fbeeec;
+    --trend-flat: #5a6675;
+
+    // Accent used for the star metric
+    --accent-star: #b58a3c;
+
+    // The brand mark - three ascending bars, lightened so they carry on the slate ground they sit on
+    --mark-low: #4e8c7d;
+    --mark-mid: #c9a24d;
+    --mark-high: #d06a5a;
+
+    // Chart series - eight muted, evenly-weighted lines, assigned by position
+    --chart-1: #2f3a49;
+    --chart-2: #c05b4d;
+    --chart-3: #b58a3c;
+    --chart-4: #4e8c7d;
+    --chart-5: #4a6fa5;
+    --chart-6: #7c6ba0;
+    --chart-7: #7a9a4e;
+    --chart-8: #a0a8b4;
+
+    // Typography
+    --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+
+    --weight-body: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+
+    --text-hero: 56px;
+    --text-h2: 24px;
+    --text-h3: 18px;
+    --text-h5: 16px;
+    --text-lg: 15px;
+    --text-base: 15px;
+    --text-sm: 13px;
+    --text-xs: 12px;
+
+    // mono eyebrow / label: uppercase, tracked out
+    --text-eyebrow: 12px;
+    --tracking-eyebrow: 0.12em;
+
+    --logo-title: 19px;
+    --logo-kicker: 11px;
+
+    --leading-body: 1.6;
+    --leading-heading: 1.15;
+    --tracking-heading: -0.02em;
+    --tracking-tight: -0.01em;
+
+    // Spacing - 4px base scale
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 64px;
+    --space-9: 96px;
+
+    --section-gap: var(--space-8);
+    --hero-pad-top: var(--space-9);
+    --hero-pad-bottom: var(--space-8);
+
+    --gutter: var(--space-6);
+    --container: 1200px;
+    --container-narrow: 640px;
+
+    // control geometry
+    --control-pad-y: 8px;
+    --control-pad-x: 14px;
+    --control-pad-y-lg: 11px;
+    --control-pad-x-lg: 18px;
+    --badge-pad-y: 2px;
+    --badge-pad-x: 7px;
+    --card-pad: var(--space-5);
+
+    --radius-sm: 4px;
+    --radius: 6px;
+    --radius-lg: 8px;
+    --border-width: 1px;
+
+    // Elevation is nearly absent: hairlines do the separating, shadows only lift what floats above
+    --shadow-xs: 0 1px 2px rgba(16, 23, 32, 0.05);
+    --shadow-sm: 0 1px 3px rgba(16, 23, 32, 0.07), 0 1px 2px rgba(16, 23, 32, 0.04);
+    --shadow-md: 0 4px 14px rgba(16, 23, 32, 0.08);
+    --shadow-overlay: 0 10px 30px rgba(16, 23, 32, 0.12);
+
+    --focus-ring: 0 0 0 3px rgba(63, 76, 107, 0.16);
+    --transition: 120ms ease;
+
+    // Semantic aliases
+    --surface-page: var(--page);
+    --surface-card: var(--white);
+    --surface-band: var(--white);
+    --surface-muted: var(--sunken);
+    --surface-input: var(--white);
+
+    --border-color: var(--line);
+    --card-border-color: var(--line);
+    --input-border-color: var(--line-strong);
+
+    --text-body: var(--ink-700);
+    --text-heading: var(--ink-900);
+    --text-muted: var(--ink-500);
+    --text-faint: var(--ink-400);
+    --text-inverse: var(--white);
+    --link: var(--brand);
+    --link-hover: var(--ink-900);
+
+    --trend-improving: var(--trend-good);
+    --trend-improving-bg: var(--trend-good-bg);
+    --trend-regressing: var(--trend-bad);
+    --trend-regressing-bg: var(--trend-bad-bg);
+    --trend-unchanged: var(--trend-flat);
+
+    // Not in the design system either: its Hero is a white band, while the start page opens on the
+    // brand ground. Ink on that ground is white, everything quiet a wash of it.
+    --hero-bg: var(--brand);
+    --hero-fg: var(--white);
+    --hero-muted: rgba(255, 255, 255, 0.72);
+    --hero-faint: rgba(255, 255, 255, 0.6);
+    --hero-line: rgba(255, 255, 255, 0.22);
+
+    --action-primary-bg: var(--ink-900);
+    --action-primary-bg-hover: var(--ink-800);
+    --action-primary-fg: var(--white);
+    --action-secondary-bg: var(--white);
+    --action-secondary-bg-hover: var(--sunken);
+    --action-secondary-fg: var(--ink-700);
+    --action-secondary-border: var(--line-strong);
+}

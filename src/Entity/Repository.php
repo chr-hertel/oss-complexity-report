@@ -141,6 +141,59 @@ class Repository
         return $this->tags->toArray();
     }
 
+    /**
+     * The oldest analysed release - `null` while nothing was measured yet.
+     */
+    public function getFirstTag(): ?Tag
+    {
+        return $this->tags->first() ?: null;
+    }
+
+    /**
+     * The most recent analysed release - `null` while nothing was measured yet.
+     */
+    public function getLatestTag(): ?Tag
+    {
+        return $this->tags->last() ?: null;
+    }
+
+    public function getReleaseCount(): int
+    {
+        return $this->tags->count();
+    }
+
+    /**
+     * Average cyclomatic complexity of the latest analysed release - the figure the chart ends on.
+     */
+    public function getComplexity(): float
+    {
+        return $this->getLatestTag()?->getAverageComplexity() ?? 0.0;
+    }
+
+    /**
+     * Lines of code of the latest analysed release.
+     */
+    public function getLinesOfCode(): int
+    {
+        return $this->getLatestTag()?->getLinesOfCode() ?? 0;
+    }
+
+    /**
+     * How the average complexity changed between the first and the latest analysed release, in percent.
+     * Negative means the codebase got simpler.
+     */
+    public function getEvolution(): float
+    {
+        $first = $this->getFirstTag()?->getAverageComplexity() ?? 0.0;
+        $last = $this->getComplexity();
+
+        if (0.0 === $first) {
+            return 0.0;
+        }
+
+        return round((($last - $first) / $first) * 100, 1);
+    }
+
     public function getLocalPath(): string
     {
         return mb_strtolower($this->name);

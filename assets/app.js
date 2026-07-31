@@ -8,7 +8,5 @@
 // any CSS you import will output into a single css file (app.css in this case)
 import './styles/app.scss';
 
-import 'bootstrap/dist/js/bootstrap.min';
-
 // start the Stimulus application
 import './stimulus_bootstrap.js';
