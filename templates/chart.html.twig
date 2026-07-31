@@ -43,16 +43,16 @@
                 {% endif %}
             </h2>
             {% if pendingRepository|default(false) %}
-                <div class="alert alert-info mt-3 mb-0">
+                <div class="alert alert-info mt-3 mb-0" {{ stimulus_controller('refresh', {interval: 30000}) }}>
                     <i class="fas fa-hourglass-half"></i>
                     {% if pendingRepository.hasData %}
                         <strong>{{ pendingRepository.name }} is being analysed right now.</strong>
-                        {{ pendingRepository.tags|length }} of its releases are measured so far - reload this page
-                        to see the ones that followed.
+                        {{ pendingRepository.tags|length }} of its releases are measured so far - this page
+                        updates itself as more of them come in.
                     {% else %}
                         <strong>{{ pendingRepository.name }} is queued for analysis.</strong>
                         Every release of it is checked out and measured one by one, which takes a while -
-                        reload this page in a few minutes to see the first numbers.
+                        this page updates itself as soon as the first numbers are in.
                     {% endif %}
                 </div>
             {% elseif project is defined and repositories is empty %}
