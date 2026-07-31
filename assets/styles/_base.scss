@@ -31,6 +31,27 @@ body > .page {
     flex: 1 0 auto;
 }
 
+// --- Page transitions -------------------------------------------------------------------------
+// What a turbo visit looks like: the browser cross-fades the old page into the new one, and the bar
+// turbo draws while it waits for a slow answer is the brand line rather than its default blue.
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 180ms;
+    animation-timing-function: ease;
+}
+
+.turbo-progress-bar {
+    height: 2px;
+    background: var(--brand);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: none;
+    }
+}
+
 h1,
 h2,
 h3,

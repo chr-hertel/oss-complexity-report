@@ -166,8 +166,13 @@ preselected repositories from a `data-repositories` attribute rendered by `templ
 lazily fetches additional ones from the `repository` JSON route when picked in the select2 box.
 `refresh_controller.js` reloads the page every 30s while the status above the chart says a repository is
 queued or being measured - it is only rendered in that state, so the reloading stops by itself once the
-data is there, and a backgrounded tab skips its turn. Page transitions use symfony/ux-swup. `vite.config.js` takes the public path from `ASSET_BASE` (set by the build
-task in `deploy.php`) rather than the build mode, so local production builds keep working.
+data is there, and a backgrounded tab skips its turn. Page transitions are Turbo Drive (`@hotwired/turbo`,
+imported in `assets/app.js`; swup and its per-page controller are gone): it takes over every link and form
+of the site at once, the fade is the browser's view transition enabled by the `view-transition` meta tag,
+and `submit` answers with **303** because turbo follows a form's redirect itself. What Turbo caches for the
+back button is the page as it looks when it is left, so `chart_controller.js` tears its select2 box down on
+`turbo:before-cache` as well as on disconnect. `vite.config.js` takes the public path from `ASSET_BASE`
+(set by the build task in `deploy.php`) rather than the build mode, so local production builds keep working.
 
 ## Conventions
 

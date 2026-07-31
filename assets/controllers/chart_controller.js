@@ -109,9 +109,23 @@ export default class extends Controller {
         this.initChart();
         this.initSelectBox();
         this.render();
+
+        /*
+         * Turbo snapshots the page for its back button while the page is still on screen - before this
+         * controller disconnects, so the select box has to be torn down for the snapshot as well.
+         * Otherwise coming back would restore select2's rendered widget and then draw a second one
+         * next to it.
+         */
+        this.beforeCache = () => this.teardown();
+        document.addEventListener('turbo:before-cache', this.beforeCache);
     }
 
     disconnect() {
+        document.removeEventListener('turbo:before-cache', this.beforeCache);
+        this.teardown();
+    }
+
+    teardown() {
         this.chart?.destroy();
         this.chart = null;
 

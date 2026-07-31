@@ -3,6 +3,8 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        {# what makes a turbo visit fade instead of blink: the browser animates the swap itself #}
+        <meta name="view-transition" content="same-origin">
         <title>{% block title 'Open Source PHP Software - Complexity Report' %}</title>
         <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
         <link rel="mask-icon" href="{{ asset('favicon-mono.svg') }}" color="#3f4c6b">
@@ -29,8 +31,7 @@
                         <span class="logo__title">Complexity Report</span>
                     </span>
                 </a>
-                {# `nav` is what swup swaps on the chart screen, so the active item travels with it #}
-                <div id="nav" class="site-header__right">
+                <div class="site-header__right">
                     <nav class="site-header__nav">
                         <a class="site-header__link {{ route == 'start' ? 'is-active' }}"
                            href="{{ path('start') }}">Repositories</a>
