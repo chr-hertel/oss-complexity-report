@@ -6,6 +6,7 @@ namespace App\ComplexityReport\GitHub;
 
 use App\ComplexityReport\Exception\SubmissionFailed;
 use Psr\Cache\CacheItemPoolInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -17,11 +18,13 @@ final class GitHubClient
 {
     private const API_URL = 'https://api.github.com';
     private const CACHE_TTL = 3600;
+    private const LOG_RESPONSE_LENGTH = 500;
 
     public function __construct(
         private HttpClientInterface $httpClient,
         private CacheItemPoolInterface $cache,
         private string $githubToken,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -97,12 +100,28 @@ final class GitHubClient
         try {
             return $this->httpClient->request('GET', self::API_URL.$path, ['headers' => $headers])->toArray();
         } catch (ClientExceptionInterface $exception) {
-            if (404 === $exception->getResponse()->getStatusCode()) {
+            $response = $exception->getResponse();
+
+            if (404 === $response->getStatusCode()) {
                 throw SubmissionFailed::unknownRepository($subject);
             }
 
+            // Whoever submitted the repository is told to try again later, but a refusal is rarely
+            // temporary: an exhausted rate limit, a token an organization does not accept. github.com
+            // says which one it is, and this is the only place that still knows.
+            $this->logger->warning('GitHub refused {path} with {status}: {response}', [
+                'path' => $path,
+                'status' => $response->getStatusCode(),
+                'response' => mb_substr($response->getContent(false), 0, self::LOG_RESPONSE_LENGTH),
+            ]);
+
             throw SubmissionFailed::gitHubUnavailable($subject, $exception);
         } catch (ExceptionInterface $exception) {
+            $this->logger->warning('GitHub request to {path} failed: {error}', [
+                'path' => $path,
+                'error' => $exception->getMessage(),
+            ]);
+
             throw SubmissionFailed::gitHubUnavailable($subject, $exception);
         }
     }
