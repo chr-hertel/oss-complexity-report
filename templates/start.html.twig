@@ -43,20 +43,20 @@
     {% endif %}
 {% endmacro %}
 
+{#
+ # Owner above name on every card, the way github.com reads them - `symfony/symfony` saying its name
+ # twice is what that repository is called, and dropping the line for it only left the head empty.
+ #}
 {% macro card(repository, ranking, rank) %}
-    {# `wordpress/wordpress` would read its own name twice, so the vendor line is dropped for those #}
-    {% set showVendor = repository.organization.login|lower != repository.shortName|lower %}
     <div class="repo-card">
         <div class="repo-card__body">
             <div class="repo-card__head">
                 <span class="repo-card__rank">{{ rank < 10 ? '0' }}{{ rank }}</span>
-                {% if showVendor %}
-                    <span class="repo-card__vendor">{{ repository.organization.login }}</span>
-                {% endif %}
+                <span class="repo-card__vendor">{{ repository.organization.login }}</span>
             </div>
             <h3 class="repo-card__title">
                 <a href="{{ path('chart', {'repositories': repository.name}) }}">
-                    {{ showVendor ? repository.shortName : repository.name }}
+                    {{ repository.shortName }}
                 </a>
             </h3>
             <p class="repo-card__text">{{ repository.description }}</p>
