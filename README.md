@@ -129,20 +129,19 @@ symfony console doctrine:database:create
 symfony console doctrine:migrations:migrate
 symfony console cache:pool:clear cache.app
 
-# submits a couple of well known repositories to start with
+# submits a couple of well known repositories to start with - submitting queues them right away
 symfony console doctrine:fixtures:load -n
 
-# queues every submitted repository ...
-symfony console app:data:aggregate
-
-# ... and this clones and analyses them - the long one, run it until the queue is empty
+# this clones and analyses them - the long one, run it until the queue is empty
 symfony console messenger:consume async -vv
 
-# fix some data issues
+# fix the datasets where git history lies
 symfony console app:data:fix -vv
 ```
 
-`messenger:stats` shows what is left to do.
+`messenger:stats` shows what is left to do. Nothing queues the analysis by hand: a submission dispatches
+it, and `app:releases:scan` picks up whatever a run left unfinished, since it asks github.com for the
+releases a repository is still missing.
 
 Schema changes
 --------------
