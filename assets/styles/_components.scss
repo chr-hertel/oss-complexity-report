@@ -411,6 +411,164 @@ a.chip:hover {
     }
 }
 
+// --- Combobox ---------------------------------------------------------------------------------
+// The search box on the start page: the design system's field over a menu of suggestions, built the
+// same way the header Dropdown is.
+.combobox {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+
+    &__menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        z-index: 20;
+        max-height: 340px;
+        overflow: auto;
+        margin: 0;
+        padding: var(--space-1) 0;
+        list-style: none;
+        background: var(--surface-card);
+        border: var(--border-width) solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-overlay);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    &__option {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0 var(--space-3);
+        align-items: baseline;
+        padding: var(--space-2) var(--space-4);
+        cursor: pointer;
+
+        &:hover,
+        &.is-active {
+            background: var(--sunken);
+        }
+
+        &--add {
+            border-top: var(--border-width) solid var(--line);
+
+            .combobox__name::before {
+                content: '+';
+                margin-right: var(--space-2);
+                color: var(--text-faint);
+            }
+        }
+    }
+
+    &__name {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--text-heading);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__meta {
+        display: inline-flex;
+        align-items: baseline;
+        gap: var(--space-2);
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        font-variant-numeric: tabular-nums;
+        color: var(--text-muted);
+        white-space: nowrap;
+
+        .fas {
+            color: var(--accent-star);
+            font-size: 11px;
+        }
+    }
+
+    &__badge {
+        padding: var(--badge-pad-y) var(--badge-pad-x);
+        color: var(--text-muted);
+        background: var(--sunken);
+        border-radius: var(--radius-sm);
+    }
+
+    &__option:hover &__badge,
+    &__option.is-active &__badge {
+        background: var(--white);
+    }
+
+    &__description {
+        grid-column: 1 / -1;
+        margin-top: 2px;
+        font-size: var(--text-xs);
+        line-height: 1.5;
+        color: var(--text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__empty {
+        padding: var(--space-2) var(--space-4);
+        font-size: var(--text-sm);
+        color: var(--text-muted);
+    }
+}
+
+// --- Skeleton ---------------------------------------------------------------------------------
+// The shape of the report while there is nothing to draw yet.
+.skeleton {
+    &__chart {
+        display: flex;
+        align-items: flex-end;
+        gap: var(--space-3);
+        height: 420px;
+        padding: var(--space-5) 0;
+    }
+
+    &__bar {
+        flex: 1 1 0;
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    }
+
+    &__line {
+        display: inline-block;
+        height: 10px;
+        max-width: 100%;
+        vertical-align: middle;
+        border-radius: var(--radius-sm);
+    }
+
+    &__bar,
+    &__line {
+        background: linear-gradient(90deg, var(--sunken) 0%, var(--surface-card) 40%, var(--sunken) 80%);
+        background-size: 300% 100%;
+        animation: skeleton-shimmer 1.6s ease-in-out infinite;
+    }
+}
+
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton__bar,
+    .skeleton__line {
+        animation: none;
+        background: var(--sunken);
+    }
+}
+
 // --- Panel ------------------------------------------------------------------------------------
 // The card surface the chart and the release analysis sit on.
 .panel {

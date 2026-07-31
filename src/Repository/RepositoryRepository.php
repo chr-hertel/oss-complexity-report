@@ -74,6 +74,35 @@ final class RepositoryRepository extends ServiceEntityRepository
     }
 
     /**
+     * Repositories whose name contains the query, most popular first - what the search box offers while
+     * someone types.
+     *
+     * @return list<Repository>
+     */
+    public function findByNameLike(string $query, int $limit): array
+    {
+        /** @var list<Repository> $repositories */
+        $repositories = $this->createQueryBuilder('r')
+            ->where('LOWER(r.name) LIKE :query')
+            ->setParameter('query', '%'.self::escapeForLike(mb_strtolower($query)).'%')
+            ->orderBy('r.stars', 'DESC')
+            ->addOrderBy('r.name', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+
+        return $repositories;
+    }
+
+    /**
+     * Repository names are full of underscores, which LIKE would read as "any character".
+     */
+    private static function escapeForLike(string $value): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
+    }
+
+    /**
      * Submitted repositories that are waiting for their first analysis.
      *
      * @return list<Repository>

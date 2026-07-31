@@ -49,8 +49,15 @@
                 {% endif %}
             </h1>
 
+            {#
+             # A page waiting for a worker has to move on its own. Where the placeholder below is drawn it
+             # polls the repository itself; everywhere else the status reloads the page now and then.
+             #}
+            {% set showSkeleton = pendingRepository|default(false) and not pendingRepository.hasData and repositories is empty %}
+
             {% if pendingRepository|default(false) %}
-                <div class="alert alert--info section" {{ stimulus_controller('refresh', {interval: 30000}) }}>
+                <div class="alert alert--info section"
+                     {% if not showSkeleton %}{{ stimulus_controller('refresh', {interval: 30000}) }}{% endif %}>
                     {% if pendingRepository.hasData %}
                         <strong>{{ pendingRepository.name }} is being analysed right now.</strong>
                         {{ pendingRepository.tags|length }} of its releases are measured so far - this page
@@ -67,7 +74,56 @@
                 </div>
             {% endif %}
 
-            {% if repositories is not empty %}
+            {#
+             # A repository that was just submitted has a page before it has numbers: the shape of the
+             # report is drawn as a placeholder, and the page swaps itself for the real thing as soon as
+             # the worker measured the first release.
+             #
+             # Only when there is nothing else to draw, though - an organization that already carries
+             # analysed repositories keeps its chart, and the alert above says what happens to the new one.
+             #}
+            {% if showSkeleton %}
+                <div class="section skeleton"
+                     {{ stimulus_controller('skeleton', { url: path('repository', {'id': pendingRepository.id}) }) }}>
+                    <p class="chart-lead">
+                        Waiting for the first measured release - this page updates itself as soon as there
+                        is one.
+                    </p>
+                    <div class="panel chart-panel">
+                        <div class="skeleton__chart" aria-hidden="true">
+                            {% for height in [38, 62, 47, 71, 55, 84, 49, 66, 58, 77, 61, 90] %}
+                                <span class="skeleton__bar" style="height: {{ height }}%"></span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <section class="section">
+                        <div class="eyebrow">Release analysis</div>
+                        <div class="panel panel--pad-lg" style="margin-top: var(--space-5)">
+                            <div class="analysis" aria-hidden="true">
+                                {% for group in 1..4 %}
+                                    <div>
+                                        <div class="analysis__title">
+                                            <span class="skeleton__line" style="width: 40%"></span>
+                                        </div>
+                                        <dl class="analysis__list">
+                                            {% for row in 1..3 %}
+                                                <div class="analysis__row">
+                                                    <dt class="analysis__label">
+                                                        <span class="skeleton__line" style="width: {{ 90 + row * 20 }}px"></span>
+                                                    </dt>
+                                                    <dd class="analysis__value">
+                                                        <span class="skeleton__line" style="width: 56px"></span>
+                                                    </dd>
+                                                </div>
+                                            {% endfor %}
+                                        </dl>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            {% elseif repositories is not empty %}
                 <div data-controller="chart"
                      data-chart-limit-value="8"
                      data-repositories="{{ selectedRepositories|map(repository => repository.asGraph)|json_encode|e('html_attr') }}">

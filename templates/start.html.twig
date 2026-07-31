@@ -89,19 +89,35 @@
         <div class="band">
             <div class="wrap submit-band">
                 <div class="submit-band__intro">
-                    <div class="eyebrow">Add a repository</div>
+                    <div class="eyebrow">Find or add a repository</div>
                     <p class="submit-band__hint">
-                        Every public repository on GitHub that is mostly written in PHP - a composer.json is
-                        not needed.
+                        Everything the report carries, plus every public repository on GitHub that is mostly
+                        written in PHP - a composer.json is not needed.
                     </p>
                 </div>
                 <div class="submit-band__form">
-                    <form action="{{ path('submit') }}" method="post" class="submit-form">
+                    {#
+                     # One box for both jobs. Picking a suggestion opens that repository, and anything the
+                     # report does not carry yet is posted to `submit`, which queues it and opens its page.
+                     # Without javascript the form still posts whatever was typed, which is what it did
+                     # before the suggestions existed.
+                     #}
+                    <form action="{{ path('submit') }}" method="post" class="submit-form"
+                          {{ stimulus_controller('search', { url: path('search') }) }}>
                         <input type="hidden" name="_token" value="{{ csrf_token('submit') }}"
                                data-controller="csrf-protection">
-                        <input type="text" name="repository" class="field field--lg"
-                               placeholder="owner/repository or https://github.com/owner/repository"
-                               aria-label="GitHub repository" required>
+                        <div class="combobox">
+                            <input type="text" name="repository" class="field field--lg" required
+                                   placeholder="Search the report, or paste owner/repository"
+                                   aria-label="Search or add a GitHub repository"
+                                   autocomplete="off" autocapitalize="off" spellcheck="false"
+                                   role="combobox" aria-expanded="false" aria-autocomplete="list"
+                                   aria-controls="search-suggestions"
+                                   data-search-target="input"
+                                   data-action="input->search#query keydown->search#navigate focus->search#query blur->search#close">
+                            <ul class="combobox__menu" id="search-suggestions" role="listbox"
+                                aria-label="Repositories" data-search-target="menu" hidden></ul>
+                        </div>
                         <button type="submit" class="btn btn--lg">Add repository</button>
                     </form>
                     {% for label, messages in app.flashes(['success', 'danger']) %}
