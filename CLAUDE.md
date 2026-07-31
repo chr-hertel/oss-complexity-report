@@ -220,7 +220,7 @@ belong to, so a line picked later carries the same facts as one the page was ren
 
 **Frontend** — Vite + symfony/reprise + StimulusBundle. `assets/controllers/chart_controller.js` reads the
 preselected repositories from a `data-repositories` attribute rendered by `templates/chart.html.twig`, and
-lazily fetches additional ones from the `repository` JSON route when picked in the select2 box - what is
+lazily fetches additional ones from the `repository` JSON route when picked in the box above it - what is
 picked is written back into the query string, so a chart someone put together is a link. The release
 analysis below the chart is one tab per line, built from the same graphs: every repository in the chart can
 be read release by release, and a tab carries the colour of its series - and since a point in the chart
@@ -240,9 +240,20 @@ data is there, and a backgrounded tab skips its turn. Page transitions are Turbo
 imported in `assets/app.js`; swup and its per-page controller are gone): it takes over every link and form
 of the site at once, the fade is the browser's view transition enabled by the `view-transition` meta tag,
 and `submit` answers with **303** because turbo follows a form's redirect itself. What Turbo caches for the
-back button is the page as it looks when it is left, so `chart_controller.js` tears its select2 box down on
-`turbo:before-cache` as well as on disconnect. `vite.config.js` takes the public path from `ASSET_BASE`
-(set by the build task in `deploy.php`) rather than the build mode, so local production builds keep working.
+back button is the page as it looks when it is left, which is why every box renders itself by replacing
+what is there: a page that comes back open comes back the same, not doubled. `vite.config.js` takes the
+public path from `ASSET_BASE` (set by the build task in `deploy.php`) rather than the build mode, so local
+production builds keep working.
+
+Both boxes people type in are the **same** control: `assets/combobox.js` is the menu under a field - the
+rows, opening and closing it, and the keyboard that walks it, with what a row says and what picking one
+means left to the box that built it. `search_controller.js` is the one on the start page, which asks the
+server what an input means; `repository_picker_controller.js` is the one above the chart, which has more
+than one answer - a chip per line, coloured by its position, which is why a pick moves its option to the
+end of the `<select>` behind it. That select is the state, not a widget: the picker writes to it and
+dispatches its `change`, so the chart is redrawn by one event however a repository got in or out. Only the
+keyboard highlights a row (`.is-active`) - hovering is the pointer's own business, and picking happens on
+`mousedown`, before the blur that closes the menu can race it.
 
 **Error reporting** (`config/packages/sentry.yaml`) — sentry/sentry-symfony, registered by hand since
 `allow-contrib` is false and its recipe therefore never ran. `SENTRY_DSN` is empty in the committed `.env`

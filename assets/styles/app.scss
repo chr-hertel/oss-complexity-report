@@ -1,7 +1,5 @@
-// Font Awesome is the design system's icon set; select2's core stylesheet is the layout its
-// multi-select needs before the design system dresses it up in _components.scss.
+// Font Awesome is the design system's icon set.
 @use '@fortawesome/fontawesome-free/css/all';
-@use 'select2/src/scss/core';
 
 @use 'tokens';
 @use 'base';

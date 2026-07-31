@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { Combobox, element } from '../combobox.js';
 
 /*
  * The search box on the start page. It asks the server what an input means - a repository the report
@@ -10,20 +11,6 @@ import { Controller } from '@hotwired/stimulus';
  */
 const DEBOUNCE = 200;
 
-function element(tag, className, text) {
-    const node = document.createElement(tag);
-
-    if (className) {
-        node.className = className;
-    }
-
-    if (undefined !== text) {
-        node.textContent = text;
-    }
-
-    return node;
-}
-
 const stars = (value) => (value < 1000 ? String(value) : String((value / 1000).toFixed(1)).replace(/\.0$/, '') + 'k');
 
 export default class extends Controller {
@@ -32,13 +19,13 @@ export default class extends Controller {
 
     connect() {
         this.options = [];
-        this.active = -1;
+        this.combobox = new Combobox(this.inputTarget, this.menuTarget, (index) => this.pick(index));
         this.requests = 0;
     }
 
     disconnect() {
         clearTimeout(this.timer);
-        this.close();
+        this.combobox.close();
     }
 
     query() {
@@ -86,103 +73,43 @@ export default class extends Controller {
             ...result.repositories.map((repository) => ({ type: 'open', repository })),
             ...(result.submittable ? [{ type: 'submit', name: result.submittable.name }] : []),
         ];
-        this.active = -1;
-        this.menuTarget.replaceChildren();
 
-        if (0 === this.options.length) {
-            this.menuTarget.append(
-                element('li', 'combobox__empty', 'Nothing found - paste a vendor/repository to add it.'),
-            );
-            this.open();
+        this.combobox.show(
+            this.options.map((option) => this.row(option)),
+            'Nothing found - paste a vendor/repository to add it.',
+        );
+    }
 
-            return;
-        }
+    row(option) {
+        const node = element('li', 'combobox__option');
 
-        this.options.forEach((option, index) => {
-            const node = element('li', 'combobox__option');
+        if ('open' === option.type) {
+            const meta = element('span', 'combobox__meta');
 
-            node.id = `search-suggestion-${index}`;
-            node.setAttribute('role', 'option');
-            node.setAttribute('aria-selected', 'false');
-            // on mousedown the input has not lost focus yet, so picking never races the blur that closes
-            node.addEventListener('mousedown', (event) => {
-                event.preventDefault();
-                this.pick(index);
-            });
+            meta.append(element('i', 'fas fa-star'), element('span', null, stars(option.repository.stars)));
 
-            if ('open' === option.type) {
-                const meta = element('span', 'combobox__meta');
-
-                meta.append(element('i', 'fas fa-star'), element('span', null, stars(option.repository.stars)));
-
-                if (!option.repository.analysed) {
-                    meta.append(element('span', 'combobox__badge', 'queued'));
-                }
-
-                node.append(element('span', 'combobox__name', option.repository.name), meta);
-
-                if (option.repository.description) {
-                    node.append(element('span', 'combobox__description', option.repository.description));
-                }
-            } else {
-                node.classList.add('combobox__option--add');
-                node.append(
-                    element('span', 'combobox__name', option.name),
-                    element('span', 'combobox__meta', 'add to the report'),
-                );
+            if (!option.repository.analysed) {
+                meta.append(element('span', 'combobox__badge', 'queued'));
             }
 
-            this.menuTarget.append(node);
-        });
+            node.append(element('span', 'combobox__name', option.repository.name), meta);
 
-        this.open();
+            if (option.repository.description) {
+                node.append(element('span', 'combobox__description', option.repository.description));
+            }
+        } else {
+            node.classList.add('combobox__option--add');
+            node.append(
+                element('span', 'combobox__name', option.name),
+                element('span', 'combobox__meta', 'add to the report'),
+            );
+        }
+
+        return node;
     }
 
     navigate(event) {
-        if ('Escape' === event.key) {
-            this.close();
-
-            return;
-        }
-
-        if ('Enter' === event.key && this.active >= 0) {
-            event.preventDefault();
-            this.pick(this.active);
-
-            return;
-        }
-
-        if ('ArrowDown' !== event.key && 'ArrowUp' !== event.key) {
-            return;
-        }
-
-        if (0 === this.options.length) {
-            return;
-        }
-
-        event.preventDefault();
-
-        // the input itself is one of the stops, so arrowing past either end lands back in it
-        const stops = this.options.length + 1;
-        const step = 'ArrowDown' === event.key ? 1 : -1;
-
-        this.highlight(((this.active + 1 + step + stops) % stops) - 1);
-    }
-
-    highlight(index) {
-        this.active = index;
-
-        [...this.menuTarget.children].forEach((node, position) => {
-            node.classList.toggle('is-active', position === index);
-            node.setAttribute('aria-selected', position === index ? 'true' : 'false');
-        });
-
-        if (index >= 0) {
-            this.inputTarget.setAttribute('aria-activedescendant', `search-suggestion-${index}`);
-            this.menuTarget.children[index].scrollIntoView({ block: 'nearest' });
-        } else {
-            this.inputTarget.removeAttribute('aria-activedescendant');
-        }
+        this.combobox.navigate(event);
     }
 
     pick(index) {
@@ -204,15 +131,7 @@ export default class extends Controller {
         this.element.requestSubmit();
     }
 
-    open() {
-        this.menuTarget.hidden = false;
-        this.inputTarget.setAttribute('aria-expanded', 'true');
-    }
-
     close() {
-        this.menuTarget.hidden = true;
-        this.active = -1;
-        this.inputTarget.setAttribute('aria-expanded', 'false');
-        this.inputTarget.removeAttribute('aria-activedescendant');
+        this.combobox.close();
     }
 }

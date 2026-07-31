@@ -3,17 +3,11 @@ import Chart from 'chart.js/auto';
 import 'chartjs-adapter-moment';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import moment from 'moment';
-import select2 from 'select2';
-import $ from 'jquery';
-
-// select2's CommonJS build exports a factory rather than registering itself on
-// jQuery. Webpack's interop happened to call it; Vite's does not, so importing
-// it for its side effect alone leaves $.fn.select2 undefined.
-select2(window, $);
+import { element } from '../combobox.js';
 
 // The eight series colours of the design system, assigned by position. The swatch in front of every
-// chip in the select box is coloured by the same rule, see _components.scss - which only holds as long
-// as the order of the datasets is the order of the chips, hence moveToEnd() and the full re-render.
+// chip in the picker is coloured by the same rule, see _components.scss - which only holds as long as
+// the order of the datasets is the order of the chips, which is why a pick goes to the end of both.
 const SERIES_COLORS = ['#2f3a49', '#c05b4d', '#b58a3c', '#4e8c7d', '#4a6fa5', '#7c6ba0', '#7a9a4e', '#a0a8b4'];
 const GRID = '#e3e7ec';
 const TICK = '#5a6675';
@@ -22,20 +16,6 @@ const MONO = 'IBM Plex Mono';
 const SANS = 'IBM Plex Sans';
 
 const ARROWS = { good: '↓', bad: '↑', flat: '→' };
-
-function element(tag, className, text) {
-    const node = document.createElement(tag);
-
-    if (className) {
-        node.className = className;
-    }
-
-    if (undefined !== text) {
-        node.textContent = text;
-    }
-
-    return node;
-}
 
 const count = (value) => value.toLocaleString('en-US');
 const decimal = (value, digits) =>
@@ -136,39 +116,12 @@ export default class extends Controller {
         this.series = [];
         this.repository = null;
         this.initChart();
-        this.initSelectBox();
         this.render();
-
-        /*
-         * Turbo snapshots the page for its back button while the page is still on screen - before this
-         * controller disconnects, so the select box has to be torn down for the snapshot as well.
-         * Otherwise coming back would restore select2's rendered widget and then draw a second one
-         * next to it.
-         */
-        this.beforeCache = () => this.teardown();
-        document.addEventListener('turbo:before-cache', this.beforeCache);
     }
 
     disconnect() {
-        document.removeEventListener('turbo:before-cache', this.beforeCache);
-        this.teardown();
-    }
-
-    teardown() {
-        if (!this.hasSelectTarget) {
-            return;
-        }
-
         this.chart?.destroy();
         this.chart = null;
-
-        const $select = $(this.selectTarget);
-
-        $select.off();
-
-        if ($select.data('select2')) {
-            $select.select2('destroy');
-        }
     }
 
     initChart() {
@@ -282,29 +235,18 @@ export default class extends Controller {
         }
     }
 
-    initSelectBox() {
-        const $select = $(this.selectTarget);
-
-        $select.select2({ width: '100%', placeholder: 'Search analysed repositories' });
-        $select.on('select2:select', this.moveToEnd);
-        $select.on('select2:select select2:unselect', () => this.render(true));
-    }
-
     /**
-     * select2 leaves a picked option where it sits in the markup, so its chips would be in a different
-     * order than the chart series - and the colour of a chip is the colour of its line.
+     * The picker above the chart is a box of its own and says what it holds by changing the select it
+     * is a widget for - which is also what the chart was rendered with, so adding a line and opening
+     * the page on it are the same thing to everything below.
      */
-    moveToEnd(event) {
-        const $option = $(event.params.data.element);
-
-        $option.detach();
-        $(this).append($option);
-        $(this).trigger('change.select2');
+    repick() {
+        this.render(true);
     }
 
     async render(picked = false) {
         const run = ++this.renders;
-        const slugs = $(this.selectTarget).val() || [];
+        const slugs = this.hasSelectTarget ? [...this.selectTarget.selectedOptions].map((option) => option.value) : [];
 
         if (picked) {
             this.syncUrl(slugs);
