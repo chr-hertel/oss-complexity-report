@@ -29,11 +29,26 @@
 }
 
 .ranking {
+    // caption and the link into the chart share one line: what the ranking sorts by on the left, the
+    // way to see it drawn on the right end of it
+    &__intro {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3) var(--space-5);
+        align-items: baseline;
+        justify-content: space-between;
+        margin: var(--space-4) 0 var(--space-5);
+    }
+
     &__caption {
         max-width: 70ch;
-        margin: var(--space-4) 0 var(--space-5);
+        margin: 0;
         font-size: var(--text-sm);
         color: var(--text-muted);
+    }
+
+    &__chart {
+        flex: 0 0 auto;
     }
 
     &[hidden] {
