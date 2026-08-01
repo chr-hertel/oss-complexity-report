@@ -221,9 +221,6 @@
                         <div class="eyebrow">Rankings</div>
                         <h2 data-rankings-target="title">{{ rankings|first.ranking.title }}</h2>
                     </div>
-                    {% if hasData %}
-                        <a href="{{ path('chart') }}" class="btn btn--secondary">Open the chart</a>
-                    {% endif %}
                 </div>
 
                 {% if hasData %}
@@ -246,7 +243,20 @@
                         <div class="ranking" role="tabpanel" id="ranking-{{ entry.ranking.value }}"
                              aria-labelledby="tab-{{ entry.ranking.value }}"
                              data-rankings-target="panel" {{ not loop.first ? 'hidden' }}>
-                            <p class="ranking__caption">{{ entry.ranking.caption }}</p>
+                            {#
+                             # The chart opens on what is being read, so the link belongs to the ranking
+                             # rather than to the section above it: every panel carries its own, drawn
+                             # with its own top repositories, and only the visible one can be clicked.
+                             #}
+                            <div class="ranking__intro">
+                                <p class="ranking__caption">{{ entry.ranking.caption }}</p>
+                                {% if entry.repositories is not empty %}
+                                    <a class="btn btn--secondary ranking__chart"
+                                       href="{{ path('chart', {'repositories': entry.repositories|slice(0, chartLimit)|map(repository => repository.name)|join(',')}) }}">
+                                        Open the chart
+                                    </a>
+                                {% endif %}
+                            </div>
                             {#
                              # A ranking can come out empty although the report has data - nothing
                              # increased within the last twelve months is a result, not a broken page.
