@@ -46,17 +46,15 @@
     color: var(--text-muted);
 }
 
-// The GitHub accounts under the rankings: a quiet line of links, not a section of its own.
+// The GitHub accounts behind the repositories: a quiet line of links, not a section of its own -
+// which is why it carries no rule above it either, the band it follows is separation enough.
 .owner-line {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-1) var(--space-4);
     align-items: baseline;
-    margin-top: var(--space-6);
-    padding-top: var(--space-5);
     font-size: var(--text-sm);
     color: var(--text-muted);
-    border-top: var(--border-width) solid var(--line);
 
     &__label {
         font-family: var(--font-mono);

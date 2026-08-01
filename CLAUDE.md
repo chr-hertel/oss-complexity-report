@@ -134,7 +134,7 @@ optional profile fields and named the wrong account as often as the right one.
   from the database, before github.com is asked at all.
 - `RepositoryRefresher` — re-reads stars and metadata for everything submitted.
 - `ComplexityLevel` — the four risk bands a cyclomatic complexity is read in (1–10 simple, 11–20
-  moderate, 21–50 complex, above that untestable). It is what the scale in the footer is printed from and
+  moderate, 21–50 complex, above that untestable). It is what the scale of the about block is printed from and
   what colours every complexity the report shows, so the bands are written down once — the report measures
   averages, so a band ends where its number does. `chart_controller.js` mirrors the thresholds, because
   the release analysis is built in the browser; like the naming rule of the chart, the mirror only holds
@@ -209,9 +209,12 @@ an unknown repository, a fork, too little PHP - stays a flash on the start page,
 ends on the page of its repository, whether it was just queued or has been in the report for years.
 
 **Web** (`src/Controller/ReportController`) — two screens: `start` renders the trend in the hero, the
-submit form, the rankings, a line of GitHub owners (only those grouping more than one measured
-repository - a single one is the repository the rankings already link to) and what is still queued, and
-`chart` is everything
+submit form, the rankings, then the block explaining the report, and below it the two quiet lists that
+close the page - a line of GitHub owners (only those grouping more than one measured repository - a
+single one is the repository the rankings already link to) and the latest additions, `LATEST_LIMIT`
+repositories newest submission first, measured or not: the rankings only carry what has numbers, so this
+is the one place a repository shows up the day it was added, with a status on its chip while it is
+`queued` or being analysed. `chart` is everything
 else. There is **one** chart page, not one per organization: `?repositories=symfony/console,nikic/iter`
 says which repositories it draws, in that order, up to `CHART_LIMIT` (the chart has eight colours), and
 anything the report carries can be added to them. Without a selection it opens on the most starred.
@@ -227,9 +230,17 @@ changes, which is why the rule has to stay this small. A repository has a chart 
 submitted: no releases yet means no lines but a status telling the visitor it is queued or being measured
 right now - the one state the browser cannot rename, since nothing can be picked in it.
 
-The **scale** (`templates/complexity_scale.html.twig`) closes the footer both screens carry, across both
-columns that explain the report rather than inside the one about the metric - at half the width every band
-would set its risk in two lines. It is the four bands of `ComplexityLevel` over the ramp they run through,
+What the report does not say by itself is `templates/about.html.twig`: how a number gets into it, what
+that number is worth, and the scale it is read against. It is not the footer anymore - the footer is the
+credits - but a band each screen places itself, since where it belongs differs: on the start page it
+stands under the rankings and before the lists closing them, on the chart page it ends the screen,
+rendered outside `<main>` so it is the element right before the credits and `.about + .site-footer`
+closes the two into the one band they were.
+
+The **scale** (`templates/complexity_scale.html.twig`) opens that block, across both columns that explain
+the report rather than inside the one about the metric - it is what every number of the report is read
+against, so it comes before the texts, and at half the width every band would set its risk in two lines.
+It is the four bands of `ComplexityLevel` over the ramp they run through,
 the bands washed white so their ranges stay readable and only the hairlines between them and the strip
 below them carry the colour at full strength. On a phone the ramp turns and the bands stack on it,
 which is the same reading in the direction there is room for. Every complexity elsewhere is marked with a

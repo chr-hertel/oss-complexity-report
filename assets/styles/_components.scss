@@ -384,6 +384,17 @@
     color: var(--text-muted);
     background: var(--surface-muted);
     border-radius: var(--radius-sm);
+
+    // where a repository stands when it does not stand in the report yet - only rendered while there
+    // is something to say, so a chip without it is one that has its numbers
+    &__status {
+        margin-left: var(--space-2);
+        padding-left: var(--space-2);
+        color: var(--text-faint);
+        text-transform: uppercase;
+        letter-spacing: var(--tracking-eyebrow);
+        border-left: 1px solid var(--line-strong);
+    }
 }
 
 a.chip:hover {
@@ -955,5 +966,71 @@ a.chip:hover {
         &__risk {
             margin-left: var(--space-2);
         }
+    }
+}
+
+// --- About ------------------------------------------------------------------------------------
+// The block that explains the report, on the ground of a band across the full width, wherever a
+// screen places it. The scale opens it across both columns - it is what every number of the report
+// is read against, and at half the width every band would set its risk in two lines - and under it
+// the two texts run as running copy rather than as the small print of the credits below.
+.about {
+    flex: 0 0 auto;
+    margin-top: var(--space-9);
+    background: var(--surface-band);
+    border-top: var(--border-width) solid var(--line);
+    border-bottom: var(--border-width) solid var(--line);
+
+    &__inner {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-7);
+        padding-top: var(--space-7);
+        padding-bottom: var(--space-6);
+    }
+
+    &__scale {
+        grid-column: 1 / -1;
+    }
+
+    &__section {
+        h2 {
+            margin-bottom: var(--space-3);
+        }
+
+        p {
+            margin: 0 0 var(--space-3);
+            font-size: var(--text-sm);
+            line-height: var(--leading-body);
+            color: var(--text-body);
+        }
+
+        p:last-child {
+            margin-bottom: 0;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            font-size: 0.92em;
+            color: var(--text-heading);
+        }
+    }
+
+    &__links {
+        color: var(--text-muted);
+    }
+
+    // quiet like the copy they sit in - this block is read, not navigated
+    a {
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--line-strong);
+    }
+}
+
+// the two explaining columns become two blocks, read one after the other
+@media (max-width: 720px) {
+    .about__inner {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-6);
     }
 }
