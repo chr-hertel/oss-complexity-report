@@ -10,9 +10,16 @@
             <i class="fas fa-star"></i>{{ repository.stars|stars }}
         </span>
     {% endset %}
+    {#
+     # The dot says which band of the footer scale this average falls into, and it stands where the Ø
+     # stood: a metric leads with one glyph, and on a card there is room for one - the title says in
+     # words what the dot means and that the number is an average.
+     #}
     {% set complexity %}
-        <span class="metric" title="Average cyclomatic complexity of the latest analysed release">
-            <span class="metric__label">Ø</span>{{ repository.complexity|number_format(2) }}
+        {% set level = repository.complexity|complexity_level %}
+        <span class="metric level level--{{ level.value }}"
+              title="Average cyclomatic complexity of the latest analysed release - {{ level.range }}: {{ level.risk|lower }}">
+            {{- repository.complexity|number_format(2) -}}
         </span>
     {% endset %}
     {% set linesOfCode %}

@@ -133,6 +133,12 @@ optional profile fields and named the wrong account as often as the right one.
   submission is what queued it, so pasting a known repository is how people look it up — it is answered
   from the database, before github.com is asked at all.
 - `RepositoryRefresher` — re-reads stars and metadata for everything submitted.
+- `ComplexityLevel` — the four risk bands a cyclomatic complexity is read in (1–10 simple, 11–20
+  moderate, 21–50 complex, above that untestable). It is what the scale in the footer is printed from and
+  what colours every complexity the report shows, so the bands are written down once — the report measures
+  averages, so a band ends where its number does. `chart_controller.js` mirrors the thresholds, because
+  the release analysis is built in the browser; like the naming rule of the chart, the mirror only holds
+  as long as the rule stays this small.
 - `Trend/*` — the whole report rolled up into one figure per time frame (`TrendWindow`: YTD, 12 months,
   5 years, all time), shown in the hero of the start page. `TrendCalculator` is pure: it takes a list of
   `ReleasePoint`s and the current time and returns `Trend` value objects, which is why the rules live
@@ -220,6 +226,16 @@ applies the same rule to the headline, its github.com link and the document titl
 changes, which is why the rule has to stay this small. A repository has a chart from the moment it is
 submitted: no releases yet means no lines but a status telling the visitor it is queued or being measured
 right now - the one state the browser cannot rename, since nothing can be picked in it.
+
+The **scale** (`templates/complexity_scale.html.twig`) closes the footer both screens carry, across both
+columns that explain the report rather than inside the one about the metric - at half the width every band
+would set its risk in two lines. It is the four bands of `ComplexityLevel` over the ramp they run through,
+the bands washed white so their ranges stay readable and only the hairlines between them and the strip
+below them carry the colour at full strength. On a phone the ramp turns and the bands stack on it,
+which is the same reading in the direction there is room for. Every complexity elsewhere is marked with a
+dot in the colour of its band - on a card it stands where the `Ø` stood, since a metric leads with one
+glyph and the row has no width to spare, and in the release analysis it leads the numbers that are
+complexities rather than changes to one.
 
 Routes are distinguished by `priority`, since `{organization}` and the slug of a repository both match
 whatever is left: `chart`/`search`/`submit` (3) > `repository` (2, `owner/repository`, returns one line of

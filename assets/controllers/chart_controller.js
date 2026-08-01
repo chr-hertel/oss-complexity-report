@@ -55,6 +55,21 @@ function trend(value, digits, label) {
     return node;
 }
 
+/*
+ * The risk bands the footer prints, mirrored from `ComplexityLevel` because the release analysis is
+ * built here in the browser rather than rendered. Like the naming rule above, the mirror only holds as
+ * long as the rule stays this small - four numbers and the band above the last of them.
+ */
+const LEVELS = [
+    [10, 'simple'],
+    [20, 'moderate'],
+    [50, 'complex'],
+];
+const level = (value) => LEVELS.find(([limit]) => value <= limit)?.[1] ?? 'untestable';
+
+// a measured complexity carrying the dot of its band, the way the cards of the start page carry it
+const complexity = (value) => element('span', `level level--${level(value)}`, decimal(value, 2));
+
 function row(label, value, hint) {
     const node = element('div', 'analysis__row');
     const definition = element('dd', 'analysis__value');
@@ -464,7 +479,7 @@ export default class extends Controller {
             group('Release', [
                 row('Released', day(tag.date)),
                 row('Lines of code (LOC)', count(tag.loc)),
-                row('Ø cyclomatic complexity', decimal(tag.y, 2)),
+                row('Ø cyclomatic complexity', complexity(tag.y)),
             ]),
             previous
                 ? group(`Compared to ${previous.name}`, [
@@ -481,8 +496,8 @@ export default class extends Controller {
             // the first release is in the head, above every group - it says what the repository is
             group(`All ${tags.length} releases`, [
                 row('Analysed releases', count(tags.length)),
-                row('Lowest Ø complexity', decimal(Math.min(...complexities), 2)),
-                row('Highest Ø complexity', decimal(Math.max(...complexities), 2)),
+                row('Lowest Ø complexity', complexity(Math.min(...complexities))),
+                row('Highest Ø complexity', complexity(Math.max(...complexities))),
             ]),
         ];
 

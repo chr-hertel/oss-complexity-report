@@ -49,7 +49,8 @@
          # What the chart does not say by itself, on every page rather than on a page of its own: how a
          # number gets into it, and what that number is worth. The second half is the one that matters -
          # a line going up reads as a verdict unless it says next to it that this is one metric among
-         # many, and that parts of the data are known to be off.
+         # many, and that parts of the data are known to be off. The scale closing the block is where
+         # the numbers themselves are read, and it stands under both columns because both lead to it.
          #}
         <footer class="site-footer">
             <div class="wrap site-footer__about">
@@ -112,6 +113,10 @@
                         <a href="https://ieeexplore.ieee.org/document/1702388" target="_blank" rel="noreferrer">McCabe, A Complexity Measure (1976)</a>,
                         <a href="https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-235.pdf" target="_blank" rel="noreferrer">NIST 500-235</a>.
                     </p>
+                </section>
+                <section class="site-footer__section site-footer__scale">
+                    <h2 class="eyebrow">Complexity levels</h2>
+                    {{ include('complexity_scale.html.twig') }}
                 </section>
             </div>
             <div class="site-footer__inner">

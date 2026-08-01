@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Twig;
 
+use App\ComplexityReport\ComplexityLevel;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
+use Twig\TwigFunction;
 
 final class AppExtension extends AbstractExtension
 {
@@ -16,7 +18,31 @@ final class AppExtension extends AbstractExtension
             new TwigFilter('compact_number', [$this, 'formatCompactNumber']),
             new TwigFilter('signed_percent', [$this, 'formatSignedPercent']),
             new TwigFilter('trend_tone', [$this, 'trendTone']),
+            new TwigFilter('complexity_level', [$this, 'complexityLevel']),
         ];
+    }
+
+    public function getFunctions(): array
+    {
+        return [
+            new TwigFunction('complexity_levels', [$this, 'complexityLevels']),
+        ];
+    }
+
+    /**
+     * Where a measured complexity sits on the scale the footer prints.
+     */
+    public function complexityLevel(float $complexity): ComplexityLevel
+    {
+        return ComplexityLevel::of($complexity);
+    }
+
+    /**
+     * @return ComplexityLevel[] the whole scale, in the order it runs
+     */
+    public function complexityLevels(): array
+    {
+        return ComplexityLevel::cases();
     }
 
     public function formatStars(int $stars): string
