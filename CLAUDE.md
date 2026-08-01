@@ -43,6 +43,7 @@ bin/console doctrine:migrations:diff              # after changing an entity
 bin/console messenger:consume async -vv           # the analysis queue
 bin/console messenger:consume scheduler_default   # the nightly release scan and star refresh
 bin/console messenger:stats                       # what is still queued
+bin/console app:repository:analyse moodle/moodle  # measure one repository here instead of in a worker
 bin/console debug:scheduler                       # next run of the recurring messages
 
 # frontend — Vite, wired into Twig by symfony/reprise
@@ -75,6 +76,17 @@ Submitting is what dispatches `AnalyseRepository`, so nothing queues the seed re
 `app:releases:scan` is how a run that was interrupted is picked up again, since it asks github.com which
 releases are still missing. `app:data:fix` needs the queue to be empty (`messenger:stats`) to see all the
 data.
+
+`app:repository:analyse <owner/repository>` is the exception to all of that: it runs `RepositoryAnalyser`
+**in the console process** rather than dispatching, which is the only way to watch a repository that does
+not get through the queue. A worker measures where nobody looks, and an analysis that dies without
+throwing — a memory limit, an OOM kill — is never acked, so the transport hands the same message back and
+it dies again on the next delivery, forever, while the repository stays `analysed IS NULL` and the report
+keeps calling it queued. Run on the console it can be given `php -d memory_limit=…`, watched release by
+release and stopped. It takes the same `WorkingCopyLock` a worker takes, so it refuses rather than
+measuring against a checkout somebody else is rewriting, and prints the peak memory of the run since that
+is usually what is being chased. `--queue` dispatches instead, for the one repository the nightly scan
+would skip.
 
 Filling a fresh instance with more than the fixtures is `app:repository:submit --file --wait`, pointed at
 `data/top-php-repositories.txt` (an operator list, not part of the dataset definition — nothing reads it on

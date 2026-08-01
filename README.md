@@ -143,6 +143,18 @@ symfony console app:data:fix -vv
 it, and `app:releases:scan` picks up whatever a run left unfinished, since it asks github.com for the
 releases a repository is still missing.
 
+One repository that will not get through the queue is `app:repository:analyse`, which measures it right
+here instead of dispatching it:
+
+```bash
+symfony console app:repository:analyse moodle/moodle -vv
+```
+
+That is what a worker would have done, only where it can be watched, given a memory limit and stopped -
+an analysis a worker loses to a memory limit is never acked, so it comes back on the next delivery and
+fails the same way, while the report keeps showing the repository as queued. `--queue` dispatches it for a
+worker instead.
+
 Schema changes
 --------------
 
