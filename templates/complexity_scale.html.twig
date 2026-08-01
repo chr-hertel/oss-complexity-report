@@ -1,0 +1,19 @@
+{#
+ # What the numbers of the report mean: the four risk bands a cyclomatic complexity is read in, laid
+ # out over the ramp they run through - the bands are the labels, the ramp is only visible between
+ # them and under them, which is why the ranges stay readable and the colour is still the message.
+ #
+ # The bands come from `ComplexityLevel`, in the order the enum lists them, because that order is what
+ # the ramp behind them is drawn from - and because the dot next to every complexity in the report is
+ # coloured by the same case.
+ #}
+<div class="scale">
+    <div class="scale__bands">
+        {% for level in complexity_levels() %}
+            <div class="scale__band scale__band--{{ level.value }}">
+                <span class="scale__range">{{ level.range }}</span>
+                <span class="scale__risk">{{ level.risk }}</span>
+            </div>
+        {% endfor %}
+    </div>
+</div>

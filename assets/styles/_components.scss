@@ -850,3 +850,110 @@ a.chip:hover {
         color: var(--text-faint);
     }
 }
+
+// --- Level ------------------------------------------------------------------------------------
+// Where one measured complexity sits on the scale in the footer, as a dot in the colour of its band
+// in front of the number. The number keeps its own ink: green and clay already say "improved" and
+// "got worse" in the very same line, and the band is a different statement.
+.level::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 6px;
+    background: var(--level-color);
+    border-radius: 50%;
+}
+
+.level--simple {
+    --level-color: var(--level-simple);
+}
+
+.level--moderate {
+    --level-color: var(--level-moderate);
+}
+
+.level--complex {
+    --level-color: var(--level-complex);
+}
+
+.level--untestable {
+    --level-color: var(--level-untestable);
+}
+
+// --- Scale ------------------------------------------------------------------------------------
+// The four risk bands of cyclomatic complexity, drawn as one ramp rather than four boxes: the ramp
+// is the background of the whole strip, the bands are washes of white laid over it, so each band
+// keeps a tint of where it sits while the colour itself stays continuous. What is left uncovered -
+// the hairline gaps between the bands and the strip below them - is the ramp at full strength.
+.scale {
+    // one stop list for both directions: the bands are quarters, so the ramp turns at 25/50/75 and
+    // is given a few percent on either side to do it in
+    --scale-ramp:
+        var(--level-simple) 19%, var(--level-moderate) 27%, var(--level-moderate) 46%, var(--level-complex) 54%,
+        var(--level-complex) 73%, var(--level-untestable) 81%;
+
+    padding-bottom: 6px;
+    background-image: linear-gradient(90deg, var(--scale-ramp));
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+
+    &__bands {
+        display: flex;
+        gap: 3px;
+    }
+
+    &__band {
+        flex: 1 1 0;
+        padding: var(--space-3) var(--space-2);
+        text-align: center;
+        // the wash: opaque enough to read text on, thin enough to keep the band's own colour
+        background: rgb(255 255 255 / 0.84);
+    }
+
+    &__range {
+        display: block;
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-medium);
+        font-variant-numeric: tabular-nums;
+        color: var(--text-heading);
+    }
+
+    &__risk {
+        display: block;
+        margin-top: 2px;
+        font-size: var(--text-xs);
+        line-height: 1.4;
+        color: var(--text-muted);
+    }
+}
+
+// Four columns of prose do not survive a phone, so the strip turns: the ramp runs top to bottom and
+// the bands stack on it, which is the same reading in the direction there is room for.
+@media (max-width: 640px) {
+    .scale {
+        padding-right: 6px;
+        padding-bottom: 0;
+        background-image: linear-gradient(180deg, var(--scale-ramp));
+
+        &__bands {
+            flex-direction: column;
+        }
+
+        &__band {
+            padding: var(--space-2) var(--space-3);
+            text-align: left;
+        }
+
+        // the range and what it means fit next to each other once a band is a full row wide
+        &__range,
+        &__risk {
+            display: inline;
+        }
+
+        &__risk {
+            margin-left: var(--space-2);
+        }
+    }
+}

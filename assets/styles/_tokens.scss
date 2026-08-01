@@ -57,6 +57,13 @@
     --mark-mid: #c9a24d;
     --mark-high: #d06a5a;
 
+    // The four risk bands cyclomatic complexity is read in (`ComplexityLevel`), the mark's ramp with a
+    // step inserted between its first two bars - the same green-to-clay reading, one level wider
+    --level-simple: var(--mark-low);
+    --level-moderate: #7a9a4e;
+    --level-complex: var(--mark-mid);
+    --level-untestable: var(--mark-high);
+
     // Chart series - eight muted, evenly-weighted lines, assigned by position
     --chart-1: #2f3a49;
     --chart-2: #c05b4d;

@@ -392,7 +392,7 @@ canvas {
 
 // The footer of every page: hairline above, mono-quiet copy. Above the credits, the two columns that
 // explain the report - running text rather than the small print the row below it is set in, since it
-// is meant to be read once.
+// is meant to be read once - and the scale the numbers themselves are read against, closing them.
 .site-footer {
     flex: 0 0 auto;
     margin-top: var(--space-9);
@@ -432,6 +432,12 @@ canvas {
 
     &__links {
         color: var(--text-muted);
+    }
+
+    // The scale closes the block across both columns: in half the width every band would set its risk
+    // in two lines, and it is what both columns lead to anyway.
+    &__scale {
+        grid-column: 1 / -1;
     }
 
     &__inner {
