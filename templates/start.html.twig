@@ -265,35 +265,51 @@
                 {% else %}
                     <p class="empty-state">Nothing analysed yet - submit the first repository above.</p>
                 {% endif %}
-
-                {#
-                 # The GitHub accounts behind the repositories are a lens on the same list, not a place of
-                 # their own: every one of them opens the chart with what was submitted for it. Which is
-                 # why only accounts with more than one repository are listed - a single one is a link to
-                 # that repository under another name.
-                 #}
-                {% if organizations is not empty %}
-                    <p class="owner-line">
-                        <span class="owner-line__label">By owner</span>
-                        {% for organization in organizations %}
-                            <a href="{{ path('chart', {'repositories': organization.analysedRepositories|slice(0, chartLimit)|map(repository => repository.name)|join(',')}) }}">{{ organization.login }}</a>
-                        {% endfor %}
-                    </p>
-                {% endif %}
             </section>
+        </div>
 
-            {% if pending is not empty %}
+        {#
+         # What those numbers mean and where they come from, right after the first screen full of them
+         # and before the two quiet lists that close the page.
+         #}
+        {{ include('about.html.twig') }}
+
+        <div class="wrap page__body">
+            {#
+             # The GitHub accounts behind the repositories are a lens on the same list, not a place of
+             # their own: every one of them opens the chart with what was submitted for it. Which is
+             # why only accounts with more than one repository are listed - a single one is a link to
+             # that repository under another name.
+             #}
+            {% if organizations is not empty %}
+                <p class="owner-line">
+                    <span class="owner-line__label">By owner</span>
+                    {% for organization in organizations %}
+                        <a href="{{ path('chart', {'repositories': organization.analysedRepositories|slice(0, chartLimit)|map(repository => repository.name)|join(',')}) }}">{{ organization.login }}</a>
+                    {% endfor %}
+                </p>
+            {% endif %}
+
+            {#
+             # What came in last, whether it was measured yet or not - the rankings only show what has
+             # numbers, so this is the one place a repository shows up the day it was submitted. A chip
+             # says where its analysis stands as long as there is something to say about it.
+             #}
+            {% if latest is not empty %}
                 <section class="section">
                     <div class="section-header">
                         <div>
-                            <div class="eyebrow">Waiting for a worker</div>
-                            <h2>Queued for analysis</h2>
+                            <div class="eyebrow">Recently submitted</div>
+                            <h2>Latest additions</h2>
                         </div>
                     </div>
                     <div class="chip-row">
-                        {% for repository in pending %}
+                        {% for repository in latest %}
                             <a class="chip" href="{{ path('chart', {'repositories': repository.name}) }}">
                                 {{ repository.name }}
+                                {% if not repository.isAnalysed %}
+                                    <span class="chip__status">{{ repository.hasData ? 'analysing' : 'queued' }}</span>
+                                {% endif %}
                             </a>
                         {% endfor %}
                     </div>

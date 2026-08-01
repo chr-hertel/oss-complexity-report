@@ -40,6 +40,11 @@ final class ReportController extends AbstractController
      */
     private const int SEARCH_LIMIT = 8;
 
+    /**
+     * Number of recently submitted repositories the start page closes with.
+     */
+    private const int LATEST_LIMIT = 12;
+
     #[Route('', name: 'start', methods: 'GET')]
     public function start(
         RepositoryRepository $repositoryRepository,
@@ -58,7 +63,7 @@ final class ReportController extends AbstractController
             'rankings' => $rankings,
             'hasData' => [] !== $analysed,
             'organizations' => $organizationRepository->findWithSeveralRepositories(),
-            'pending' => $repositoryRepository->findPending(),
+            'latest' => $repositoryRepository->findLatest(self::LATEST_LIMIT),
             'statistics' => $statisticsLoader->load(),
             'trends' => $trendLoader->load(),
             'chartLimit' => self::CHART_LIMIT,

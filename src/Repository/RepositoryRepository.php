@@ -140,16 +140,19 @@ final class RepositoryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Submitted repositories that are waiting for their first analysis.
+     * What was submitted last, newest first - measured or not, since a repository is part of the report
+     * from the moment somebody added it, and the rankings only carry what has numbers.
      *
      * @return list<Repository>
      */
-    public function findPending(): array
+    public function findLatest(int $limit): array
     {
         /** @var list<Repository> $repositories */
         $repositories = $this->createQueryBuilder('r')
-            ->where('r.analysed IS NULL')
-            ->orderBy('r.submitted', 'ASC')
+            ->orderBy('r.submitted', 'DESC')
+            // a batch submitted in one go shares its timestamp, so the order needs a second opinion
+            ->addOrderBy('r.id', 'DESC')
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
 

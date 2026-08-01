@@ -193,4 +193,11 @@
             {% endif %}
         </div>
     </main>
+
+    {#
+     # What the chart does not say by itself closes this screen, below the release analysis. It stands
+     # outside the page rather than in it, because the credits follow it directly and the two are read
+     # as one band.
+     #}
+    {{ include('about.html.twig') }}
 {% endblock %}
