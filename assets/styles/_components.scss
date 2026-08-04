@@ -375,39 +375,52 @@
     }
 }
 
-// --- Chip -------------------------------------------------------------------------------------
-// A repository that is queued but not measured yet.
-.chip {
-    padding: 4px var(--space-2);
+// --- Badge ------------------------------------------------------------------------------------
+// A name and the one thing said about it, joined into a single tag split down the middle: the name on
+// light ground, the value on dark. It is what closes the start page - a vendor and how many
+// repositories of it are measured, a repository and where its analysis stands, a release and its
+// version - so the three lists are read the same way and only differ in what their dark half says.
+.badge {
+    display: inline-flex;
+    overflow: hidden;
     font-family: var(--font-mono);
     font-size: var(--text-xs);
-    color: var(--text-muted);
-    background: var(--surface-muted);
+    line-height: 1;
     border-radius: var(--radius-sm);
 
-    // the version half of `owner/repository:1.2.0` - set apart so the repository stays what is read
-    // first, the way a tag is read after the name it hangs on
-    &__release {
+    &__name {
+        padding: 5px var(--space-2);
         color: var(--text-heading);
+        background: var(--line);
     }
 
-    // where a repository stands when it does not stand in the report yet - only rendered while there
-    // is something to say, so a chip without it is one that has its numbers
-    &__status {
-        margin-left: var(--space-2);
-        padding-left: var(--space-2);
-        color: var(--text-faint);
-        text-transform: uppercase;
+    // a badge without one is a name that has nothing to add - a repository that is measured, while a
+    // vendor always has its count
+    &__value {
+        padding: 5px var(--space-2);
+        font-variant-numeric: tabular-nums;
+        color: var(--white);
+        background: var(--ink-700);
+    }
+
+    // where a repository stands is a state, not a measurement - set the way every other label of the
+    // report is set, so it is not read as a version
+    &__value--state {
         letter-spacing: var(--tracking-eyebrow);
-        border-left: 1px solid var(--line-strong);
+        text-transform: uppercase;
     }
 }
 
-a.chip:hover {
-    color: var(--text-body);
+// only the linked ones react, and both halves go one step darker together
+a.badge:hover .badge__name {
+    background: var(--line-strong);
 }
 
-.chip-row {
+a.badge:hover .badge__value {
+    background: var(--ink-900);
+}
+
+.badge-row {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);

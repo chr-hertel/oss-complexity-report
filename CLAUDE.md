@@ -210,15 +210,16 @@ ends on the page of its repository, whether it was just queued or has been in th
 
 **Web** (`src/Controller/ReportController`) — two screens: `start` renders the trend in the hero, the
 submit form, the rankings, then the block explaining the report, and below it the two quiet lists that
-close the page - the GitHub owners (only those grouping more than one measured repository - a single one
-is the repository the rankings already link to), each a badge of its login and how many measured
-repositories it accounts for, ordered by that count, and the latest additions, which are two columns
-because something comes in in two ways: `LATEST_LIMIT` repositories newest submission first, measured or
-not - the rankings only carry what has numbers, so this is the one place a repository shows up the day it
-was added, with a status on its chip while it is `queued` or being analysed - and next to them
-`LATEST_LIMIT` releases as `owner/repository:1.2.0`, ordered by `Tag` id, since when a release was
-measured is not stored and the id is the order the rows were written in; a repository is submitted once,
-its releases keep arriving from the nightly scan. `chart` is everything
+close the page - the GitHub vendors (only those grouping more than one measured repository - a single one
+is the repository the rankings already link to), ordered by how many measured repositories they account
+for, and the latest additions, which are two columns because something comes in in two ways:
+`LATEST_LIMIT` repositories newest submission first, measured or not - the rankings only carry what has
+numbers, so this is the one place a repository shows up the day it was added, marked while it is `queued`
+or being analysed - and next to them `LATEST_LIMIT` releases, ordered by `Tag` id, since when a release
+was measured is not stored and the id is the order the rows were written in; a repository is submitted
+once, its releases keep arriving from the nightly scan. All three lists are the same `.badge`: a name on
+light ground joined to the one thing said about it on dark - a count, a state, a version - so what
+differs between them is only what their dark half carries. `chart` is everything
 else. There is **one** chart page, not one per organization: `?repositories=symfony/console,nikic/iter`
 says which repositories it draws, in that order, up to `CHART_LIMIT` (the chart has eight colours), and
 anything the report carries can be added to them. Without a selection it opens on the most starred.

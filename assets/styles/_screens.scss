@@ -61,51 +61,12 @@
     color: var(--text-muted);
 }
 
-// The GitHub accounts behind the repositories: quiet badges under their label, not a section of its
-// own - which is why it carries no rule above it either, the band it follows is separation enough.
-.owners {
+// The GitHub accounts behind the repositories: a row of badges under their label, not a section of
+// its own - which is why it carries no rule above it either, the band it follows is separation
+// enough. The badges themselves are `.badge` in _components.scss, the same ones the lists below use.
+.vendors {
     &__label {
         margin-bottom: var(--space-3);
-    }
-
-    &__list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-2);
-    }
-}
-
-// An account and its share of the report as one tag, split down the middle: the login on light
-// ground, the number of repositories measured for it on dark - the two halves of a shields.io badge,
-// which is how a name and a count are read everywhere else.
-.owner-badge {
-    display: inline-flex;
-    overflow: hidden;
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    line-height: 1;
-    border-radius: var(--radius-sm);
-
-    &__name {
-        padding: 5px var(--space-2);
-        color: var(--text-body);
-        background: var(--surface-muted);
-    }
-
-    &__count {
-        padding: 5px var(--space-2);
-        font-variant-numeric: tabular-nums;
-        color: var(--white);
-        background: var(--ink-700);
-    }
-
-    &:hover &__name {
-        color: var(--text-heading);
-        background: var(--line);
-    }
-
-    &:hover &__count {
-        background: var(--ink-900);
     }
 }
 

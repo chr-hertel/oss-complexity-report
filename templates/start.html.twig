@@ -58,6 +58,20 @@
 {% endmacro %}
 
 {#
+ # The tag the three lists closing the page are built from: a name and the one thing said about it,
+ # joined into one badge. What the dark half carries is all that differs between them - a count, a
+ # version, a state - so they are read the same way.
+ #}
+{% macro badge(name, value, url, title, state = false) %}
+    <a class="badge" href="{{ url }}" title="{{ title }}">
+        <span class="badge__name">{{ name }}</span>
+        {% if value is not empty %}
+            <span class="badge__value{{ state ? ' badge__value--state' }}">{{ value }}</span>
+        {% endif %}
+    </a>
+{% endmacro %}
+
+{#
  # Owner above name on every card, the way github.com reads them - `symfony/symfony` saying its name
  # twice is what that repository is called, and dropping the line for it only left the head empty.
  #}
@@ -292,22 +306,21 @@
              # that repository under another name.
              #}
             {% if organizations is not empty %}
-                <div class="owners">
-                    <div class="eyebrow owners__label">By owner</div>
+                <div class="vendors">
+                    <div class="eyebrow vendors__label">By vendor</div>
                     {#
-                     # A badge is the account and how much of the report it accounts for, joined into one
-                     # tag: the login on light ground, the number of measured repositories on dark. The
-                     # count is what they are ordered by, so the line reads as a ranking of its own.
+                     # The dark half of a vendor badge is how much of the report it accounts for, which is
+                     # what they are ordered by - so the row reads as a ranking of its own.
                      #}
-                    <div class="owners__list">
+                    <div class="badge-row">
                         {% for organization in organizations %}
                             {% set measured = organization.analysedRepositories %}
-                            <a class="owner-badge"
-                               href="{{ path('chart', {'repositories': measured|slice(0, chartLimit)|map(repository => repository.name)|join(',')}) }}"
-                               title="{{ measured|length }} measured {{ measured|length == 1 ? 'repository' : 'repositories' }} of {{ organization.login }}">
-                                <span class="owner-badge__name">{{ organization.login }}</span>
-                                <span class="owner-badge__count">{{ measured|length }}</span>
-                            </a>
+                            {{ _self.badge(
+                                organization.login,
+                                measured|length,
+                                path('chart', {'repositories': measured|slice(0, chartLimit)|map(repository => repository.name)|join(',')}),
+                                '%d measured %s of %s'|format(measured|length, measured|length == 1 ? 'repository' : 'repositories', organization.login)
+                            ) }}
                         {% endfor %}
                     </div>
                 </div>
@@ -316,7 +329,7 @@
             {#
              # What came in last, in the two ways something can: a repository somebody submitted, and a
              # release a worker measured. The left column is the one place a repository shows up the day
-             # it was added, since the rankings only carry what has numbers - a chip says where its
+             # it was added, since the rankings only carry what has numbers - a badge says where its
              # analysis stands as long as there is something to say about it. The right column is the
              # other end of the same work: a repository is added once, its releases keep arriving, and a
              # nightly scan adds them without anyone submitting anything.
@@ -330,35 +343,44 @@
                         </div>
                     </div>
                     <div class="latest">
+                        {#
+                         # The dark half of a library badge is where its analysis stands, so a badge
+                         # that is only its name is one that has its numbers - which is the majority,
+                         # and the reason the state is what gets marked rather than the other way round.
+                         #}
                         {% if latest is not empty %}
                             <div class="latest__column">
                                 <div class="eyebrow latest__label">Libraries</div>
-                                <div class="chip-row">
+                                <div class="badge-row">
                                     {% for repository in latest %}
-                                        <a class="chip" href="{{ path('chart', {'repositories': repository.name}) }}">
-                                            {{ repository.name }}
-                                            {% if not repository.isAnalysed %}
-                                                <span class="chip__status">{{ repository.hasData ? 'analysing' : 'queued' }}</span>
-                                            {% endif %}
-                                        </a>
+                                        {{ _self.badge(
+                                            repository.name,
+                                            repository.isAnalysed ? null : (repository.hasData ? 'analysing' : 'queued'),
+                                            path('chart', {'repositories': repository.name}),
+                                            repository.isAnalysed
+                                                ? '%s, submitted %s'|format(repository.name, repository.submitted|date('F j, Y'))
+                                                : '%s is waiting for a worker'|format(repository.name),
+                                            true
+                                        ) }}
                                     {% endfor %}
                                 </div>
                             </div>
                         {% endif %}
                         {#
-                         # A release is read as `owner/repository:1.2.0`, the way a version is addressed
-                         # everywhere else, and opens the chart of the repository it belongs to - which is
-                         # where that release is a point.
+                         # A release badge is the repository and the version measured for it, and opens
+                         # the chart of that repository - which is where the release is a point.
                          #}
                         {% if latestReleases is not empty %}
                             <div class="latest__column">
                                 <div class="eyebrow latest__label">Releases</div>
-                                <div class="chip-row">
+                                <div class="badge-row">
                                     {% for tag in latestReleases %}
-                                        <a class="chip" href="{{ path('chart', {'repositories': tag.repository.name}) }}"
-                                           title="{{ tag.repository.name }} {{ tag.name }}, tagged {{ tag.created|date('F j, Y') }}">
-                                            {{ tag.repository.name }}<span class="chip__release">:{{ tag.name }}</span>
-                                        </a>
+                                        {{ _self.badge(
+                                            tag.repository.name,
+                                            tag.name,
+                                            path('chart', {'repositories': tag.repository.name}),
+                                            '%s %s, tagged %s'|format(tag.repository.name, tag.name, tag.created|date('F j, Y'))
+                                        ) }}
                                     {% endfor %}
                                 </div>
                             </div>
