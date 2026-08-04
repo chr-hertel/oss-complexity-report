@@ -27,9 +27,11 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ReportController extends AbstractController
 {
     /**
-     * Number of repositories a chart starts with - it has eight colors to distinguish them.
+     * Number of lines the chart opens on when nobody picked any - the eight colours of the palette, so
+     * the chart it starts with has one each. It is where a chart begins, not what it holds: a selection
+     * says how many lines it draws, and the report is the only thing that bounds it.
      */
-    private const int CHART_LIMIT = 8;
+    private const int CHART_DEFAULT = 8;
 
     /**
      * Number of repositories featured on the start page.
@@ -70,7 +72,6 @@ final class ReportController extends AbstractController
             'latestReleases' => $tagRepository->findLatest(self::LATEST_LIMIT),
             'statistics' => $statisticsLoader->load(),
             'trends' => $trendLoader->load(),
-            'chartLimit' => self::CHART_LIMIT,
         ]);
     }
 
@@ -138,18 +139,21 @@ final class ReportController extends AbstractController
      * The one chart of the report: `?repositories=symfony/console,laravel/framework` says which lines it
      * draws, and anything the report carries can be added to them. Without a selection it opens on the
      * most starred repositories.
+     *
+     * How many lines that may be is not capped: a vendor with fifty measured repositories is a chart of
+     * fifty. What bounds the query string is the report itself - it cannot name more repositories than
+     * there are, and everything it names that is not one is dropped.
      */
     #[Route('chart', name: 'chart', methods: 'GET', priority: 3)]
     public function chart(Request $request, RepositoryRepository $repositories): Response
     {
         $analysed = $repositories->findAnalysed();
-        $selected = $repositories->findBySlugs($this->selectedSlugs($request));
+        $selected = $repositories->findBySlugs($this->selectedSlugs($request, $repositories->count([])));
 
         return $this->render('chart.html.twig', [
             'selection' => [] === $selected
-                ? ChartSelection::mostStarred($analysed, self::CHART_LIMIT)
+                ? ChartSelection::mostStarred($analysed, self::CHART_DEFAULT)
                 : ChartSelection::of($selected, $analysed),
-            'chartLimit' => self::CHART_LIMIT,
         ]);
     }
 
@@ -178,7 +182,7 @@ final class ReportController extends AbstractController
 
         return $this->redirectToRoute(
             'chart',
-            ['repositories' => implode(',', \array_slice($slugs, 0, self::CHART_LIMIT))],
+            ['repositories' => implode(',', $slugs)],
             Response::HTTP_MOVED_PERMANENTLY,
         );
     }
@@ -226,18 +230,22 @@ final class ReportController extends AbstractController
 
     /**
      * What `?repositories=symfony/console,laravel/framework` asks for: slugs, in the order they were
-     * given, as many as the chart has colours for. Anything that is not a repository is dropped rather
-     * than answered with an error - the query string is a link people edit and share.
+     * given. Anything that is not a repository is dropped rather than answered with an error - the query
+     * string is a link people edit and share.
+     *
+     * $limit is how many repositories the report carries. It is not a limit on the chart - a selection
+     * cannot name more repositories than exist, so this only keeps a query string somebody padded out
+     * from being asked about.
      *
      * @return list<string>
      */
-    private function selectedSlugs(Request $request): array
+    private function selectedSlugs(Request $request, int $limit): array
     {
         $slugs = array_filter(array_map(trim(...), explode(',', $request->query->getString('repositories'))));
 
         // `symfony/console` and `Symfony/Console` are the same repository, and one line of it is enough
         $unique = array_unique(array_map(mb_strtolower(...), $slugs));
 
-        return \array_slice(array_values(array_intersect_key($slugs, $unique)), 0, self::CHART_LIMIT);
+        return \array_slice(array_values(array_intersect_key($slugs, $unique)), 0, $limit);
     }
 }

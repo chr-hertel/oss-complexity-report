@@ -217,12 +217,19 @@ for, and the latest additions, which are two columns because something comes in 
 numbers, so this is the one place a repository shows up the day it was added, marked while it is `queued`
 or being analysed - and next to them `LATEST_LIMIT` releases, ordered by `Tag` id, since when a release
 was measured is not stored and the id is the order the rows were written in; a repository is submitted
-once, its releases keep arriving from the nightly scan. All three lists are the same `.badge`: a name on
+once, its releases keep arriving from the nightly scan. All three lists are the same `.pill`: a name on
 light ground joined to the one thing said about it on dark - a count, a state, a version - so what
-differs between them is only what their dark half carries. `chart` is everything
+differs between them is only what their dark half carries, and nothing surrounds the two halves (`.badge`
+is the single-ground count of the design system, which is a different thing). `chart` is everything
 else. There is **one** chart page, not one per organization: `?repositories=symfony/console,nikic/iter`
-says which repositories it draws, in that order, up to `CHART_LIMIT` (the chart has eight colours), and
-anything the report carries can be added to them. Without a selection it opens on the most starred.
+says which repositories it draws, in that order, and anything the report carries can be added to them.
+There is **no** cap on how many: a vendor of fifty measured repositories is a chart of fifty, and what
+bounds a query string is the report itself, since it cannot name more repositories than exist -
+`CHART_DEFAULT` is only where a chart *starts* when nobody picked anything, the eight most starred, one
+per colour of the palette. Past the eighth line the palette starts over, and each pass through it is
+stroked differently (`SERIES_DASHES`), so a ninth line shares its colour but not its look; past a full
+palette the chart legend is dropped, because the picker chips above say the same thing in the same
+colours without taking the height the chart is drawn in.
 Repositories are addressed by the slug they carry on github.com, never by a database id - the query string
 is a link people read, edit and share, so it says what it draws. The case does not matter, and slugs that
 are not repositories are dropped rather than answered with an error.

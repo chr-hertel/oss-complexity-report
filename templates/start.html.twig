@@ -59,14 +59,14 @@
 
 {#
  # The tag the three lists closing the page are built from: a name and the one thing said about it,
- # joined into one badge. What the dark half carries is all that differs between them - a count, a
+ # joined into one pill. What the dark half carries is all that differs between them - a count, a
  # version, a state - so they are read the same way.
  #}
-{% macro badge(name, value, url, title, state = false) %}
-    <a class="badge" href="{{ url }}" title="{{ title }}">
-        <span class="badge__name">{{ name }}</span>
+{% macro pill(name, value, url, title, state = false) %}
+    <a class="pill" href="{{ url }}" title="{{ title }}">
+        <span class="pill__name">{{ name }}</span>
         {% if value is not empty %}
-            <span class="badge__value{{ state ? ' badge__value--state' }}">{{ value }}</span>
+            <span class="pill__value{{ state ? ' pill__value--state' }}">{{ value }}</span>
         {% endif %}
     </a>
 {% endmacro %}
@@ -266,7 +266,7 @@
                                 <p class="ranking__caption">{{ entry.ranking.caption }}</p>
                                 {% if entry.repositories is not empty %}
                                     <a class="btn btn--secondary ranking__chart"
-                                       href="{{ path('chart', {'repositories': entry.repositories|slice(0, chartLimit)|map(repository => repository.name)|join(',')}) }}">
+                                       href="{{ path('chart', {'repositories': entry.repositories|map(repository => repository.name)|join(',')}) }}">
                                         Open the chart
                                     </a>
                                 {% endif %}
@@ -309,16 +309,16 @@
                 <div class="vendors">
                     <div class="eyebrow vendors__label">By vendor</div>
                     {#
-                     # The dark half of a vendor badge is how much of the report it accounts for, which is
+                     # The dark half of a vendor pill is how much of the report it accounts for, which is
                      # what they are ordered by - so the row reads as a ranking of its own.
                      #}
-                    <div class="badge-row">
+                    <div class="pill-row">
                         {% for organization in organizations %}
                             {% set measured = organization.analysedRepositories %}
-                            {{ _self.badge(
+                            {{ _self.pill(
                                 organization.login,
                                 measured|length,
-                                path('chart', {'repositories': measured|slice(0, chartLimit)|map(repository => repository.name)|join(',')}),
+                                path('chart', {'repositories': measured|map(repository => repository.name)|join(',')}),
                                 '%d measured %s of %s'|format(measured|length, measured|length == 1 ? 'repository' : 'repositories', organization.login)
                             ) }}
                         {% endfor %}
@@ -329,7 +329,7 @@
             {#
              # What came in last, in the two ways something can: a repository somebody submitted, and a
              # release a worker measured. The left column is the one place a repository shows up the day
-             # it was added, since the rankings only carry what has numbers - a badge says where its
+             # it was added, since the rankings only carry what has numbers - a pill says where its
              # analysis stands as long as there is something to say about it. The right column is the
              # other end of the same work: a repository is added once, its releases keep arriving, and a
              # nightly scan adds them without anyone submitting anything.
@@ -344,16 +344,16 @@
                     </div>
                     <div class="latest">
                         {#
-                         # The dark half of a library badge is where its analysis stands, so a badge
+                         # The dark half of a library pill is where its analysis stands, so a pill
                          # that is only its name is one that has its numbers - which is the majority,
                          # and the reason the state is what gets marked rather than the other way round.
                          #}
                         {% if latest is not empty %}
                             <div class="latest__column">
                                 <div class="eyebrow latest__label">Libraries</div>
-                                <div class="badge-row">
+                                <div class="pill-row">
                                     {% for repository in latest %}
-                                        {{ _self.badge(
+                                        {{ _self.pill(
                                             repository.name,
                                             repository.isAnalysed ? null : (repository.hasData ? 'analysing' : 'queued'),
                                             path('chart', {'repositories': repository.name}),
@@ -367,15 +367,15 @@
                             </div>
                         {% endif %}
                         {#
-                         # A release badge is the repository and the version measured for it, and opens
+                         # A release pill is the repository and the version measured for it, and opens
                          # the chart of that repository - which is where the release is a point.
                          #}
                         {% if latestReleases is not empty %}
                             <div class="latest__column">
                                 <div class="eyebrow latest__label">Releases</div>
-                                <div class="badge-row">
+                                <div class="pill-row">
                                     {% for tag in latestReleases %}
-                                        {{ _self.badge(
+                                        {{ _self.pill(
                                             tag.repository.name,
                                             tag.name,
                                             path('chart', {'repositories': tag.repository.name}),

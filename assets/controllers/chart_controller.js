@@ -9,6 +9,16 @@ import { element } from '../combobox.js';
 // chip in the picker is coloured by the same rule, see _components.scss - which only holds as long as
 // the order of the datasets is the order of the chips, which is why a pick goes to the end of both.
 const SERIES_COLORS = ['#2f3a49', '#c05b4d', '#b58a3c', '#4e8c7d', '#4a6fa5', '#7c6ba0', '#7a9a4e', '#a0a8b4'];
+
+// The chart draws as many lines as are picked, and the palette is eight - so it starts over, and every
+// pass through it is drawn differently: a ninth line shares its colour with the first but not its
+// stroke. Two lines only look alike once there are more than 24 of them.
+const SERIES_DASHES = [[], [6, 3], [2, 3]];
+const stroke = (index) => ({
+    borderColor: SERIES_COLORS[index % SERIES_COLORS.length],
+    backgroundColor: SERIES_COLORS[index % SERIES_COLORS.length],
+    borderDash: SERIES_DASHES[Math.floor(index / SERIES_COLORS.length) % SERIES_DASHES.length],
+});
 const GRID = '#e3e7ec';
 const TICK = '#5a6675';
 const INK = '#101720';
@@ -282,9 +292,13 @@ export default class extends Controller {
             pointRadius: 2.5,
             pointHoverRadius: 5,
             tension: 0.15,
-            borderColor: SERIES_COLORS[index % SERIES_COLORS.length],
-            backgroundColor: SERIES_COLORS[index % SERIES_COLORS.length],
+            ...stroke(index),
         }));
+
+        // A legend of fifty entries is not a legend, it is the page - and it would take the height the
+        // chart is drawn in. The chips above the chart say the same thing in the same colours and stay
+        // one line per row, so past a palette they are the legend.
+        this.chart.options.plugins.legend.display = graphs.length <= SERIES_COLORS.length;
         this.chart.update();
         this.reflectZoom();
 

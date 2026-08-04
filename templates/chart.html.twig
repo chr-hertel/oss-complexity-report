@@ -108,7 +108,7 @@
                      # what is picked ends up in the query string. The headline says what it is, so the
                      # box needs no second one.
                      #}
-                    <div class="repository-picker" {{ stimulus_controller('repository-picker', {limit: chartLimit}) }}>
+                    <div class="repository-picker" {{ stimulus_controller('repository-picker') }}>
                         {#
                          # The state the box is a widget for: what is in the chart, and in which order it
                          # is drawn. The chart reads this and redraws on its `change`, so it does not
@@ -139,7 +139,8 @@
                                 data-repository-picker-target="menu" hidden></ul>
                         </div>
                         <p class="repository-picker__hint">
-                            Up to {{ chartLimit }} at a time, one colour each.
+                            As many lines as the report carries - one colour each, dashed once the eight
+                            colours start over.
                             <a href="{{ path('start') }}">Add a repository</a> the report does not carry yet.
                         </p>
                     </div>

@@ -61,9 +61,9 @@
     color: var(--text-muted);
 }
 
-// The GitHub accounts behind the repositories: a row of badges under their label, not a section of
+// The GitHub accounts behind the repositories: a row of pills under their label, not a section of
 // its own - which is why it carries no rule above it either, the band it follows is separation
-// enough. The badges themselves are `.badge` in _components.scss, the same ones the lists below use.
+// enough. The pills themselves are `.pill` in _components.scss, the same ones the lists below use.
 .vendors {
     &__label {
         margin-bottom: var(--space-3);

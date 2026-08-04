@@ -196,8 +196,9 @@
         background: var(--chart-8);
     }
 
+    // the palette starts over on the ninth line, the way the chart starts it over
     @for $index from 1 through 8 {
-        .tab:nth-child(#{$index}) .tab__swatch {
+        .tab:nth-child(8n + #{$index}) .tab__swatch {
             background: var(--chart-#{$index});
         }
     }
@@ -375,12 +376,15 @@
     }
 }
 
-// --- Badge ------------------------------------------------------------------------------------
+// --- Pill -------------------------------------------------------------------------------------
 // A name and the one thing said about it, joined into a single tag split down the middle: the name on
-// light ground, the value on dark. It is what closes the start page - a vendor and how many
-// repositories of it are measured, a repository and where its analysis stands, a release and its
+// light ground, the value on dark, and nothing around the two - the halves carry the whole shape, so
+// the only rounded corners are the outer ones. It is what closes the start page - a vendor and how
+// many repositories of it are measured, a repository and where its analysis stands, a release and its
 // version - so the three lists are read the same way and only differ in what their dark half says.
-.badge {
+//
+// It is not `.badge` above: that one is the small count of the design system, a single ground.
+.pill {
     display: inline-flex;
     overflow: hidden;
     font-family: var(--font-mono);
@@ -394,7 +398,7 @@
         background: var(--line);
     }
 
-    // a badge without one is a name that has nothing to add - a repository that is measured, while a
+    // a pill without one is a name that has nothing to add - a repository that is measured, while a
     // vendor always has its count
     &__value {
         padding: 5px var(--space-2);
@@ -412,15 +416,15 @@
 }
 
 // only the linked ones react, and both halves go one step darker together
-a.badge:hover .badge__name {
+a.pill:hover .pill__name {
     background: var(--line-strong);
 }
 
-a.badge:hover .badge__value {
+a.pill:hover .pill__value {
     background: var(--ink-900);
 }
 
-.badge-row {
+.pill-row {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
@@ -488,8 +492,9 @@ a.badge:hover .badge__value {
         background: var(--chart-8);
     }
 
+    // the ninth chip is the ninth line, which is the first colour again - see chart_controller.js
     @for $index from 1 through 8 {
-        &__chip:nth-child(#{$index}) &__swatch {
+        &__chip:nth-child(8n + #{$index}) &__swatch {
             background: var(--chart-#{$index});
         }
     }

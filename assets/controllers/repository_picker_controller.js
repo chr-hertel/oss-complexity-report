@@ -11,7 +11,6 @@ import { Combobox, element } from '../combobox.js';
  */
 export default class extends Controller {
     static targets = ['select', 'chips', 'input', 'menu'];
-    static values = { limit: Number };
 
     connect() {
         this.combobox = new Combobox(this.inputTarget, this.menuTarget, (index) => this.pick(index));
@@ -37,13 +36,10 @@ export default class extends Controller {
      */
     query() {
         const search = this.inputTarget.value.trim().toLowerCase();
-        const full = this.selected().length >= this.limitValue;
 
-        this.options = full
-            ? []
-            : [...this.selectTarget.options].filter(
-                  (option) => !option.selected && option.value.toLowerCase().includes(search),
-              );
+        this.options = [...this.selectTarget.options].filter(
+            (option) => !option.selected && option.value.toLowerCase().includes(search),
+        );
 
         this.combobox.show(
             this.options.map((option) => {
@@ -53,19 +49,16 @@ export default class extends Controller {
 
                 return row;
             }),
-            this.nothing(full, '' !== search),
+            this.nothing('' !== search),
         );
     }
 
     /**
-     * An empty menu is three different answers, and saying the wrong one reads like a box that stopped
-     * working: the chart is full, the report is in it already, or nothing goes by that name.
+     * An empty menu is two different answers, and saying the wrong one reads like a box that stopped
+     * working: the report is in the chart already, or nothing goes by that name. There is no third one
+     * anymore - the chart takes as many lines as there are repositories to draw.
      */
-    nothing(full, searching) {
-        if (full) {
-            return `The chart draws ${this.limitValue} lines at a time - remove one to add another.`;
-        }
-
+    nothing(searching) {
         return searching
             ? 'Nothing in the report matches that.'
             : 'Everything the report carries is already in this chart.';
