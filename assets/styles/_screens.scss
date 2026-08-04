@@ -61,21 +61,67 @@
     color: var(--text-muted);
 }
 
-// The GitHub accounts behind the repositories: a quiet line of links, not a section of its own -
-// which is why it carries no rule above it either, the band it follows is separation enough.
-.owner-line {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1) var(--space-4);
-    align-items: baseline;
-    font-size: var(--text-sm);
-    color: var(--text-muted);
+// The GitHub accounts behind the repositories: quiet badges under their label, not a section of its
+// own - which is why it carries no rule above it either, the band it follows is separation enough.
+.owners {
+    &__label {
+        margin-bottom: var(--space-3);
+    }
+
+    &__list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+}
+
+// An account and its share of the report as one tag, split down the middle: the login on light
+// ground, the number of repositories measured for it on dark - the two halves of a shields.io badge,
+// which is how a name and a count are read everywhere else.
+.owner-badge {
+    display: inline-flex;
+    overflow: hidden;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: 1;
+    border-radius: var(--radius-sm);
+
+    &__name {
+        padding: 5px var(--space-2);
+        color: var(--text-body);
+        background: var(--surface-muted);
+    }
+
+    &__count {
+        padding: 5px var(--space-2);
+        font-variant-numeric: tabular-nums;
+        color: var(--white);
+        background: var(--ink-700);
+    }
+
+    &:hover &__name {
+        color: var(--text-heading);
+        background: var(--line);
+    }
+
+    &:hover &__count {
+        background: var(--ink-900);
+    }
+}
+
+// The two ends of what came in last, side by side: repositories somebody submitted, releases a worker
+// measured. On a phone one column, the submissions first.
+.latest {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-6);
 
     &__label {
-        font-family: var(--font-mono);
-        font-size: var(--text-xs);
-        letter-spacing: var(--tracking-eyebrow);
-        text-transform: uppercase;
+        margin-bottom: var(--space-3);
+    }
+
+    @media (max-width: 720px) {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 

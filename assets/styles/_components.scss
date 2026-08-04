@@ -385,6 +385,12 @@
     background: var(--surface-muted);
     border-radius: var(--radius-sm);
 
+    // the version half of `owner/repository:1.2.0` - set apart so the repository stays what is read
+    // first, the way a tag is read after the name it hangs on
+    &__release {
+        color: var(--text-heading);
+    }
+
     // where a repository stands when it does not stand in the report yet - only rendered while there
     // is something to say, so a chip without it is one that has its numbers
     &__status {

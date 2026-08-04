@@ -15,6 +15,7 @@ use App\Entity\Organization;
 use App\Entity\Repository;
 use App\Repository\OrganizationRepository;
 use App\Repository\RepositoryRepository;
+use App\Repository\TagRepository;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -41,7 +42,8 @@ final class ReportController extends AbstractController
     private const int SEARCH_LIMIT = 8;
 
     /**
-     * Number of recently submitted repositories the start page closes with.
+     * Number of recently submitted repositories, and of recently measured releases, the start page
+     * closes with - the two lists stand next to each other, so they are the same length.
      */
     private const int LATEST_LIMIT = 12;
 
@@ -49,6 +51,7 @@ final class ReportController extends AbstractController
     public function start(
         RepositoryRepository $repositoryRepository,
         OrganizationRepository $organizationRepository,
+        TagRepository $tagRepository,
         StatisticsLoader $statisticsLoader,
         TrendLoader $trendLoader,
     ): Response {
@@ -64,6 +67,7 @@ final class ReportController extends AbstractController
             'hasData' => [] !== $analysed,
             'organizations' => $organizationRepository->findWithSeveralRepositories(),
             'latest' => $repositoryRepository->findLatest(self::LATEST_LIMIT),
+            'latestReleases' => $tagRepository->findLatest(self::LATEST_LIMIT),
             'statistics' => $statisticsLoader->load(),
             'trends' => $trendLoader->load(),
             'chartLimit' => self::CHART_LIMIT,

@@ -46,6 +46,9 @@ final class OrganizationRepository extends ServiceEntityRepository
      * of those needs releases - an owner of a single repository is that repository, which the rankings
      * already link to, and an owner without measured releases links to an empty report.
      *
+     * They are listed by how much of the report they account for, because that is the number their badge
+     * carries; stars only break the tie between two owners of the same size.
+     *
      * @return list<Organization>
      */
     public function findWithSeveralRepositories(): array
@@ -54,14 +57,15 @@ final class OrganizationRepository extends ServiceEntityRepository
 
         /** @var list<Organization> $organizations */
         $organizations = $queryBuilder
-            ->select('o, SUM(r.stars) AS HIDDEN stars')
+            ->select('o, COUNT(r.id) AS HIDDEN measured, SUM(r.stars) AS HIDDEN stars')
             ->innerJoin('o.repositories', 'r')
             ->where($queryBuilder->expr()->exists(
                 sprintf('SELECT t.id FROM %s t WHERE t.repository = r', Tag::class)
             ))
             ->groupBy('o.id')
             ->having('COUNT(r.id) > 1')
-            ->orderBy('stars', 'DESC')
+            ->orderBy('measured', 'DESC')
+            ->addOrderBy('stars', 'DESC')
             ->addOrderBy('o.login', 'ASC')
             ->getQuery()
             ->getResult();

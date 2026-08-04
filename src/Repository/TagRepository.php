@@ -41,6 +41,31 @@ final class TagRepository extends ServiceEntityRepository
         );
     }
 
+    /**
+     * The releases that were measured last.
+     *
+     * Ordered by id, because that is the only record of when a release entered the report: a `Tag` is
+     * written the moment its release was analysed, while the date it carries is the day it was tagged on
+     * github.com. So this is the newest end of the dataset, not the newest end of PHP.
+     *
+     * @return list<Tag>
+     */
+    public function findLatest(int $limit): array
+    {
+        /** @var list<Tag> $tags */
+        $tags = $this->createQueryBuilder('t')
+            // both are shown on every chip, and neither is worth a query of its own
+            ->addSelect('r', 'o')
+            ->innerJoin('t.repository', 'r')
+            ->innerJoin('r.organization', 'o')
+            ->orderBy('t.id', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+
+        return $tags;
+    }
+
     public function getLinesOfCodeSum(): int
     {
         $query = $this->createQueryBuilder('t')
