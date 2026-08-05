@@ -14,13 +14,17 @@ namespace App\ComplexityReport;
 final readonly class BackfillProgress
 {
     /**
+     * $measuredRepositories is what an incomplete one is counted against, and it is deliberately not
+     * every submitted repository: one that has no measured release cannot be missing an output for one,
+     * so counting it into the total would report it as a repository the backfill is through with.
+     *
      * @param list<array{name: string, missing: int}> $next the repositories the coming runs would take,
      *                                                      in the order they would be taken
      */
     public function __construct(
         public int $releases,
         public int $missingReleases,
-        public int $repositories,
+        public int $measuredRepositories,
         public int $incompleteRepositories,
         public array $next,
     ) {

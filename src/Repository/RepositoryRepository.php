@@ -202,6 +202,21 @@ final class RepositoryRepository extends ServiceEntityRepository
     }
 
     /**
+     * Repositories that carry at least one measured release - what an incomplete one is counted against.
+     *
+     * Not every submitted repository can be incomplete: one that was never measured has no release to be
+     * missing an output, so counting those into the total would report them as done.
+     */
+    public function countMeasured(): int
+    {
+        return (int) $this->createQueryBuilder('r')
+            ->select('COUNT(DISTINCT r.id)')
+            ->innerJoin('r.tags', 't')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
      * How many repositories the backfill has left, however many releases each of them is missing - one
      * of them costs a clone either way, which is what the hourly run is rationed in.
      */

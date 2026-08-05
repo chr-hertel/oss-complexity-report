@@ -23,7 +23,7 @@ final readonly class BackfillProgressLoader
         return new BackfillProgress(
             $this->tagRepository->count([]),
             $this->tagRepository->countMissingMetrics(),
-            $this->repositoryRepository->count([]),
+            $this->repositoryRepository->countMeasured(),
             $this->repositoryRepository->countIncomplete(),
             $this->repositoryRepository->findIncomplete($next),
         );

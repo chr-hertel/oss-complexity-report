@@ -53,9 +53,9 @@ final readonly class MetricsStatusCommand
                 number_format($progress->share(), 1),
             ),
             sprintf(
-                '<options=bold>%s</> of <options=bold>%s</> repositories are still incomplete',
+                '<options=bold>%s</> of <options=bold>%s</> measured repositories are still incomplete',
                 number_format($progress->incompleteRepositories),
-                number_format($progress->repositories),
+                number_format($progress->measuredRepositories),
             ),
         ]);
 

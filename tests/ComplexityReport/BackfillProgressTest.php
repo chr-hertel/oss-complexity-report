@@ -52,6 +52,8 @@ final class BackfillProgressTest extends TestCase
 
     private static function progress(int $releases, int $missingReleases, int $incompleteRepositories): BackfillProgress
     {
-        return new BackfillProgress($releases, $missingReleases, 96, $incompleteRepositories, []);
+        // a repository the backfill can be counted against is one that carries releases, so a total
+        // below the incomplete count is not a state this can be in
+        return new BackfillProgress($releases, $missingReleases, max(96, $incompleteRepositories), $incompleteRepositories, []);
     }
 }
