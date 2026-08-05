@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\MessageHandler;
 
+use App\ComplexityReport\MetricsBackfiller;
 use App\Message\BackfillMetrics;
 use App\Message\BackfillRepositoryMetrics;
 use App\Repository\RepositoryRepository;
@@ -26,11 +27,6 @@ use Symfony\Component\Messenger\MessageBusInterface;
 #[AsMessageHandler]
 final readonly class BackfillMetricsHandler
 {
-    /**
-     * How many repositories are queued per run - ten an hour, most starred first.
-     */
-    private const int BATCH = 10;
-
     public function __construct(
         private RepositoryRepository $repositoryRepository,
         private MessageBusInterface $messageBus,
@@ -40,7 +36,7 @@ final readonly class BackfillMetricsHandler
 
     public function __invoke(BackfillMetrics $message): void
     {
-        $ids = $this->repositoryRepository->findIncompleteIds(self::BATCH);
+        $ids = $this->repositoryRepository->findIncompleteIds(MetricsBackfiller::BATCH);
 
         foreach ($ids as $id) {
             $this->messageBus->dispatch(new BackfillRepositoryMetrics($id));

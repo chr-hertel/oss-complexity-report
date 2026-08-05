@@ -26,11 +26,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand('app:metrics:backfill', 'Re-measures releases that carry no phploc output yet')]
 final readonly class MetricsBackfillCommand
 {
-    /**
-     * How many repositories are worked off when none are named - the batch the hourly run queues.
-     */
-    private const int LIMIT = 10;
-
     public function __construct(
         private RepositoryRepository $repositoryRepository,
         private MetricsBackfiller $backfiller,
@@ -46,7 +41,7 @@ final readonly class MetricsBackfillCommand
         #[Argument('Repositories to fill in, e.g. "moodle/moodle" - the most starred incomplete ones when none are named')]
         array $repositories = [],
         #[Option('How many repositories to work off when none are named')]
-        int $limit = self::LIMIT,
+        int $limit = MetricsBackfiller::BATCH,
     ): int {
         $io->title('Filling in phploc output');
 

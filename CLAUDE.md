@@ -45,6 +45,7 @@ bin/console messenger:consume scheduler_default   # the nightly release scan, st
 bin/console messenger:stats                       # what is still queued
 bin/console app:repository:analyse moodle/moodle  # measure one repository here instead of in a worker
 bin/console app:metrics:backfill moodle/moodle    # fill in the phploc output of releases measured without it
+bin/console app:metrics:status                    # how far that backfill has got, and what it takes next
 bin/console debug:scheduler                       # next run of the recurring messages
 
 # frontend — Vite, wired into Twig by symfony/reprise
@@ -175,6 +176,13 @@ optional profile fields and named the wrong account as often as the right one.
   flushes per release. It corrects **only** what was never stored: the lines of code and the complexity the
   release was written with stay, even though this measurement produces them again — a backfill is not the
   place to move a line the chart has been drawn with for years.
+- `BackfillProgress` + `BackfillProgressLoader` — how far that is, as `app:metrics:status` prints it. It
+  counts the same thing twice on purpose: releases say how much of the report can be read as phploc
+  printed it, repositories say how much work is left, since one of them costs a clone whether it is
+  missing one release or two hundred - and `MetricsBackfiller::BATCH` is what a run is rationed in, which
+  is why the constant lives on the service the hourly run, the command and the status all go through. It
+  counts what is stored and nothing else: what is queued is `messenger:stats`, and a repository being
+  measured right now still counts as missing, because it is until it is flushed.
 - `PhplocReport` — a stored measurement printed the way the phploc command line prints it, by handing it to
   phploc's own `Log\Text`. There is no second layout to keep in step with the tool, which is why the modal
   can be called raw output; the printer writes to standard output, so this catches it in a buffer.

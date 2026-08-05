@@ -170,25 +170,63 @@ final class RepositoryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Repositories carrying releases that were measured before the report kept the full phploc output,
-     * most starred first - what the hourly backfill works off, a few at a time.
-     *
-     * Ordered like everything else the report picks by itself: the most starred repositories are the
-     * ones being read, so they are the ones that get their raw output first.
+     * Repositories carrying releases that were measured before the report kept the full phploc output -
+     * what the hourly backfill works off, a few at a time.
      *
      * @return list<int>
      */
     public function findIncompleteIds(int $limit): array
     {
-        return $this->idsOf(
-            $this->createQueryBuilder('r')
-                ->innerJoin('r.tags', 't')
-                ->where('t.metrics IS NULL')
-                ->groupBy('r.id')
-                ->orderBy('r.stars', 'DESC')
-                ->addOrderBy('r.name', 'ASC')
-                ->setMaxResults($limit)
+        return $this->idsOf($this->incomplete()->setMaxResults($limit));
+    }
+
+    /**
+     * The same repositories with the number of releases each of them is still missing - what
+     * `app:metrics:status` names, in the order the next runs would take them.
+     *
+     * @return list<array{name: string, missing: int}>
+     */
+    public function findIncomplete(int $limit): array
+    {
+        /** @var list<array{name: string, missing: int|string}> $rows */
+        $rows = $this->incomplete()
+            ->select('r.name AS name, COUNT(t.id) AS missing')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_map(
+            static fn (array $row) => ['name' => $row['name'], 'missing' => (int) $row['missing']],
+            $rows
         );
+    }
+
+    /**
+     * How many repositories the backfill has left, however many releases each of them is missing - one
+     * of them costs a clone either way, which is what the hourly run is rationed in.
+     */
+    public function countIncomplete(): int
+    {
+        return (int) $this->createQueryBuilder('r')
+            ->select('COUNT(DISTINCT r.id)')
+            ->innerJoin('r.tags', 't')
+            ->where('t.metrics IS NULL')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Repositories carrying releases without their phploc output, most starred first - the order the
+     * report picks everything by, so the repositories being read get theirs first.
+     */
+    private function incomplete(): QueryBuilder
+    {
+        return $this->createQueryBuilder('r')
+            ->innerJoin('r.tags', 't')
+            ->where('t.metrics IS NULL')
+            ->groupBy('r.id')
+            ->orderBy('r.stars', 'DESC')
+            ->addOrderBy('r.name', 'ASC');
     }
 
     /**

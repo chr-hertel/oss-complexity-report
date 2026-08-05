@@ -27,6 +27,12 @@ use Psr\Log\LoggerInterface;
  */
 final readonly class MetricsBackfiller
 {
+    /**
+     * How many repositories one run works off - the hourly one queues this many, the command takes this
+     * many when it is given no names, and the status counts the runs that are left in it.
+     */
+    public const int BATCH = 10;
+
     public function __construct(
         private GitController $gitController,
         private CodeAnalyser $codeAnalyser,
