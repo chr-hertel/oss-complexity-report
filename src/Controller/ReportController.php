@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\ComplexityReport\ChartSelection;
 use App\ComplexityReport\Exception\SubmissionFailed;
+use App\ComplexityReport\PhplocReport;
 use App\ComplexityReport\Ranking;
 use App\ComplexityReport\RepositorySearch;
 use App\ComplexityReport\RepositorySubmitter;
@@ -199,6 +200,37 @@ final class ReportController extends AbstractController
         $repository = $repositories->findBySlug($name) ?? throw $this->createNotFoundException();
 
         return new JsonResponse($repository->asGraph());
+    }
+
+    /**
+     * One release as phploc printed it - the sixty-odd numbers a measurement consists of, of which the
+     * report itself plots two.
+     *
+     * It hangs under the release rather than under the repository, because that is what it belongs to,
+     * and it is fetched when somebody opens it rather than rendered into the chart page: a release is
+     * read one at a time, while a chart carries hundreds of them.
+     *
+     * A release measured before the report kept the full output has none, and says so with a 404 - the
+     * panel does not offer it there, so this is the answer to a link that was kept or typed.
+     */
+    #[Route('{name}/{tag}/raw', name: 'raw', requirements: ['name' => '[^/]+/[^/]+', 'tag' => '.+'], methods: 'GET', priority: 2)]
+    public function raw(
+        string $name,
+        string $tag,
+        RepositoryRepository $repositories,
+        TagRepository $tags,
+        PhplocReport $report,
+    ): Response {
+        $repository = $repositories->findBySlug($name) ?? throw $this->createNotFoundException();
+        $metrics = $tags->findOneBy(['repository' => $repository, 'name' => $tag])?->getMetrics()
+            ?? throw $this->createNotFoundException();
+
+        $response = new Response($report->render($metrics), Response::HTTP_OK, ['Content-Type' => 'text/plain; charset=UTF-8']);
+
+        // what a released tag was measured as does not change again
+        $response->setPublic()->setMaxAge(86400);
+
+        return $response;
     }
 
     /**

@@ -66,7 +66,9 @@ final readonly class RepositoryAnalyser
 
     private function collectTagData(Repository $repository, GitTag $tag): Analysis
     {
-        $key = sprintf('%s_%s_analysis', str_replace('/', '_', $repository->getName()), $tag->getName());
+        // the version is part of the key because an `Analysis` cached before the full phploc measurement
+        // was kept carries none, and an entry that has no expiry has no other way of going away
+        $key = sprintf('%s_%s_analysis_v2', str_replace('/', '_', $repository->getName()), $tag->getName());
         $item = $this->cache->getItem($key);
 
         if (!$item->isHit()) {

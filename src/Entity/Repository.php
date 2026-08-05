@@ -234,7 +234,7 @@ class Repository
         }
 
         $this->tags->add(
-            new Tag($tag->getName(), $analysis->created, $analysis->linesOfCode, $analysis->averageComplexity, $this)
+            new Tag($tag->getName(), $analysis->created, $analysis->linesOfCode, $analysis->averageComplexity, $this, $analysis->metrics)
         );
     }
 

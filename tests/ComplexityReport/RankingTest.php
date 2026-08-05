@@ -94,7 +94,7 @@ final class RankingTest extends TestCase
         $created = ['1.0' => new \DateTimeImmutable('-3 years'), '2.0' => new \DateTimeImmutable('-1 month')];
 
         foreach (['1.0' => $first, '2.0' => $latest] as $tag => [$linesOfCode, $complexity]) {
-            $repository->addTag(new GitTag($tag), new Analysis($linesOfCode, $complexity, $created[$tag]));
+            $repository->addTag(new GitTag($tag), new Analysis($linesOfCode, $complexity, $created[$tag], []));
         }
 
         return $repository;

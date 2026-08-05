@@ -28,7 +28,13 @@ final class GraphData implements \JsonSerializable
     /**
      * `x` is what the chart plots, `date` and `loc` are what the release analysis below it reads.
      *
-     * @return list<array{name: string, x: string, date: string, y: float, loc: int}>
+     * `raw` says whether the release can be read as phploc printed it. The measurement itself is not in
+     * here - sixty numbers per release would be most of what a chart of fifty repositories transfers,
+     * for a modal that is opened for one release at a time - so the flag is what the panel needs and the
+     * output is fetched when it is asked for. It is false for every release measured before the report
+     * kept the full output, which is why this is a flag rather than something the page assumes.
+     *
+     * @return list<array{name: string, x: string, date: string, y: float, loc: int, raw: bool}>
      */
     public function getTagData(): array
     {
@@ -39,6 +45,7 @@ final class GraphData implements \JsonSerializable
                 'date' => $tag->getCreated()->format('Y-m-d'),
                 'y' => round($tag->getAverageComplexity(), 2),
                 'loc' => $tag->getLinesOfCode(),
+                'raw' => $tag->hasMetrics(),
             ];
         }, $this->repository->getTags()));
     }
@@ -47,7 +54,7 @@ final class GraphData implements \JsonSerializable
      * A line of the chart: what it is called, where it comes from and the releases it is drawn from.
      * `url` and `stars` are what the release analysis says about the repository behind the line.
      *
-     * @return array{name: string, url: string, stars: int, tags: list<array{name: string, x: string, date: string, y: float, loc: int}>, labels: list<string>}
+     * @return array{name: string, url: string, stars: int, tags: list<array{name: string, x: string, date: string, y: float, loc: int, raw: bool}>, labels: list<string>}
      */
     public function jsonSerialize(): array
     {

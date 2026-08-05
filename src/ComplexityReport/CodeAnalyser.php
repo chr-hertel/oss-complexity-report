@@ -21,8 +21,14 @@ final class CodeAnalyser
         $localPath = $this->repositoryPath.'/'.$repository->getLocalPath();
         $files = $this->sourceFiles->collect($localPath, $repository->getName());
 
-        $analysis = (new Analyser())->countFiles($files, false);
+        /** @var array<string, float|int> $metrics */
+        $metrics = (new Analyser())->countFiles($files, false);
 
-        return new Analysis($analysis['loc'], $analysis['classCcnAvg'], $this->gitController->getLastCommitDate($repository));
+        return new Analysis(
+            (int) $metrics['loc'],
+            (float) $metrics['classCcnAvg'],
+            $this->gitController->getLastCommitDate($repository),
+            $metrics,
+        );
     }
 }

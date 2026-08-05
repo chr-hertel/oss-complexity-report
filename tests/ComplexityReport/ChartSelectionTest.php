@@ -124,7 +124,7 @@ final class ChartSelectionTest extends TestCase
     private static function measured(string $name, ?Organization $organization = null): Repository
     {
         $repository = self::repository($name, $organization);
-        $repository->addTag(new GitTag('1.0'), new Analysis(100, 2.0, new \DateTimeImmutable('2020-01-01')));
+        $repository->addTag(new GitTag('1.0'), new Analysis(100, 2.0, new \DateTimeImmutable('2020-01-01'), []));
 
         return $repository;
     }

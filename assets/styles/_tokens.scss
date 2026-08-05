@@ -174,6 +174,13 @@
     --hero-faint: rgba(255, 255, 255, 0.6);
     --hero-line: rgba(255, 255, 255, 0.22);
 
+    // The one dark ground that is not the brand: output of a command line tool, shown the way the
+    // terminal it was printed in shows it. Its ink is a wash of white rather than white, because a
+    // full contrast column of numbers on black is what makes a terminal tiring to read.
+    --terminal-bg: var(--ink-900);
+    --terminal-fg: #d5dbe4;
+    --terminal-line: rgba(255, 255, 255, 0.1);
+
     --action-primary-bg: var(--ink-900);
     --action-primary-bg-hover: var(--ink-800);
     --action-primary-fg: var(--white);

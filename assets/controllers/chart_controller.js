@@ -30,6 +30,19 @@ const ARROWS = { good: '↓', bad: '↑', flat: '→' };
 const count = (value) => value.toLocaleString('en-US');
 const decimal = (value, digits) =>
     value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+
+/*
+ * What the same lines can be drawn as. A release is stored as two numbers and both are in every graph
+ * the page already has, so switching between them fetches nothing - `key` is which of them the chart
+ * reads out of a release, and the rest is how that number is written wherever it is written out.
+ *
+ * The report is about complexity, so complexity is what a chart opens on; `name` is what the other one
+ * is called in the query string, and the default carries none.
+ */
+const METRICS = [
+    { name: 'complexity', key: 'y', label: 'Ø Complexity', short: (value) => `Ø ${decimal(value, 2)}` },
+    { name: 'loc', key: 'loc', label: 'Lines of Code', short: count },
+];
 const day = (value) => moment(value, 'YYYY-MM-DD').format('LL');
 const dot = () => element('span', 'release-head__dot', '·');
 
@@ -111,6 +124,7 @@ export default class extends Controller {
         'canvas',
         'resetZoom',
         'select',
+        'metric',
         'release',
         'releaseTabs',
         'releasePanel',
@@ -119,6 +133,10 @@ export default class extends Controller {
         'releaseMeta',
         'releaseSelect',
         'analysis',
+        'rawAction',
+        'raw',
+        'rawTitle',
+        'rawOutput',
     ];
 
     connect() {
@@ -130,6 +148,12 @@ export default class extends Controller {
 
         // what the page was rendered with; everything picked later is fetched from the JSON route once
         this.graphs = new Map();
+        // and the raw phploc output of every release that was opened, which never changes once measured
+        this.raws = new Map();
+        // Turbo keeps the page as it looks when it is left, and an open dialog would come back open -
+        // and then not modal, since only showModal() puts one in the top layer
+        this.closeRawBeforeCache = () => this.closeRaw();
+        document.addEventListener('turbo:before-cache', this.closeRawBeforeCache);
         JSON.parse(this.element.dataset.repositories).forEach((graph) => {
             this.graphs.set(graph.name, graph);
         });
@@ -137,6 +161,10 @@ export default class extends Controller {
         // `<site> - <headline>`, so what is in front of the last dash is the part that stays
         this.site = document.title.split(' - ').slice(0, -1).join(' - ');
         this.renders = 0;
+        // a link says what it draws as well as what it draws it from, so the switch reads the address
+        // bar the way the repositories were read from it
+        this.metric = this.metricFrom(new URLSearchParams(window.location.search).get('metric'));
+        this.reflectMetric();
         // the lines that can be read release by release, and which one of them is being read
         this.series = [];
         this.repository = null;
@@ -147,6 +175,10 @@ export default class extends Controller {
     disconnect() {
         this.chart?.destroy();
         this.chart = null;
+
+        if (this.closeRawBeforeCache) {
+            document.removeEventListener('turbo:before-cache', this.closeRawBeforeCache);
+        }
     }
 
     initChart() {
@@ -187,7 +219,8 @@ export default class extends Controller {
                         bodyFont: { family: MONO, size: 12 },
                         callbacks: {
                             title: (items) => `${items[0].dataset.label} ${items[0].raw.name}`,
-                            label: (item) => `Ø Complexity: ${item.formattedValue}`,
+                            // whichever number the lines are drawn as, named the way the switch names it
+                            label: (item) => `${this.metric.label}: ${item.formattedValue}`,
                         },
                     },
                     zoom: {
@@ -269,6 +302,34 @@ export default class extends Controller {
         this.render(true);
     }
 
+    /**
+     * The other number every release was measured in. Both are in the graphs the page already has, so
+     * this redraws rather than fetches - and it resets the zoom, because a window onto a complexity of
+     * four says nothing about a codebase of half a million lines.
+     */
+    selectMetric(event) {
+        const metric = this.metricFrom(event.currentTarget.dataset.metric);
+
+        if (metric === this.metric) {
+            return;
+        }
+
+        this.metric = metric;
+        this.reflectMetric();
+        this.chart?.resetZoom();
+        this.render(true);
+    }
+
+    metricFrom(name) {
+        return METRICS.find((metric) => metric.name === name) ?? METRICS[0];
+    }
+
+    reflectMetric() {
+        this.metricTargets.forEach((button) => {
+            button.setAttribute('aria-selected', button.dataset.metric === this.metric.name ? 'true' : 'false');
+        });
+    }
+
     async render(picked = false) {
         const run = ++this.renders;
         const slugs = this.hasSelectTarget ? [...this.selectTarget.selectedOptions].map((option) => option.value) : [];
@@ -286,7 +347,10 @@ export default class extends Controller {
 
         this.chart.data.datasets = graphs.map((graph, index) => ({
             label: graph.name,
+            // the releases themselves, whichever of their numbers is being drawn - so a point stays the
+            // release it is, and clicking one still opens it in the analysis below
             data: graph.tags,
+            parsing: { xAxisKey: 'x', yAxisKey: this.metric.key },
             fill: false,
             borderWidth: 1.75,
             pointRadius: 2.5,
@@ -338,6 +402,13 @@ export default class extends Controller {
             params.set('repositories', slugs.join(','));
         } else {
             params.delete('repositories');
+        }
+
+        // the metric the chart opens on is the one the report is about, so it is the absence of one
+        if (this.metric === METRICS[0]) {
+            params.delete('metric');
+        } else {
+            params.set('metric', this.metric.name);
         }
 
         // `symfony/console,laravel/framework` is what this was typed as, and what it should stay
@@ -433,7 +504,8 @@ export default class extends Controller {
         this.releaseSelectTarget.replaceChildren();
 
         graph.tags.forEach((tag, index) => {
-            const option = element('option', null, `${tag.name}  ·  Ø ${decimal(tag.y, 2)}`);
+            // the release, and what it stands at in whatever the chart is drawing
+            const option = element('option', null, `${tag.name}  ·  ${this.metric.short(tag[this.metric.key])}`);
 
             option.value = String(index);
             // newest first, the way the report is read
@@ -516,5 +588,73 @@ export default class extends Controller {
         ];
 
         this.analysisTarget.replaceChildren(...groups.filter(Boolean));
+
+        // the release the modal would show, and whether there is one to show at all
+        this.tag = tag;
+
+        if (this.hasRawActionTarget) {
+            this.rawActionTarget.hidden = !tag.raw;
+        }
+    }
+
+    /**
+     * The whole measurement of the release being read, as the phploc command line prints it. Fetched
+     * when it is asked for rather than carried by the page - a chart holds hundreds of releases and this
+     * is opened for one - and kept afterwards, since what a tag measured as does not change again.
+     */
+    async openRaw() {
+        const release = this.release;
+        const tag = this.tag;
+
+        this.rawTitleTarget.textContent = `${release.name} ${tag.name}`;
+        this.rawOutputTarget.textContent = 'Reading the measurement…';
+        this.rawTarget.showModal();
+
+        const output = await this.loadRaw(release.name, tag.name);
+
+        // reading is not instant, and the dialog can be closed and reopened on another release meanwhile
+        if (this.tag === tag && this.rawTarget.open) {
+            this.rawOutputTarget.textContent = output;
+        }
+    }
+
+    async loadRaw(name, tag) {
+        const key = `${name}@${tag}`;
+
+        if (!this.raws.has(key)) {
+            // relative, like the JSON route above, so it keeps working under a deployed sub path
+            const path = `${name}/${encodeURIComponent(tag)}/raw`;
+
+            try {
+                const response = await fetch(path, { headers: { Accept: 'text/plain' } });
+
+                if (!response.ok) {
+                    throw new Error(String(response.status));
+                }
+
+                this.raws.set(key, await response.text());
+            } catch {
+                // not cached: a failure is worth trying again, unlike a measurement
+                return 'The measurement of this release could not be read.';
+            }
+        }
+
+        return this.raws.get(key);
+    }
+
+    /**
+     * A modal dialog fills its backdrop with itself, so a click that lands on the dialog element rather
+     * than on anything in it is a click next to it - which closes it, the way Escape does.
+     */
+    dismissRaw(event) {
+        if (event.target === this.rawTarget) {
+            this.closeRaw();
+        }
+    }
+
+    closeRaw() {
+        if (this.hasRawTarget && this.rawTarget.open) {
+            this.rawTarget.close();
+        }
     }
 }

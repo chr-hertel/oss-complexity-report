@@ -170,6 +170,28 @@ final class RepositoryRepository extends ServiceEntityRepository
     }
 
     /**
+     * Repositories carrying releases that were measured before the report kept the full phploc output,
+     * most starred first - what the hourly backfill works off, a few at a time.
+     *
+     * Ordered like everything else the report picks by itself: the most starred repositories are the
+     * ones being read, so they are the ones that get their raw output first.
+     *
+     * @return list<int>
+     */
+    public function findIncompleteIds(int $limit): array
+    {
+        return $this->idsOf(
+            $this->createQueryBuilder('r')
+                ->innerJoin('r.tags', 't')
+                ->where('t.metrics IS NULL')
+                ->groupBy('r.id')
+                ->orderBy('r.stars', 'DESC')
+                ->addOrderBy('r.name', 'ASC')
+                ->setMaxResults($limit)
+        );
+    }
+
+    /**
      * @return list<int>
      */
     private function idsOf(QueryBuilder $queryBuilder): array

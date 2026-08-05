@@ -107,7 +107,7 @@ final class RepositoryTest extends TestCase
         $repository = self::repositoryWith([]);
 
         foreach ($releases as [$name, $complexity, $created]) {
-            $repository->addTag(new GitTag($name), new Analysis(100, $complexity, new \DateTimeImmutable($created)));
+            $repository->addTag(new GitTag($name), new Analysis(100, $complexity, new \DateTimeImmutable($created), []));
         }
 
         return $repository;
@@ -129,7 +129,7 @@ final class RepositoryTest extends TestCase
         $created = new \DateTimeImmutable('2020-01-01');
 
         foreach ($releases as $name => [$linesOfCode, $complexity]) {
-            $repository->addTag(new GitTag($name), new Analysis($linesOfCode, $complexity, $created));
+            $repository->addTag(new GitTag($name), new Analysis($linesOfCode, $complexity, $created, []));
             $created = $created->modify('+1 year');
         }
 
