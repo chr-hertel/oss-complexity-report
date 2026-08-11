@@ -19,11 +19,6 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: RepositoryRepository::class)]
 class Repository
 {
-    /**
-     * How far back {@see self::getRecentEvolution()} looks - the twelve months the report calls recent.
-     */
-    private const string RECENT = '-12 months';
-
     #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
     private int $id;
 
@@ -31,9 +26,13 @@ class Repository
     private ?\DateTimeImmutable $analysed = null;
 
     /**
+     * `EXTRA_LAZY` so asking whether a repository has releases, or how many, is a count rather than a
+     * loaded collection: a release carries the phploc measurement it was reduced from, and the pages that
+     * ask those two questions never look at a single one of them.
+     *
      * @var Collection<int, Tag>
      */
-    #[ORM\OneToMany(targetEntity: Tag::class, mappedBy: 'repository', cascade: ['persist']), ORM\OrderBy(['created' => 'ASC'])]
+    #[ORM\OneToMany(targetEntity: Tag::class, mappedBy: 'repository', cascade: ['persist'], fetch: 'EXTRA_LAZY'), ORM\OrderBy(['created' => 'ASC'])]
     private Collection $tags;
 
     public function __construct(
@@ -147,79 +146,12 @@ class Repository
     }
 
     /**
-     * The oldest analysed release - `null` while nothing was measured yet.
+     * How many releases were measured so far - a count on the database rather than a loaded collection,
+     * which is the whole reason the association is mapped `EXTRA_LAZY`.
      */
-    public function getFirstTag(): ?Tag
-    {
-        return $this->tags->first() ?: null;
-    }
-
-    /**
-     * The most recent analysed release - `null` while nothing was measured yet.
-     */
-    public function getLatestTag(): ?Tag
-    {
-        return $this->tags->last() ?: null;
-    }
-
     public function getReleaseCount(): int
     {
         return $this->tags->count();
-    }
-
-    /**
-     * Average cyclomatic complexity of the latest analysed release - the figure the chart ends on.
-     */
-    public function getComplexity(): float
-    {
-        return $this->getLatestTag()?->getAverageComplexity() ?? 0.0;
-    }
-
-    /**
-     * Lines of code of the latest analysed release.
-     */
-    public function getLinesOfCode(): int
-    {
-        return $this->getLatestTag()?->getLinesOfCode() ?? 0;
-    }
-
-    /**
-     * How the average complexity changed between the first and the latest analysed release, in percent.
-     * Negative means the codebase got simpler.
-     */
-    public function getEvolution(): float
-    {
-        return self::change($this->getFirstTag()?->getAverageComplexity() ?? 0.0, $this->getComplexity());
-    }
-
-    /**
-     * The same figure for the last twelve months - what the "Latest Increases" ranking is ordered by,
-     * over the window the hero rolls the whole report up into.
-     */
-    public function getRecentEvolution(): float
-    {
-        return $this->getEvolutionSince(new \DateTimeImmutable(self::RECENT));
-    }
-
-    /**
-     * How the average complexity changed since a point in time, in percent.
-     *
-     * The repository is compared against the release it stood at back then, which is the rule the hero
-     * trend follows as well. Two cases have nothing to say and are 0.0 rather than a made up number: a
-     * repository that was not measured yet when the window opened, and one that has not released since -
-     * there the baseline is the latest release, so nothing changed within the window.
-     */
-    public function getEvolutionSince(\DateTimeImmutable $since): float
-    {
-        $baseline = null;
-
-        foreach ($this->tags as $tag) {
-            if ($tag->getCreated() <= $since && (null === $baseline || $tag->getCreated() > $baseline->getCreated())) {
-                $baseline = $tag;
-            }
-        }
-
-        return self::change($baseline?->getAverageComplexity() ?? 0.0, $this->getComplexity());
     }
 
     public function getLocalPath(): string
@@ -253,18 +185,5 @@ class Repository
     public function asGraph(): GraphData
     {
         return new GraphData($this);
-    }
-
-    /**
-     * Change between two average complexities, in percent - a release without a single class has no
-     * average to compare against, so it is no change rather than a division by zero.
-     */
-    private static function change(float $from, float $to): float
-    {
-        if (0.0 === $from) {
-            return 0.0;
-        }
-
-        return round((($to - $from) / $from) * 100, 1);
     }
 }

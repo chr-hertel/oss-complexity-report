@@ -27,3 +27,7 @@
 /node_modules/
 /public/build/
 ###< symfony/reprise ###
+
+# local only, not part of the repository
+/bin/pull-prod
+/bin/.pull-prod/

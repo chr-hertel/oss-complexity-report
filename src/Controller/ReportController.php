@@ -8,6 +8,7 @@ use App\ComplexityReport\ChartSelection;
 use App\ComplexityReport\Exception\SubmissionFailed;
 use App\ComplexityReport\PhplocReport;
 use App\ComplexityReport\Ranking;
+use App\ComplexityReport\RankingLoader;
 use App\ComplexityReport\RepositorySearch;
 use App\ComplexityReport\RepositorySubmitter;
 use App\ComplexityReport\StatisticsLoader;
@@ -57,9 +58,10 @@ final class ReportController extends AbstractController
         TagRepository $tagRepository,
         StatisticsLoader $statisticsLoader,
         TrendLoader $trendLoader,
+        RankingLoader $rankingLoader,
     ): Response {
-        // one query for every ranking - they all sort the same set, only by a different measurement
-        $analysed = $repositoryRepository->findAnalysedWithTags();
+        // one read for every ranking - they all sort the same set, only by a different measurement
+        $analysed = $rankingLoader->load();
 
         $rankings = array_map(static function (Ranking $ranking) use ($analysed) {
             return ['ranking' => $ranking, 'repositories' => $ranking->sort($analysed, self::FEATURED_LIMIT)];
@@ -68,7 +70,7 @@ final class ReportController extends AbstractController
         return $this->render('start.html.twig', [
             'rankings' => $rankings,
             'hasData' => [] !== $analysed,
-            'organizations' => $organizationRepository->findWithSeveralRepositories(),
+            'vendors' => $organizationRepository->findVendors(),
             'latest' => $repositoryRepository->findLatest(self::LATEST_LIMIT),
             'latestReleases' => $tagRepository->findLatest(self::LATEST_LIMIT),
             'statistics' => $statisticsLoader->load(),

@@ -127,6 +127,14 @@ a screen of its own anymore, only the account a repository is grouped under, and
 GitHub `login` it is addressed by plus an avatar: the display name and homepage it used to carry came from
 optional profile fields and named the wrong account as often as the right one.
 
+An entity answers what it **is**, never what the report **makes of it**: `Repository` used to carry the
+complexity, the size and the evolution of its releases, which meant printing a card loaded every release
+of every repository. Those are figures of a page and live where the page reads them (`RankedRepository`).
+What is left of that association is `getTags()` for the code that actually works on releases (the
+analyser, the backfill, the fixers, `GraphData`) plus `hasData()` and `getReleaseCount()` — and the
+collection is mapped `EXTRA_LAZY`, so those two are a `COUNT` rather than twenty thousand hydrated `Tag`s
+with their phploc measurements.
+
 **Domain services** (`src/ComplexityReport`) — the thin `src/Command` classes only wrap these:
 
 - `GitHub/GitHubClient` — the only external source, wraps `api.github.com` (repository, owner, languages)
@@ -156,6 +164,23 @@ optional profile fields and named the wrong account as often as the right one.
   against its own first release). `TrendLoader` is the thin edge: one query via
   `TagRepository::findReleasePoints()`, cached in `cache.app` for an hour under a key that carries the
   day, since the windows move with it.
+- `Ranking` + `RankingLoader` / `RankedRepository` / `ReleaseSummary` / `Vendor` — the rankings of the
+  start page, and the one rule they follow: **nothing the page shows is counted by loading releases.** A
+  card is about three of the twenty thousand releases the report carries — the first, the latest, and the
+  one a repository stood at twelve months ago (`RankedRepository::RECENT`) — so
+  `TagRepository::findReleaseSummaries()` lets Postgres pick them, one `ReleaseSummary` row per repository
+  instead of one row per release. It is native SQL (`array_agg(… ORDER BY …)[1]`, plus a `FILTER` for the
+  window) because DQL knows neither, which is the price: that query spells out table and column names.
+  What the engine does **not** do is the arithmetic — the percent change and the two cases that have
+  nothing to compare against are rules of the report, so they stay in `RankedRepository` and are unit
+  tested, the way the `Trend/*` rules are. `Ranking` then sorts those in memory; four orders over the same
+  list is not four queries. `Vendor` is the same idea for the pill row closing the page:
+  `OrganizationRepository::findVendors()` groups it in one query (`string_agg` for the names a pill links
+  to, `HAVING count(*) >= Vendor::MINIMUM` for what is worth naming), rather than loading every account,
+  its repositories, and their releases to count them. This is what the start page cost before: it
+  hydrated the whole report — every `Tag`, each with the phploc measurement it keeps — twice over, and
+  once the backfill had filled `metrics` in for every release, 128M of PHP memory was no longer enough to
+  render it.
 - `ReleaseScanner` — which releases of a repository are missing: skips anything `GitTag::isPreRelease()`
   (contains `-`) or `isPatchRelease()` (not a plain `X.Y` / `X.Y.0` version), anything `ExcludedReleases`
   leaves out and anything already stored. `scanRemote()` reads refs with `git ls-remote` (no clone, no

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\ComplexityReport;
 
-use App\Entity\Repository;
-
 /**
  * The orders the start page offers for its featured repositories - stars is the one the report itself
  * is built around, the other three sort by what was actually measured.
@@ -69,9 +67,9 @@ enum Ranking: string
     }
 
     /**
-     * @param list<Repository> $repositories
+     * @param list<RankedRepository> $repositories
      *
-     * @return list<Repository>
+     * @return list<RankedRepository>
      */
     public function sort(array $repositories, int $limit): array
     {
@@ -87,28 +85,28 @@ enum Ranking: string
      * simpler within the window did not increase, and neither did one that has not released in it -
      * both are 0.0 or less, which is nothing to rank.
      *
-     * @return callable(Repository): bool
+     * @return callable(RankedRepository): bool
      */
     private function filter(): callable
     {
         return match ($this) {
-            self::Growth => static fn (Repository $repository) => $repository->getRecentEvolution() > 0.0,
-            default => static fn (Repository $repository) => true,
+            self::Growth => static fn (RankedRepository $repository) => $repository->recentEvolution > 0.0,
+            default => static fn (RankedRepository $repository) => true,
         };
     }
 
     /**
      * Ties are broken by stars so a ranking never reorders itself between two requests.
      *
-     * @return callable(Repository, Repository): int
+     * @return callable(RankedRepository, RankedRepository): int
      */
     private function comparator(): callable
     {
         return match ($this) {
-            self::Stars => static fn (Repository $left, Repository $right) => $right->getStars() <=> $left->getStars(),
-            self::Complexity => static fn (Repository $left, Repository $right) => [$right->getComplexity(), $right->getStars()] <=> [$left->getComplexity(), $left->getStars()],
-            self::Size => static fn (Repository $left, Repository $right) => [$right->getLinesOfCode(), $right->getStars()] <=> [$left->getLinesOfCode(), $left->getStars()],
-            self::Growth => static fn (Repository $left, Repository $right) => [$right->getRecentEvolution(), $right->getStars()] <=> [$left->getRecentEvolution(), $left->getStars()],
+            self::Stars => static fn (RankedRepository $left, RankedRepository $right) => $right->repository->getStars() <=> $left->repository->getStars(),
+            self::Complexity => static fn (RankedRepository $left, RankedRepository $right) => [$right->complexity, $right->repository->getStars()] <=> [$left->complexity, $left->repository->getStars()],
+            self::Size => static fn (RankedRepository $left, RankedRepository $right) => [$right->linesOfCode, $right->repository->getStars()] <=> [$left->linesOfCode, $left->repository->getStars()],
+            self::Growth => static fn (RankedRepository $left, RankedRepository $right) => [$right->recentEvolution, $right->repository->getStars()] <=> [$left->recentEvolution, $left->repository->getStars()],
         };
     }
 }

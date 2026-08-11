@@ -4,10 +4,10 @@
  # The metrics under a card follow the ranking it is shown in: whatever the tab sorts by comes first,
  # so the order the cards are in is readable off the cards themselves.
  #}
-{% macro metrics(repository, ranking) %}
+{% macro metrics(ranked, ranking) %}
     {% set stars %}
-        <span class="metric metric--star" title="{{ repository.stars }} stars on GitHub">
-            <i class="fas fa-star"></i>{{ repository.stars|stars }}
+        <span class="metric metric--star" title="{{ ranked.repository.stars }} stars on GitHub">
+            <i class="fas fa-star"></i>{{ ranked.repository.stars|stars }}
         </span>
     {% endset %}
     {#
@@ -16,33 +16,33 @@
      # words what the dot means and that the number is an average.
      #}
     {% set complexity %}
-        {% set level = repository.complexity|complexity_level %}
+        {% set level = ranked.complexity|complexity_level %}
         <span class="metric level level--{{ level.value }}"
               title="Average cyclomatic complexity of the latest analysed release - {{ level.range }}: {{ level.risk|lower }}">
-            {{- repository.complexity|number_format(2) -}}
+            {{- ranked.complexity|number_format(2) -}}
         </span>
     {% endset %}
     {% set linesOfCode %}
-        <span class="metric" title="{{ repository.linesOfCode|number_format }} lines of code in the latest analysed release">
-            <span class="metric__label">LOC</span>{{ repository.linesOfCode|compact_number }}
+        <span class="metric" title="{{ ranked.linesOfCode|number_format }} lines of code in the latest analysed release">
+            <span class="metric__label">LOC</span>{{ ranked.linesOfCode|compact_number }}
         </span>
     {% endset %}
     {% set releases %}
         <span class="metric" title="Releases analysed so far">
-            <span class="metric__label">RELEASES</span>{{ repository.releaseCount }}
+            <span class="metric__label">RELEASES</span>{{ ranked.releaseCount }}
         </span>
     {% endset %}
     {% set evolution %}
-        <span class="metric metric--{{ repository.evolution|trend_tone }}"
-              title="Change in average complexity since {{ repository.firstTag.name }} - down is an improvement">
-            <span class="metric__label">since {{ repository.firstTag.created|date('Y') }}</span>{{ repository.evolution|signed_percent }}
+        <span class="metric metric--{{ ranked.evolution|trend_tone }}"
+              title="Change in average complexity since {{ ranked.firstRelease }} - down is an improvement">
+            <span class="metric__label">since {{ ranked.firstReleased|date('Y') }}</span>{{ ranked.evolution|signed_percent }}
         </span>
     {% endset %}
 
     {% set growth %}
-        <span class="metric metric--{{ repository.recentEvolution|trend_tone }}"
+        <span class="metric metric--{{ ranked.recentEvolution|trend_tone }}"
               title="Change in average complexity within the last 12 months - measured against the release it stood at back then">
-            <span class="metric__label">12M</span>{{ repository.recentEvolution|signed_percent }}
+            <span class="metric__label">12M</span>{{ ranked.recentEvolution|signed_percent }}
         </span>
     {% endset %}
 
@@ -75,7 +75,8 @@
  # Owner above name on every card, the way github.com reads them - `symfony/symfony` saying its name
  # twice is what that repository is called, and dropping the line for it only left the head empty.
  #}
-{% macro card(repository, ranking, rank) %}
+{% macro card(ranked, ranking, rank) %}
+    {% set repository = ranked.repository %}
     <div class="repo-card">
         <div class="repo-card__body">
             <div class="repo-card__head">
@@ -90,7 +91,7 @@
             <p class="repo-card__text">{{ repository.description }}</p>
         </div>
         <div class="repo-card__meta">
-            {{ _self.metrics(repository, ranking) }}
+            {{ _self.metrics(ranked, ranking) }}
             <a href="{{ repository.url }}" target="_blank" rel="noreferrer" class="repo-card__github"
                title="{{ repository.name }} on GitHub">
                 <i class="fab fa-github"></i>
@@ -266,7 +267,7 @@
                                 <p class="ranking__caption">{{ entry.ranking.caption }}</p>
                                 {% if entry.repositories is not empty %}
                                     <a class="btn btn--secondary ranking__chart"
-                                       href="{{ path('chart', {'repositories': entry.repositories|map(repository => repository.name)|join(',')}) }}">
+                                       href="{{ path('chart', {'repositories': entry.repositories|map(ranked => ranked.repository.name)|join(',')}) }}">
                                         Open the chart
                                     </a>
                                 {% endif %}
@@ -279,8 +280,8 @@
                                 <p class="empty-state">Nothing the report carries got more complex within the last 12 months.</p>
                             {% else %}
                                 <div class="repo-grid">
-                                    {% for repository in entry.repositories %}
-                                        {{ _self.card(repository, entry.ranking.value, loop.index) }}
+                                    {% for ranked in entry.repositories %}
+                                        {{ _self.card(ranked, entry.ranking.value, loop.index) }}
                                     {% endfor %}
                                 </div>
                             {% endif %}
@@ -305,7 +306,7 @@
              # why only accounts with more than one repository are listed - a single one is a link to
              # that repository under another name.
              #}
-            {% if organizations is not empty %}
+            {% if vendors is not empty %}
                 <div class="vendors">
                     <div class="eyebrow vendors__label">By vendor</div>
                     {#
@@ -313,13 +314,12 @@
                      # what they are ordered by - so the row reads as a ranking of its own.
                      #}
                     <div class="pill-row">
-                        {% for organization in organizations %}
-                            {% set measured = organization.analysedRepositories %}
+                        {% for vendor in vendors %}
                             {{ _self.pill(
-                                organization.login,
-                                measured|length,
-                                path('chart', {'repositories': measured|map(repository => repository.name)|join(',')}),
-                                '%d measured %s of %s'|format(measured|length, measured|length == 1 ? 'repository' : 'repositories', organization.login)
+                                vendor.login,
+                                vendor.count,
+                                path('chart', {'repositories': vendor.repositories|join(',')}),
+                                '%d measured repositories of %s'|format(vendor.count, vendor.login)
                             ) }}
                         {% endfor %}
                     </div>

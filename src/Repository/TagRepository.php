@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\ComplexityReport\ReleaseSummary;
 use App\ComplexityReport\Trend\ReleasePoint;
 use App\Entity\Tag;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -37,6 +39,57 @@ final class TagRepository extends ServiceEntityRepository
 
         return array_map(
             static fn (array $row) => new ReleasePoint((int) $row['repository'], $row['created'], (float) $row['complexity']),
+            $rows
+        );
+    }
+
+    /**
+     * The releases of every repository, grouped into the figures a ranking card is drawn from - one row
+     * per repository instead of one per release.
+     *
+     * A card is about three of the releases a repository ever had: its first, its latest, and the one it
+     * stood at when `$since` opened the window. Reading twenty thousand rows to pick three of each was
+     * what made the start page a question of how much memory it may have, so the picking is left to the
+     * engine: `array_agg` orders the releases of a group and the subscript takes the end being asked
+     * for, the `FILTER` doing it again over what the window contains. This is native SQL because DQL
+     * knows neither, which is the price - the table and its columns are spelled out here.
+     *
+     * @return list<ReleaseSummary>
+     */
+    public function findReleaseSummaries(\DateTimeImmutable $since): array
+    {
+        $sql = <<<'SQL'
+            SELECT t.repository_id                                                              AS repository,
+                   count(*)                                                                     AS releases,
+                   (array_agg(t.name ORDER BY t.created, t.name))[1]                            AS first_name,
+                   (array_agg(t.created ORDER BY t.created, t.name))[1]                         AS first_created,
+                   (array_agg(t.average_complexity ORDER BY t.created, t.name))[1]              AS first_complexity,
+                   (array_agg(t.average_complexity ORDER BY t.created DESC, t.name DESC))[1]    AS complexity,
+                   (array_agg(t.lines_of_code ORDER BY t.created DESC, t.name DESC))[1]         AS lines_of_code,
+                   (array_agg(t.average_complexity ORDER BY t.created DESC, t.name DESC)
+                       FILTER (WHERE t.created <= :since))[1]                                   AS baseline
+            FROM tag t
+            GROUP BY t.repository_id
+            SQL;
+
+        /** @var list<array{repository: int|string, releases: int|string, first_name: string, first_created: string, first_complexity: float|string, complexity: float|string, lines_of_code: int|string, baseline: float|string|null}> $rows */
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            $sql,
+            ['since' => $since],
+            ['since' => Types::DATETIME_IMMUTABLE],
+        );
+
+        return array_map(
+            static fn (array $row) => new ReleaseSummary(
+                (int) $row['repository'],
+                (int) $row['releases'],
+                $row['first_name'],
+                new \DateTimeImmutable($row['first_created']),
+                (float) $row['first_complexity'],
+                (float) $row['complexity'],
+                (int) $row['lines_of_code'],
+                null === $row['baseline'] ? null : (float) $row['baseline'],
+            ),
             $rows
         );
     }
