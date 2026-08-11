@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\ComplexityReport\Vendor;
 use App\Entity\Organization;
-use App\Entity\Tag;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -42,34 +42,42 @@ final class OrganizationRepository extends ServiceEntityRepository
     }
 
     /**
-     * The organizations that group something: they need more than one repository to chart, and every one
-     * of those needs releases - an owner of a single repository is that repository, which the rankings
+     * The accounts that group something: they need more than one repository to chart, and every one of
+     * those needs releases - an owner of a single repository is that repository, which the rankings
      * already link to, and an owner without measured releases links to an empty report.
      *
-     * They are listed by how much of the report they account for, because that is the number their badge
-     * carries; stars only break the tie between two owners of the same size.
+     * They are listed by how much of the report they account for, because that is the number their pill
+     * carries; stars only break the tie between two accounts of the same size.
      *
-     * @return list<Organization>
+     * Nothing is loaded for this - the account is a login and the pill is a list of names, so the whole
+     * row is one grouped query. `string_agg` puts the names of an account into its row in the order the
+     * chart link needs them, which is also the order the query string is written in: a repository is
+     * `owner/name` on github.com and neither half can carry a comma, so the separator holds.
+     *
+     * @return list<Vendor>
      */
-    public function findWithSeveralRepositories(): array
+    public function findVendors(): array
     {
-        $queryBuilder = $this->createQueryBuilder('o');
+        $sql = <<<'SQL'
+            SELECT o.login                                            AS login,
+                   string_agg(r.name, ',' ORDER BY r.stars DESC, r.name) AS repositories
+            FROM repository r
+                INNER JOIN organization o ON o.id = r.organization_id
+            WHERE EXISTS (SELECT 1 FROM tag t WHERE t.repository_id = r.id)
+            GROUP BY o.id, o.login
+            HAVING count(*) >= :minimum
+            ORDER BY count(*) DESC, sum(r.stars) DESC, o.login ASC
+            SQL;
 
-        /** @var list<Organization> $organizations */
-        $organizations = $queryBuilder
-            ->select('o, COUNT(r.id) AS HIDDEN measured, SUM(r.stars) AS HIDDEN stars')
-            ->innerJoin('o.repositories', 'r')
-            ->where($queryBuilder->expr()->exists(
-                sprintf('SELECT t.id FROM %s t WHERE t.repository = r', Tag::class)
-            ))
-            ->groupBy('o.id')
-            ->having('COUNT(r.id) > 1')
-            ->orderBy('measured', 'DESC')
-            ->addOrderBy('stars', 'DESC')
-            ->addOrderBy('o.login', 'ASC')
-            ->getQuery()
-            ->getResult();
+        /** @var list<array{login: string, repositories: string}> $rows */
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            $sql,
+            ['minimum' => Vendor::MINIMUM],
+        );
 
-        return $organizations;
+        return array_map(
+            static fn (array $row) => new Vendor($row['login'], explode(',', $row['repositories'])),
+            $rows
+        );
     }
 }

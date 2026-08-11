@@ -35,31 +35,6 @@ final class RepositoryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Everything that has data, with its releases already loaded.
-     *
-     * The rankings on the start page read the first and the latest release of every repository, which is
-     * one query for all of them instead of one per repository.
-     *
-     * @return list<Repository>
-     */
-    public function findAnalysedWithTags(): array
-    {
-        /** @var list<Repository> $repositories */
-        $repositories = $this->createQueryBuilder('r')
-            ->addSelect('t')
-            ->innerJoin('r.tags', 't')
-            ->orderBy('r.stars', 'DESC')
-            ->addOrderBy('r.name', 'ASC')
-            // spelled out rather than left to the association's OrderBy, so the first and the last
-            // element of the collection are the first and the latest release in every Doctrine version
-            ->addOrderBy('t.created', 'ASC')
-            ->getQuery()
-            ->getResult();
-
-        return $repositories;
-    }
-
-    /**
      * The repositories behind the given `owner/repository` slugs, in the order they were asked for -
      * unknown ones are dropped, so a link to a repository that is gone still opens a chart. github.com
      * does not care about the case of a slug, and neither does a link somebody typed by hand.
@@ -258,8 +233,13 @@ final class RepositoryRepository extends ServiceEntityRepository
     private function withData(): QueryBuilder
     {
         return $this->createQueryBuilder('r')
+            // the account is on every card and in every chart title, and joining it here is one query
+            // instead of one per repository the page happens to show
+            ->addSelect('o')
+            ->innerJoin('r.organization', 'o')
             ->innerJoin('r.tags', 't')
             ->groupBy('r.id')
+            ->addGroupBy('o.id')
             ->orderBy('r.stars', 'DESC')
             ->addOrderBy('r.name', 'ASC');
     }

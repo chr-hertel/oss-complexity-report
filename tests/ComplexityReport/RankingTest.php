@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\ComplexityReport;
 
-use App\ComplexityReport\Analysis;
-use App\ComplexityReport\GitTag;
+use App\ComplexityReport\RankedRepository;
 use App\ComplexityReport\Ranking;
+use App\ComplexityReport\ReleaseSummary;
 use App\Entity\Organization;
 use App\Entity\Repository;
 use PHPUnit\Framework\TestCase;
@@ -22,7 +22,7 @@ final class RankingTest extends TestCase
     {
         $sorted = $ranking->sort(self::repositories(), 4);
 
-        self::assertSame($expected, array_map(static fn (Repository $r) => $r->getName(), $sorted));
+        self::assertSame($expected, array_map(static fn (RankedRepository $r) => $r->repository->getName(), $sorted));
     }
 
     /**
@@ -47,7 +47,7 @@ final class RankingTest extends TestCase
         $repositories = self::repositories();
         Ranking::Complexity->sort($repositories, 4);
 
-        self::assertSame('a/popular', $repositories[0]->getName());
+        self::assertSame('a/popular', $repositories[0]->repository->getName());
     }
 
     public function testEveryRankingIsDescribed(): void
@@ -60,7 +60,7 @@ final class RankingTest extends TestCase
     }
 
     /**
-     * @return list<Repository>
+     * @return list<RankedRepository>
      */
     private static function repositories(): array
     {
@@ -74,13 +74,13 @@ final class RankingTest extends TestCase
     }
 
     /**
-     * The first release is old enough to be the baseline of every window, the latest one is recent - so
-     * what these repositories did to their complexity, they did within the last twelve months.
+     * The first release is the baseline of the window as well - so what these repositories did to their
+     * complexity, they did within the last twelve months.
      *
      * @param array{int, float} $first
      * @param array{int, float} $latest
      */
-    private static function repository(string $name, int $stars, array $first, array $latest): Repository
+    private static function repository(string $name, int $stars, array $first, array $latest): RankedRepository
     {
         $repository = new Repository(
             $name,
@@ -91,12 +91,15 @@ final class RankingTest extends TestCase
             $stars,
         );
 
-        $created = ['1.0' => new \DateTimeImmutable('-3 years'), '2.0' => new \DateTimeImmutable('-1 month')];
-
-        foreach (['1.0' => $first, '2.0' => $latest] as $tag => [$linesOfCode, $complexity]) {
-            $repository->addTag(new GitTag($tag), new Analysis($linesOfCode, $complexity, $created[$tag], []));
-        }
-
-        return $repository;
+        return RankedRepository::from($repository, new ReleaseSummary(
+            1,
+            2,
+            '1.0',
+            new \DateTimeImmutable('-3 years'),
+            $first[1],
+            $latest[1],
+            $latest[0],
+            $first[1],
+        ));
     }
 }
