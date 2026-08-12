@@ -41,11 +41,9 @@ bin/console doctrine:migrations:diff              # after changing an entity
 
 # async
 bin/console messenger:consume async -vv           # the analysis queue
-bin/console messenger:consume scheduler_default   # the nightly release scan, star refresh, hourly backfill
+bin/console messenger:consume scheduler_default   # the nightly release scan and star refresh
 bin/console messenger:stats                       # what is still queued
 bin/console app:repository:analyse moodle/moodle  # measure one repository here instead of in a worker
-bin/console app:metrics:backfill moodle/moodle    # fill in the phploc output of releases measured without it
-bin/console app:metrics:status                    # how far that backfill has got, and what it takes next
 bin/console debug:scheduler                       # next run of the recurring messages
 
 # frontend — Vite, wired into Twig by symfony/reprise
@@ -97,10 +95,8 @@ its own). It goes through `RepositorySubmitter` like any other submission, so th
 progress while a worker is consuming `async`. Re-running it is free: repositories the report already carries
 come back as `Submission::known`.
 
-Day-to-day there is no rebuild and nothing to run by hand: submitting dispatches the analysis, the
-nightly schedule looks for new releases and refreshes stars, and the hourly one fills in the phploc output
-of releases that were measured before it was kept (`app:metrics:backfill` is the same work in the console,
-for the repository that needs watching or a memory limit).
+Day-to-day there is no rebuild and nothing to run by hand: submitting dispatches the analysis, and the
+nightly schedule looks for new releases and refreshes stars.
 
 Analysis is slow (clones the repository) and leans on the `cache.app` filesystem pool: GitHub responses
 expire after 1h, but **per-tag phploc analyses are cached without expiry**. Stale or wrong numbers usually
@@ -117,11 +113,12 @@ what predates that, including directories that no repository maps to anymore (th
 ## Architecture
 
 **Entities** (`src/Entity`, Doctrine attributes on constructor-promoted properties, no setters except
-`Tag::setCreated` for the fixers, `Tag::storeMetrics()` for the backfill and `update()` for GitHub
+`Tag::setCreated` for the fixers and `update()` for GitHub
 refreshes): `Organization` (a GitHub account,
 e.g. `symfony`) → `Repository` (a GitHub repository, e.g. `symfony/console`, holds `stars` + `analysed`) →
 `Tag` (one analysed release, holds `linesOfCode` + `averageComplexity` + `created`, plus `metrics`: the
-whole phploc measurement it was reduced from, `null` for every release measured before that was kept).
+whole phploc measurement those two are read out of, which every release carries — the column was nullable
+while the releases measured before it existed were being re-measured, and is not anymore).
 `Organization` is not
 a screen of its own anymore, only the account a repository is grouped under, and it holds nothing but the
 GitHub `login` it is addressed by plus an avatar: the display name and homepage it used to carry came from
@@ -131,7 +128,7 @@ An entity answers what it **is**, never what the report **makes of it**: `Reposi
 complexity, the size and the evolution of its releases, which meant printing a card loaded every release
 of every repository. Those are figures of a page and live where the page reads them (`RankedRepository`).
 What is left of that association is `getTags()` for the code that actually works on releases (the
-analyser, the backfill, the fixers, `GraphData`) plus `hasData()` and `getReleaseCount()` — and the
+analyser, the fixers, `GraphData`) plus `hasData()` and `getReleaseCount()` — and the
 collection is mapped `EXTRA_LAZY`, so those two are a `COUNT` rather than twenty thousand hydrated `Tag`s
 with their phploc measurements.
 
@@ -179,8 +176,7 @@ with their phploc measurements.
   to, `HAVING count(*) >= Vendor::MINIMUM` for what is worth naming), rather than loading every account,
   its repositories, and their releases to count them. This is what the start page cost before: it
   hydrated the whole report — every `Tag`, each with the phploc measurement it keeps — twice over, and
-  once the backfill had filled `metrics` in for every release, 128M of PHP memory was no longer enough to
-  render it.
+  once every release carried its `metrics`, 128M of PHP memory was no longer enough to render it.
 - `ReleaseScanner` — which releases of a repository are missing: skips anything `GitTag::isPreRelease()`
   (contains `-`) or `isPatchRelease()` (not a plain `X.Y` / `X.Y.0` version), anything `ExcludedReleases`
   leaves out and anything already stored. `scanRemote()` reads refs with `git ls-remote` (no clone, no
@@ -192,22 +188,6 @@ with their phploc measurements.
 - `RepositoryAnalyser` — measures those releases: checkout, phploc, `Tag`. Flushes after every release so a
   retry only redoes what is left, then `markAnalysed()`. It does **not** guard the working copy — that is
   the handler's job.
-- `MetricsBackfiller` — the same measurement, run again for what an analysis used to throw away. A release
-  analysed before `Analysis::$metrics` existed stored two numbers of the sixty phploc counts, and those
-  sixty are not missing from a table somewhere — they were never written down, so recovering them is the
-  expensive half of an analysis all over again. It asks what is missing before it clones anything (naming a
-  complete repository costs nothing, which is what makes the hourly run harmless while a worker is still
-  busy), skips tags the remote does not have anymore rather than failing the message on them forever, and
-  flushes per release. It corrects **only** what was never stored: the lines of code and the complexity the
-  release was written with stay, even though this measurement produces them again — a backfill is not the
-  place to move a line the chart has been drawn with for years.
-- `BackfillProgress` + `BackfillProgressLoader` — how far that is, as `app:metrics:status` prints it. It
-  counts the same thing twice on purpose: releases say how much of the report can be read as phploc
-  printed it, repositories say how much work is left, since one of them costs a clone whether it is
-  missing one release or two hundred - and `MetricsBackfiller::BATCH` is what a run is rationed in, which
-  is why the constant lives on the service the hourly run, the command and the status all go through. It
-  counts what is stored and nothing else: what is queued is `messenger:stats`, and a repository being
-  measured right now still counts as missing, because it is until it is flushed.
 - `PhplocReport` — a stored measurement printed the way the phploc command line prints it, by handing it to
   phploc's own `Log\Text`. There is no second layout to keep in step with the tool, which is why the modal
   can be called raw output; the printer writes to standard output, so this catches it in a buffer.
@@ -239,20 +219,14 @@ with their phploc measurements.
 migration). `ScanForNewReleases` fans out into one `ScanRepository` per repository, which asks github.com
 for refs and only dispatches `AnalyseRepository` when a release is actually missing — so the nightly run
 neither clones nor queues anything for a repository that did not release. `RefreshRepositories` wraps
-`RepositoryRefresher`. `BackfillMetrics` is the same fan-out for the one task that is not about keeping the
-report current but about finishing it: it hands the ten most starred repositories that still carry releases
-without their phploc output to `async` as `BackfillRepositoryMetrics`, once an hour, until it finds nothing
-left to queue. A trickle rather than a nightly batch, because each of those repositories costs a clone —
-and it needs no state, since the question it asks is "what is still missing", not "where did we stop". The
+`RepositoryRefresher`. The
 `Schedule` is `stateful()` (a deploy restarting the worker must not re-trigger the night) and `lock()`ed,
 and hands every task to `async` via `RedispatchMessage` instead of running it in the schedule worker.
 
 `AnalyseRepositoryHandler` takes a `flock` per repository before analysing: checking out a tag rewrites the
 shared working copy, so a second worker on the same repository would silently measure the wrong code. A
 busy repository throws `RecoverableMessageHandlingException` and is retried — deliberately without
-consuming the retry budget, since being busy is not a failure. `BackfillRepositoryMetricsHandler` takes the
-same lock for the same reason and waits the same way: an analysis is the work the report is there for, and
-a backfill is what happens when nobody else needs the working copy.
+consuming the retry budget, since being busy is not a failure.
 
 **Submitting** is the only write the web exposes, so `submit` spends one token of the `submission` rate
 limiter (5 per 15 minutes and IP) before anything else and only then checks the CSRF token - the limiter
@@ -329,11 +303,15 @@ glyph and the row has no width to spare, and in the release analysis it leads th
 complexities rather than changes to one.
 
 Routes are distinguished by `priority`, since `{organization}` and the slug of a repository both match
-whatever is left: `chart`/`search`/`submit` (3) > `repository` (2, `owner/repository`, returns one line of
+whatever is left — and every one of them is **negative**, because routing sorts the whole collection and
+not the controller: a positive priority puts a catch-all in front of what the framework registers, and
+`/_wdt/{token}` and `/_profiler/{token}` are two segments like every repository slug, so the profiler
+answered 404 as a repository nobody submitted. Below zero the report is what is left over, which is what it
+is: `chart`/`search`/`submit` (-1) > `repository` (-2, `owner/repository`, returns one line of
 the chart as JSON - the slug is the whole route, so the select box can request it relative to the page it
-is on) and `raw` (2, `owner/repository/<tag>/raw`, one release as phploc printed it, `text/plain` and
-cacheable for a day since a released tag does not get measured differently again; a release that carries no
-measurement answers 404, which is what a kept link to one of them gets) > `organization` (1). The last one is the page GitHub accounts used to have, kept as a permanent
+is on) and `raw` (-2, `owner/repository/<tag>/raw`, one release as phploc printed it, `text/plain` and
+cacheable for a day since a released tag does not get measured differently again; a release the report does
+not carry answers 404) > `organization` (-3). The last one is the page GitHub accounts used to have, kept as a permanent
 redirect into the chart - `?repository=<id>` included, since that is how the links that were handed out
 address a repository. `Repository::asGraph()` returns a `GraphData` value object that JSON-serializes into
 what the chart expects: the releases it draws plus the github.com url and the stars of the repository they
@@ -355,9 +333,9 @@ numbers and the report plots two, and the rest is shown as phploc printed it - o
 printed on (`--terminal-*`, the one dark surface that is not the brand), in a `<dialog>` the panel behind
 it keeps its release through. It is fetched when it is opened rather than carried by the page - a chart
 holds hundreds of releases and this is read one at a time - and kept afterwards, since a measurement does
-not change. The button is only there where there is an output: `raw` per release in `GraphData` says so,
-and it is false for everything measured before the output was kept (see `MetricsBackfiller`), so nothing
-offers a modal that would 404. Turbo caches the page as it is left, so the dialog is closed on
+not change. Every release carries a measurement, so the button is simply there and `GraphData` says nothing
+about it - it used to carry a `raw` flag per release, for the ones measured before the output was kept.
+Turbo caches the page as it is left, so the dialog is closed on
 `turbo:before-cache` - one that came back open would come back not modal, since only `showModal()` puts a
 dialog in the top layer.
 The chart zooms and pans

@@ -133,7 +133,6 @@ export default class extends Controller {
         'releaseMeta',
         'releaseSelect',
         'analysis',
-        'rawAction',
         'raw',
         'rawTitle',
         'rawOutput',
@@ -589,12 +588,8 @@ export default class extends Controller {
 
         this.analysisTarget.replaceChildren(...groups.filter(Boolean));
 
-        // the release the modal would show, and whether there is one to show at all
+        // the release the modal would show
         this.tag = tag;
-
-        if (this.hasRawActionTarget) {
-            this.rawActionTarget.hidden = !tag.raw;
-        }
     }
 
     /**

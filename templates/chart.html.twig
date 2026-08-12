@@ -205,12 +205,10 @@
                                 {#
                                  # The panel below is the handful of numbers the report has an opinion
                                  # about; a phploc run counts sixty. The rest is not summarised anywhere,
-                                 # it is shown as phploc printed it - and only for releases measured
-                                 # after the report started keeping it, which is why this is hidden until
-                                 # the controller finds an output behind the release.
+                                 # it is shown as phploc printed it.
                                  #}
                                 <button type="button" class="btn btn--secondary"
-                                        data-chart-target="rawAction" data-action="chart#openRaw" hidden>
+                                        data-action="chart#openRaw">
                                     <i class="fas fa-terminal"></i> Raw phploc output
                                 </button>
                                 <select class="release-select" aria-label="Release"

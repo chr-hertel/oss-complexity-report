@@ -55,11 +55,6 @@
         cursor: default;
         pointer-events: none;
     }
-
-    // a button that is only there in some states says so with `hidden`, and inline-flex would ignore it
-    &[hidden] {
-        display: none;
-    }
 }
 
 // --- TextInput --------------------------------------------------------------------------------

@@ -26,6 +26,15 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * The two routes at the bottom of this class match whatever is left of the path - a repository is
+ * addressed by its slug and an account by its login, so `/{name}` and `/{organization}` have no shape of
+ * their own to be told apart by. What orders them is `priority`, and every priority here is **negative**:
+ * routing sorts the whole collection, not this class, so a positive one would put a catch-all in front of
+ * the routes the framework registers - `/_wdt/{token}` and `/_profiler/{token}` are two segments like
+ * every repository slug, and the profiler answered 404 as a repository nobody submitted for as long as
+ * they were. Below zero the report is what is left over, which is what it is.
+ */
 final class ReportController extends AbstractController
 {
     /**
@@ -81,7 +90,7 @@ final class ReportController extends AbstractController
     /**
      * Suggestions for the search box: what the report carries, plus what the input could be submitted as.
      */
-    #[Route('search', name: 'search', methods: 'GET', priority: 3)]
+    #[Route('search', name: 'search', methods: 'GET', priority: -1)]
     public function search(Request $request, RepositorySearch $search): JsonResponse
     {
         $result = $search->search((string) $request->query->get('q', ''), self::SEARCH_LIMIT);
@@ -103,7 +112,7 @@ final class ReportController extends AbstractController
      * to a submission itself, and only a See Other tells it to read the page that follows with a GET. The
      * two refusals below are the exception - see refuse().
      */
-    #[Route('submit', name: 'submit', methods: 'POST', priority: 3)]
+    #[Route('submit', name: 'submit', methods: 'POST', priority: -1)]
     public function submit(
         Request $request,
         RepositorySubmitter $submitter,
@@ -147,7 +156,7 @@ final class ReportController extends AbstractController
      * fifty. What bounds the query string is the report itself - it cannot name more repositories than
      * there are, and everything it names that is not one is dropped.
      */
-    #[Route('chart', name: 'chart', methods: 'GET', priority: 3)]
+    #[Route('chart', name: 'chart', methods: 'GET', priority: -1)]
     public function chart(Request $request, RepositoryRepository $repositories): Response
     {
         $analysed = $repositories->findAnalysed();
@@ -164,7 +173,7 @@ final class ReportController extends AbstractController
      * A GitHub account used to have a page of its own; it is the chart above, opened with what was
      * submitted for that account - the links that were handed out keep working.
      */
-    #[Route('{organization}', name: 'organization', methods: 'GET', priority: 1)]
+    #[Route('{organization}', name: 'organization', methods: 'GET', priority: -3)]
     public function organization(
         #[MapEntity(mapping: ['organization' => 'login'])] Organization $organization,
         Request $request,
@@ -196,7 +205,7 @@ final class ReportController extends AbstractController
      * addressed the way github.com addresses it, and that slug is the whole route - so the select box
      * can request it relative to the page it is on, which keeps working under a deployed sub path.
      */
-    #[Route('{name}', name: 'repository', requirements: ['name' => '[^/]+/[^/]+'], methods: 'GET', priority: 2)]
+    #[Route('{name}', name: 'repository', requirements: ['name' => '[^/]+/[^/]+'], methods: 'GET', priority: -2)]
     public function repository(string $name, RepositoryRepository $repositories): JsonResponse
     {
         $repository = $repositories->findBySlug($name) ?? throw $this->createNotFoundException();
@@ -212,10 +221,10 @@ final class ReportController extends AbstractController
      * and it is fetched when somebody opens it rather than rendered into the chart page: a release is
      * read one at a time, while a chart carries hundreds of them.
      *
-     * A release measured before the report kept the full output has none, and says so with a 404 - the
-     * panel does not offer it there, so this is the answer to a link that was kept or typed.
+     * A release the report does not carry answers 404, which is what a link to a repository that went
+     * away or a tag that was renamed gets.
      */
-    #[Route('{name}/{tag}/raw', name: 'raw', requirements: ['name' => '[^/]+/[^/]+', 'tag' => '.+'], methods: 'GET', priority: 2)]
+    #[Route('{name}/{tag}/raw', name: 'raw', requirements: ['name' => '[^/]+/[^/]+', 'tag' => '.+'], methods: 'GET', priority: -2)]
     public function raw(
         string $name,
         string $tag,
@@ -224,10 +233,10 @@ final class ReportController extends AbstractController
         PhplocReport $report,
     ): Response {
         $repository = $repositories->findBySlug($name) ?? throw $this->createNotFoundException();
-        $metrics = $tags->findOneBy(['repository' => $repository, 'name' => $tag])?->getMetrics()
+        $release = $tags->findOneBy(['repository' => $repository, 'name' => $tag])
             ?? throw $this->createNotFoundException();
 
-        $response = new Response($report->render($metrics), Response::HTTP_OK, ['Content-Type' => 'text/plain; charset=UTF-8']);
+        $response = new Response($report->render($release->getMetrics()), Response::HTTP_OK, ['Content-Type' => 'text/plain; charset=UTF-8']);
 
         // what a released tag was measured as does not change again
         $response->setPublic()->setMaxAge(86400);

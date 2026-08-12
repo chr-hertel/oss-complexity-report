@@ -119,19 +119,6 @@ final class TagRepository extends ServiceEntityRepository
         return $tags;
     }
 
-    /**
-     * Releases that were measured before the report kept the full phploc output - what the backfill has
-     * left to do, counted in the unit the report is read in rather than in repositories.
-     */
-    public function countMissingMetrics(): int
-    {
-        return (int) $this->createQueryBuilder('t')
-            ->select('COUNT(t.id)')
-            ->where('t.metrics IS NULL')
-            ->getQuery()
-            ->getSingleScalarResult();
-    }
-
     public function getLinesOfCodeSum(): int
     {
         $query = $this->createQueryBuilder('t')
