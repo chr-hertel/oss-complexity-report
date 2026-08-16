@@ -55,6 +55,11 @@
         cursor: default;
         pointer-events: none;
     }
+
+    // a ranking that came out empty has nothing to draw, so the button steps aside rather than fades
+    &[hidden] {
+        display: none;
+    }
 }
 
 // --- TextInput --------------------------------------------------------------------------------
@@ -204,175 +209,223 @@
     }
 }
 
-// --- RepositoryCard ---------------------------------------------------------------------------
-// One analysed repository: vendor line, name, description, then a metrics row.
-.repo-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--space-5);
-}
+// --- RankingTable -----------------------------------------------------------------------------
+// A ranking as what it is: an order. Nine repositories used to be nine cards, which reads as nine
+// things rather than as first to ninth - a rank, a name, three measured columns and the way out to
+// github.com, all of them lining up down the table so a column can be read as a column.
+//
+// The three measured ones follow the tab (`Ranking::columns()`), so whatever the ranking sorts by is
+// the one right of the name.
+.ranking-table {
+    --ranking-columns: 44px minmax(0, 1fr) 96px 96px 96px 28px;
 
-.repo-card {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+    margin-top: var(--space-5);
     background: var(--surface-card);
     border: var(--border-width) solid var(--card-border-color);
     border-radius: var(--radius-lg);
-    transition:
-        border-color var(--transition),
-        box-shadow var(--transition);
+    overflow: hidden;
 
-    &:hover {
-        border-color: var(--line-strong);
-        box-shadow: var(--shadow-xs);
-    }
-
-    &__body {
-        flex: 1 1 auto;
-        padding: var(--card-pad);
+    &__head,
+    &__row {
+        display: grid;
+        grid-template-columns: var(--ranking-columns);
+        gap: var(--space-4);
+        align-items: center;
     }
 
     &__head {
-        display: flex;
-        align-items: baseline;
-        gap: var(--space-3);
-        margin-bottom: var(--space-2);
+        padding: 10px var(--space-5);
         font-family: var(--font-mono);
-        font-size: var(--text-xs);
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-    }
-
-    &__rank {
-        color: var(--text-faint);
-    }
-
-    &__vendor {
-        overflow: hidden;
-        text-overflow: ellipsis;
+        font-size: 11px;
         letter-spacing: var(--tracking-eyebrow);
         text-transform: uppercase;
         color: var(--text-muted);
+        background: var(--surface-muted);
+        border-bottom: var(--border-width) solid var(--line);
     }
 
-    &__title {
-        margin-bottom: var(--space-2);
-        font-size: var(--text-h5);
-        font-weight: var(--weight-semibold);
-        letter-spacing: var(--tracking-tight);
+    &__number {
+        text-align: right;
+    }
 
-        a {
-            color: var(--text-heading);
+    &__row {
+        padding: 14px var(--space-5);
+        border-bottom: var(--border-width) solid var(--line);
+        transition: background-color var(--transition);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+
+        &:hover {
+            background: var(--surface-muted);
         }
     }
 
-    &:hover &__title a {
+    &__rank {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        font-variant-numeric: tabular-nums;
+        color: var(--text-faint);
+    }
+
+    &__repository {
+        min-width: 0;
+    }
+
+    &__name {
+        font-family: var(--font-mono);
+        font-size: 14px;
+        font-weight: var(--weight-medium);
+        color: var(--text-heading);
+    }
+
+    &__row:hover &__name {
         text-decoration: underline;
         text-underline-offset: 3px;
     }
 
-    &__text {
+    // one line: a description is what a repository says about itself, not what the report says
+    &__description {
+        display: block;
+        overflow: hidden;
         font-size: var(--text-sm);
-        line-height: 1.55;
+        line-height: 1.5;
         color: var(--text-muted);
-        text-wrap: pretty;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
-    &__meta {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--space-2) var(--space-4);
-        padding: var(--space-3) var(--card-pad);
-        border-top: var(--border-width) solid var(--line);
+    &__cell {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        white-space: nowrap;
+        color: var(--text-muted);
+
+        .fas {
+            margin-right: 6px;
+            font-size: 11px;
+            color: var(--accent-star);
+        }
+
+        // the measurement the report is about is the one that carries the ink of a heading
+        &--strong {
+            color: var(--text-heading);
+        }
+
+        &--good {
+            color: var(--trend-improving);
+        }
+
+        &--bad {
+            color: var(--trend-regressing);
+        }
     }
 
     &__github {
-        margin-left: auto;
         font-size: 14px;
+        text-align: right;
         color: var(--text-faint);
+
+        &:hover {
+            color: var(--text-heading);
+        }
     }
 }
 
-.metric {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    font-variant-numeric: tabular-nums;
-    color: var(--text-muted);
-    white-space: nowrap;
+// Under a laptop the three measured columns are what has to give: the two the ranking is not about
+// drop, the one it sorts by stays, and the name keeps the width it needs to stay on one line.
+//
+// A row is rank, name, three figures, github - so the two that go are the fourth and the fifth of it.
+@media (max-width: 900px) {
+    .ranking-table {
+        --ranking-columns: 36px minmax(0, 1fr) 88px 28px;
 
-    &__label,
-    .fas,
-    .fab {
-        margin-right: 6px;
-        font-size: 11px;
-        color: var(--text-faint);
-    }
-
-    &--good {
-        color: var(--trend-improving);
-    }
-
-    &--bad {
-        color: var(--trend-regressing);
-    }
-
-    &--star .fas {
-        color: var(--accent-star);
+        &__head > :nth-child(4),
+        &__head > :nth-child(5),
+        &__row > :nth-child(4),
+        &__row > :nth-child(5) {
+            display: none;
+        }
     }
 }
 
-// --- StatsLine --------------------------------------------------------------------------------
-// Dataset size as four labelled figures on one hairline-separated row.
-.stats {
+@media (max-width: 560px) {
+    .ranking-table {
+        &__head,
+        &__row {
+            gap: var(--space-3);
+            padding-inline: var(--space-4);
+        }
+
+        &__description {
+            display: none;
+        }
+    }
+}
+
+// --- HeadlineFigures --------------------------------------------------------------------------
+// What the release being read comes down to, above the panel spelling it out: four figures in one
+// hairline grid, each of them with the note that makes it a reading rather than a number.
+.headline-figures {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--space-5);
-    margin: 0;
-    padding: var(--space-5) 0;
-    border-top: var(--border-width) solid var(--line);
+    gap: var(--border-width);
+    margin-top: var(--space-5);
+    background: var(--line);
+    border: var(--border-width) solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+
+    &__cell {
+        padding: var(--space-5);
+        background: var(--surface-card);
+    }
 
     &__label {
         font-family: var(--font-mono);
-        font-size: var(--text-xs);
+        font-size: 11px;
         letter-spacing: var(--tracking-eyebrow);
         text-transform: uppercase;
         color: var(--text-muted);
     }
 
     &__value {
-        margin: var(--space-2) 0 0;
-        font-size: var(--text-h2);
+        margin-top: 10px;
+        font-size: 28px;
         font-weight: var(--weight-semibold);
         font-variant-numeric: tabular-nums;
-        letter-spacing: var(--tracking-tight);
+        letter-spacing: var(--tracking-heading);
         color: var(--text-heading);
+
+        &--good {
+            color: var(--trend-improving);
+        }
+
+        &--bad {
+            color: var(--trend-regressing);
+        }
     }
 
-    // In the hero the same row is read on the brand ground, and only three of the four figures are
-    // shown - the vendors are one section of the page below.
-    &--hero {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        max-width: 34rem;
-        margin-top: var(--space-5);
-        padding: var(--space-4) 0 0;
-        border-top-color: var(--hero-line);
-    }
-
-    &--hero &__label {
-        color: var(--hero-faint);
-    }
-
-    &--hero &__value {
-        color: var(--hero-fg);
+    &__note {
+        margin-top: var(--space-1);
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-faint);
     }
 }
 
-@media (max-width: 720px) {
-    // Two columns is as far as the labels go before they collide - the hero row wraps with them.
-    .stats {
+@media (max-width: 900px) {
+    .headline-figures {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .headline-figures {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
@@ -408,10 +461,12 @@
     }
 
     // where a repository stands is a state, not a measurement - set the way every other label of the
-    // report is set, so it is not read as a version
+    // report is set, so it is not read as a version, and on the brand rather than on ink, so a strip
+    // of versions is scanned past it rather than through it
     &__value--state {
         letter-spacing: var(--tracking-eyebrow);
         text-transform: uppercase;
+        background: var(--brand);
     }
 }
 
@@ -422,6 +477,10 @@ a.pill:hover .pill__name {
 
 a.pill:hover .pill__value {
     background: var(--ink-900);
+}
+
+a.pill:hover .pill__value--state {
+    background: var(--brand-strong);
 }
 
 .pill-row {
@@ -697,31 +756,25 @@ a.pill:hover .pill__value {
 
 .chart-canvas {
     position: relative;
-    height: 420px;
+    height: 440px;
 }
 
-// What the chart draws, above the panel it draws it in - the two numbers a release is measured in,
-// side by side rather than in a select, because there are two of them and both are worth naming.
+// What the chart draws, on the top edge of the panel it draws it in - the two numbers a release is
+// measured in, side by side rather than in a select, because there are two of them and both are worth
+// naming.
 //
 // It is a segmented control rather than two quiet words: the sunken track is what says that both of
 // them are options and one of them is taken, which a label on its own cannot say. So the track carries
 // the affordance and the raised half carries the state, the way a switch is read everywhere else.
 .chart-metrics {
     display: flex;
+    flex: 0 0 auto;
     gap: 2px;
-    // the switch stands over the right edge of the chart, where it is out of the way of a headline
     width: fit-content;
     padding: 2px;
-    margin: var(--space-6) 0 0 auto;
     background: var(--surface-muted);
     border: var(--border-width) solid var(--line);
     border-radius: var(--radius);
-}
-
-// the switch belongs to the chart it draws, so the panel follows it at a hair rather than at the
-// distance it keeps from whatever stands above the whole block
-.chart-metrics + .chart-panel {
-    margin-top: var(--space-2);
 }
 
 .metric-switch {
@@ -843,8 +896,8 @@ a.pill:hover .pill__value {
 // The measurement of one release, grouped the way the report reads it.
 .analysis {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: var(--space-6) var(--space-7);
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-6);
 
     &__title {
         padding-bottom: var(--space-3);
@@ -888,70 +941,6 @@ a.pill:hover .pill__value {
         font-family: var(--font-mono);
         font-size: var(--text-xs);
         color: var(--text-faint);
-    }
-}
-
-.release-head {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-4);
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-bottom: var(--space-5);
-
-    h2 {
-        display: flex;
-        align-items: baseline;
-        gap: var(--space-3);
-        margin-top: var(--space-2);
-        font-size: var(--text-h3);
-    }
-
-    // the repository is a link to github.com, so it carries the same arrow the chart headline does
-    &__name {
-        font-family: var(--font-mono);
-        font-weight: var(--weight-medium);
-        color: inherit;
-        text-decoration: none;
-
-        .fas {
-            margin-left: var(--space-2);
-            font-size: 13px;
-            color: var(--text-faint);
-        }
-
-        // only the name is underlined on hover, the arrow behind it is not part of it
-        &:hover span {
-            text-decoration: underline;
-        }
-    }
-
-    &__meta {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: var(--space-3);
-        margin-top: var(--space-3);
-        font-size: var(--text-sm);
-        color: var(--text-muted);
-    }
-
-    &__dot {
-        color: var(--text-faint);
-    }
-
-    // what can be done with the release being read, next to the box that picks it - the two are the
-    // same control geometry, so they sit on one line without either of them being made to fit
-    &__actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-3);
-        align-items: center;
-
-        .fas {
-            font-size: 11px;
-            color: var(--text-faint);
-        }
     }
 }
 
@@ -1172,19 +1161,69 @@ a.pill:hover .pill__value {
     border-bottom: var(--border-width) solid var(--line);
 
     &__inner {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--space-7);
         padding-top: var(--space-7);
         padding-bottom: var(--space-6);
     }
 
-    &__scale {
+    &__label {
+        display: block;
+        margin-bottom: var(--space-3);
+    }
+
+    &__columns {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-6) var(--space-7);
+        margin-top: var(--space-6);
+    }
+
+    // every caveat spelled out, under the two columns saying the short version of them
+    &__long {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         grid-column: 1 / -1;
+        gap: var(--space-6) var(--space-7);
+        padding-top: var(--space-5);
+        border-top: var(--border-width) solid var(--line);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    // the sentence that opens it, set like the quiet links of this block because that is what it is
+    &__reveal {
+        margin: 0;
+    }
+
+    &__more {
+        padding: 0;
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--text-muted);
+        background: none;
+        border: 0;
+        border-bottom: 1px solid var(--line-strong);
+        cursor: pointer;
+        transition: color var(--transition);
+
+        &:hover {
+            color: var(--text-heading);
+        }
+
+        &:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        &[hidden] {
+            display: none;
+        }
     }
 
     &__section {
-        h2 {
+        h2,
+        h3 {
             margin-bottom: var(--space-3);
         }
 
@@ -1219,7 +1258,8 @@ a.pill:hover .pill__value {
 
 // the two explaining columns become two blocks, read one after the other
 @media (max-width: 720px) {
-    .about__inner {
+    .about__columns,
+    .about__long {
         grid-template-columns: minmax(0, 1fr);
         gap: var(--space-6);
     }

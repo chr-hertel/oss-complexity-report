@@ -106,6 +106,25 @@ final class ChartSelectionTest extends TestCase
     }
 
     /**
+     * What the strip under the chart says it is drawn from. A repository still waiting for a worker is
+     * not a line, so it brings no releases to the count either.
+     */
+    public function testItCountsTheReleasesOfEveryLineItDraws(): void
+    {
+        $console = self::analysed('symfony/console');
+        $console->addTag(new GitTag('1.1'), new Analysis(120, 2.1, new \DateTimeImmutable('2021-01-01'), []));
+
+        $selection = ChartSelection::of([$console, self::repository('symfony/uid')], [$console]);
+
+        self::assertSame(2, $selection->getReleaseCount());
+    }
+
+    public function testAChartWithoutALineCountsNothing(): void
+    {
+        self::assertSame(0, ChartSelection::mostStarred([], 8)->getReleaseCount());
+    }
+
+    /**
      * A repository that was submitted and is waiting for its first release.
      */
     private static function repository(string $name, ?Organization $organization = null): Repository

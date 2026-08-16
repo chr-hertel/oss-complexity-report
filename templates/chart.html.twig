@@ -12,17 +12,19 @@
      # The one chart of the report. It is not named after the way it was reached but after what is in it,
      # and since that changes without leaving the page, the controller reaches up to the headline - which
      # is why it wraps the whole screen rather than only the chart.
+     #
+     # That headline is not printed anymore: what the chart holds is the row of chips above it, said in
+     # the colours the lines are drawn in, and a title repeating them was the third place saying the
+     # same thing. It is still what the document is called and what a reader that does not look at the
+     # screen opens on, so it is carried rather than dropped.
      #}
     <main class="page">
         <div class="wrap page__body" data-controller="chart"
              data-repositories="{{ series|map(repository => repository.asGraph)|json_encode|e('html_attr') }}">
-            <div class="eyebrow">Chart</div>
-            <h1 class="chart-title">
+            <h1 class="visually-hidden">
                 <span data-chart-target="headline">{{ selection.headline }}</span>
-                <a class="chart-title__link" target="_blank" rel="noreferrer" data-chart-target="headlineLink"
-                   {% if selection.url %}href="{{ selection.url }}" title="{{ selection.url|replace({'https://':''}) }}"{% else %}hidden{% endif %}>
-                    <i class="fas fa-arrow-up-right-from-square"></i>
-                </a>
+                <a data-chart-target="headlineLink"
+                   {% if selection.url %}href="{{ selection.url }}"{% else %}hidden{% endif %}>on GitHub</a>
             </h1>
 
             {#
@@ -71,7 +73,7 @@
                         <div class="eyebrow">Release analysis</div>
                         <div class="panel panel--pad-lg" style="margin-top: var(--space-5)">
                             <div class="analysis" aria-hidden="true">
-                                {% for group in 1..4 %}
+                                {% for group in 1..3 %}
                                     <div>
                                         <div class="analysis__title">
                                             <span class="skeleton__line" style="width: 40%"></span>
@@ -95,79 +97,65 @@
                     </section>
                 </div>
             {% elseif series is not empty %}
-                <div>
-                    {# what a point is; what it is drawn as is said by the switch above the chart #}
-                    <p class="chart-lead">
-                        One point per analysed release, measured with phploc. Scroll
-                        to zoom, drag to pan,
-                        and click a release to read it below.
-                    </p>
-
+                <div {{ stimulus_controller('repository-picker') }}>
                     {#
-                     # What the chart is drawn from stands above it: everything the report carries can be
-                     # added here, whoever owns it - the box is the whole navigation of this screen, and
-                     # what is picked ends up in the query string. The headline says what it is, so the
-                     # box needs no second one.
+                     # The state the box is a widget for: what is in the chart, and in which order it is
+                     # drawn. The chart reads this and redraws on its `change`, so it does not care how a
+                     # repository got in or out.
                      #}
-                    <div class="repository-picker" {{ stimulus_controller('repository-picker') }}>
-                        {#
-                         # The state the box is a widget for: what is in the chart, and in which order it
-                         # is drawn. The chart reads this and redraws on its `change`, so it does not
-                         # care how a repository got in or out.
-                         #}
-                        <select name="repositories[]" multiple="multiple" hidden
-                                data-chart-target="select" data-repository-picker-target="select"
-                                data-action="change->chart#repick">
-                            {% for repository in selection.options %}
-                                <option value="{{ repository.name }}" {{ repository in series ? 'selected="selected"' }}>{{ repository.name }}</option>
-                            {% endfor %}
-                        </select>
-                        {# the same box as the search on the start page, with room for more than one answer #}
-                        <div class="combobox">
-                            <div class="combobox__control" data-action="click->repository-picker#focus">
-                                <ul class="combobox__chips" data-repository-picker-target="chips"></ul>
-                                <input type="text" class="combobox__input"
-                                       placeholder="Search the report"
-                                       aria-label="Repositories in this chart"
-                                       autocomplete="off" autocapitalize="off" spellcheck="false"
-                                       role="combobox" aria-expanded="false" aria-autocomplete="list"
-                                       aria-controls="repository-suggestions"
-                                       data-repository-picker-target="input"
-                                       data-action="input->repository-picker#query focus->repository-picker#query keydown->repository-picker#navigate blur->repository-picker#close">
-                            </div>
-                            <ul class="combobox__menu" id="repository-suggestions" role="listbox"
-                                aria-label="Repositories the report carries"
-                                data-repository-picker-target="menu" hidden></ul>
-                        </div>
-                        <p class="repository-picker__hint">
-                            As many lines as the report carries - one colour each, dashed once the eight
-                            colours start over.
-                            <a href="{{ path('start') }}">Add a repository</a> the report does not carry yet.
-                        </p>
-                    </div>
-
-                    {#
-                     # What the same lines are drawn as. A release is measured in two numbers and the
-                     # report is about one of them, so complexity is what the chart opens on - but the
-                     # other one is measured just as well, and reading a codebase growing under a
-                     # complexity that holds is a different statement than either number alone. What is
-                     # picked ends up in the query string next to the repositories, because it is part
-                     # of the chart somebody put together.
-                     #}
-                    <div class="chart-metrics" role="tablist" aria-label="What the chart draws">
-                        <button type="button" class="metric-switch" role="tab" aria-selected="true"
-                                aria-controls="chart-canvas" data-metric="complexity"
-                                data-chart-target="metric" data-action="chart#selectMetric">
-                            Ø complexity
-                        </button>
-                        <button type="button" class="metric-switch" role="tab" aria-selected="false"
-                                aria-controls="chart-canvas" data-metric="loc"
-                                data-chart-target="metric" data-action="chart#selectMetric">
-                            Lines of code
-                        </button>
-                    </div>
+                    <select name="repositories[]" multiple="multiple" hidden
+                            data-chart-target="select" data-repository-picker-target="select"
+                            data-action="change->chart#repick">
+                        {% for repository in selection.options %}
+                            <option value="{{ repository.name }}" {{ repository in series ? 'selected="selected"' }}>{{ repository.name }}</option>
+                        {% endfor %}
+                    </select>
 
                     <div class="panel chart-panel">
+                        {#
+                         # What the chart is drawn from and what it draws it as, on the top edge of the
+                         # panel it does both in. The chips are the lines - each one in the colour of its
+                         # series, which is what a legend under the chart used to say - and the field
+                         # after them is where another one is added.
+                         #}
+                        <div class="chart-panel__head">
+                            <div class="combobox chart-panel__picker">
+                                <div class="combobox__control" data-action="click->repository-picker#focus">
+                                    <ul class="combobox__chips" data-repository-picker-target="chips"></ul>
+                                    <input type="text" class="combobox__input"
+                                           placeholder="+ add a line"
+                                           aria-label="Repositories in this chart"
+                                           autocomplete="off" autocapitalize="off" spellcheck="false"
+                                           role="combobox" aria-expanded="false" aria-autocomplete="list"
+                                           aria-controls="repository-suggestions"
+                                           data-repository-picker-target="input"
+                                           data-action="input->repository-picker#query focus->repository-picker#query keydown->repository-picker#navigate blur->repository-picker#close">
+                                </div>
+                                <ul class="combobox__menu" id="repository-suggestions" role="listbox"
+                                    aria-label="Repositories the report carries"
+                                    data-repository-picker-target="menu" hidden></ul>
+                            </div>
+
+                            {#
+                             # What the same lines are drawn as. A release is measured in two numbers and
+                             # the report is about one of them, so complexity is what the chart opens on -
+                             # but reading a codebase growing under a complexity that holds is a different
+                             # statement than either number alone.
+                             #}
+                            <div class="chart-metrics" role="tablist" aria-label="What the chart draws">
+                                <button type="button" class="metric-switch" role="tab" aria-selected="true"
+                                        aria-controls="chart-canvas" data-metric="complexity"
+                                        data-chart-target="metric" data-action="chart#selectMetric">
+                                    Ø complexity
+                                </button>
+                                <button type="button" class="metric-switch" role="tab" aria-selected="false"
+                                        aria-controls="chart-canvas" data-metric="loc"
+                                        data-chart-target="metric" data-action="chart#selectMetric">
+                                    Lines of code
+                                </button>
+                            </div>
+                        </div>
+
                         <div class="chart-canvas" id="chart-canvas" role="tabpanel">
                             <canvas data-chart-target="canvas"></canvas>
                             {#
@@ -180,79 +168,88 @@
                                 <i class="fas fa-arrows-to-dot"></i> Reset zoom
                             </button>
                         </div>
+
+                        {# what a point is, and how much of the report is on this one #}
+                        <div class="chart-panel__foot">
+                            <span>Scroll to zoom, drag to pan, click a release to read it below.</span>
+                            <span class="chart-panel__count" data-chart-target="count">
+                                {{ series|length }} {{ series|length == 1 ? 'repository' : 'repositories' }} ·
+                                {{ selection.releaseCount|number_format }}
+                                {{ selection.releaseCount == 1 ? 'release' : 'releases' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {#
+                 # One tab per line of the chart: every repository in it can be read release by release,
+                 # not only the one the page was opened with. The tabs are built by the controller, since
+                 # what is in the chart changes without leaving the page - and what picks a release out of
+                 # the one being read sits on the same rail, because both of them choose what the panel
+                 # below shows.
+                 #}
+                <section class="section release" data-chart-target="release" hidden>
+                    <div class="release__rail">
+                        <div class="tabs tabs--series" role="tablist" aria-label="Repositories in this chart"
+                             data-chart-target="releaseTabs"></div>
+                        <div class="release__actions">
+                            {#
+                             # The repository being read, on github.com. It used to hang off the headline
+                             # of the screen; the headline is gone, and this is where what is being read
+                             # is named now.
+                             #}
+                            <a class="release__link" target="_blank" rel="noreferrer"
+                               data-chart-target="releaseLink"><i class="fas fa-arrow-up-right-from-square"></i></a>
+                            <select class="release-select" aria-label="Release"
+                                    data-chart-target="releaseSelect" data-action="chart#selectRelease"></select>
+                            {#
+                             # The panel below is the handful of numbers the report has an opinion about;
+                             # a phploc run counts sixty. The rest is not summarised anywhere, it is shown
+                             # as phploc printed it.
+                             #}
+                            <button type="button" class="btn btn--secondary" data-action="chart#openRaw">
+                                <i class="fas fa-terminal"></i> Raw output
+                            </button>
+                        </div>
                     </div>
 
                     {#
-                     # One tab per line of the chart: every repository in it can be read release by
-                     # release, not only the one the page was opened with. The tabs are built by the
-                     # controller, since what is in the chart changes without leaving the page.
+                     # What the release being read comes down to, before the panel spelling it out: where
+                     # it stands, what it did against the release before it, how large it is, and how much
+                     # of the repository has been measured.
                      #}
-                    <section class="section" data-chart-target="release" hidden>
-                        <div class="eyebrow">Release analysis</div>
-                        <div class="tabs tabs--series" role="tablist" aria-label="Repositories in this chart"
-                             data-chart-target="releaseTabs"></div>
-                        <div class="release-head">
-                            <div>
-                                <h2>
-                                    {# the repository being read is where it is read on github.com #}
-                                    <a class="release-head__name" target="_blank" rel="noreferrer"
-                                       data-chart-target="releaseRepository"></a>
-                                    <span class="badge" data-chart-target="releaseName"></span>
-                                </h2>
-                                <div class="release-head__meta" data-chart-target="releaseMeta"></div>
-                            </div>
-                            <div class="release-head__actions">
-                                {#
-                                 # The panel below is the handful of numbers the report has an opinion
-                                 # about; a phploc run counts sixty. The rest is not summarised anywhere,
-                                 # it is shown as phploc printed it.
-                                 #}
-                                <button type="button" class="btn btn--secondary"
-                                        data-action="chart#openRaw">
-                                    <i class="fas fa-terminal"></i> Raw phploc output
-                                </button>
-                                <select class="release-select" aria-label="Release"
-                                        data-chart-target="releaseSelect" data-action="chart#selectRelease"></select>
-                            </div>
-                        </div>
-                        <div class="panel panel--pad-lg" role="tabpanel" data-chart-target="releasePanel">
-                            <div class="analysis" data-chart-target="analysis"></div>
-                        </div>
+                    <div class="headline-figures" data-chart-target="headlineFigures"></div>
 
-                        {#
-                         # The whole measurement, as the phploc command line prints it. It is a modal
-                         # because it is a detour off the release being read and not a second place to
-                         # read one: the panel behind it stays on the release it was opened from.
-                         #}
-                        <dialog class="raw" aria-labelledby="raw-title"
-                                data-chart-target="raw" data-action="click->chart#dismissRaw">
-                            <div class="raw__head">
-                                <div>
-                                    <div class="eyebrow">phploc output</div>
-                                    <h2 class="raw__title" id="raw-title" data-chart-target="rawTitle"></h2>
-                                </div>
-                                <button type="button" class="raw__close" aria-label="Close"
-                                        data-action="chart#closeRaw">
-                                    <i class="fas fa-xmark"></i>
-                                </button>
+                    <div class="panel panel--pad-lg" role="tabpanel" data-chart-target="releasePanel">
+                        <div class="analysis" data-chart-target="analysis"></div>
+                    </div>
+
+                    {#
+                     # The whole measurement, as the phploc command line prints it. It is a modal because
+                     # it is a detour off the release being read and not a second place to read one: the
+                     # panel behind it stays on the release it was opened from.
+                     #}
+                    <dialog class="raw" aria-labelledby="raw-title"
+                            data-chart-target="raw" data-action="click->chart#dismissRaw">
+                        <div class="raw__head">
+                            <div>
+                                <div class="eyebrow">phploc output</div>
+                                <h2 class="raw__title" id="raw-title" data-chart-target="rawTitle"></h2>
                             </div>
-                            {# a report of aligned columns, so it is shown in the font it was aligned for #}
-                            <pre class="raw__output" tabindex="0" data-chart-target="rawOutput"></pre>
-                        </dialog>
-                    </section>
-                </div>
+                            <button type="button" class="raw__close" aria-label="Close"
+                                    data-action="chart#closeRaw">
+                                <i class="fas fa-xmark"></i>
+                            </button>
+                        </div>
+                        {# a report of aligned columns, so it is shown in the font it was aligned for #}
+                        <pre class="raw__output" tabindex="0" data-chart-target="rawOutput"></pre>
+                    </dialog>
+                </section>
             {% else %}
                 <p class="chart-lead empty-state">
-                    Nothing measured yet - <a href="{{ path('start') }}">add the first repository</a>.
+                    Nothing measured yet - the box above takes the first repository.
                 </p>
             {% endif %}
         </div>
     </main>
-
-    {#
-     # What the chart does not say by itself closes this screen, below the release analysis. It stands
-     # outside the page rather than in it, because the credits follow it directly and the two are read
-     # as one band.
-     #}
-    {{ include('about.html.twig') }}
 {% endblock %}

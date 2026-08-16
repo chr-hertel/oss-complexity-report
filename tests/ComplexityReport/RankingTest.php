@@ -56,6 +56,33 @@ final class RankingTest extends TestCase
             self::assertNotSame('', $ranking->label());
             self::assertNotSame('', $ranking->title());
             self::assertNotSame('', $ranking->caption());
+            self::assertNotSame('', $ranking->legend());
+        }
+    }
+
+    /**
+     * The table is one grid whatever tab is on, so every ranking fills the same three columns - and
+     * whatever it sorts by is the one right of the name, so the order the rows are in is readable off
+     * the rows themselves.
+     */
+    public function testEveryRankingLeadsWithWhatItSortsBy(): void
+    {
+        $leads = [
+            Ranking::Stars->value => 'stars',
+            Ranking::Complexity->value => 'complexity',
+            Ranking::Size->value => 'loc',
+            Ranking::Growth->value => 'growth',
+        ];
+
+        foreach (Ranking::all() as $ranking) {
+            $columns = $ranking->columns();
+
+            self::assertCount(3, $columns, $ranking->value);
+            self::assertSame($leads[$ranking->value], $columns[0]['key']);
+
+            foreach ($columns as $column) {
+                self::assertNotSame('', $column['label']);
+            }
         }
     }
 

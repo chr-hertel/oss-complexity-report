@@ -1,54 +1,17 @@
-// Layout of the two screens the product has - StartScreen.jsx and ChartScreen.jsx in the design
-// project. Everything they are built from lives in _components.scss.
+// Layout of the two screens the product has. Everything they are built from lives in
+// _components.scss; what is here is where those pieces stand.
 
 .page__body {
     padding-top: var(--space-8);
 }
 
 // --- Start ------------------------------------------------------------------------------------
-// The input spans the band, announced by the label above it and explained by the hint underneath.
-.submit-band {
-    &__label {
-        margin-bottom: var(--space-3);
-    }
-
-    &__hint {
-        margin-top: var(--space-3);
-        font-size: var(--text-sm);
-        color: var(--text-muted);
-    }
-
-    .alert {
-        margin-top: var(--space-3);
-    }
-}
-
-.submit-form {
-    display: flex;
-    gap: var(--space-2);
-}
-
 .ranking {
-    // caption and the link into the chart share one line: what the ranking sorts by on the left, the
-    // way to see it drawn on the right end of it
-    &__intro {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-3) var(--space-5);
-        align-items: baseline;
-        justify-content: space-between;
-        margin: var(--space-4) 0 var(--space-5);
-    }
-
     &__caption {
-        max-width: 70ch;
-        margin: 0;
+        max-width: 92ch;
+        margin: var(--space-3) 0 0;
         font-size: var(--text-sm);
         color: var(--text-muted);
-    }
-
-    &__chart {
-        flex: 0 0 auto;
     }
 
     &[hidden] {
@@ -61,53 +24,79 @@
     color: var(--text-muted);
 }
 
-// The GitHub accounts behind the repositories: a row of pills under their label, not a section of
-// its own - which is why it carries no rule above it either, the band it follows is separation
-// enough. The pills themselves are `.pill` in _components.scss, the same ones the lists below use.
-.vendors {
-    &__label {
-        margin-bottom: var(--space-3);
-    }
-}
-
-// The two ends of what came in last, side by side: repositories somebody submitted, releases a worker
-// measured. On a phone one column, the submissions first.
-.latest {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-6);
+// What came in last, on one line: a pill per repository, and the accounts behind them folded away at
+// the end of it. It closes the page, so it is a strip rather than a section - two lists under two
+// headings were more page than what they say is worth.
+.just-in {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-6);
+    align-items: baseline;
+    margin-top: var(--space-7);
+    padding: var(--space-4) var(--space-5);
+    background: var(--surface-card);
+    border: var(--border-width) solid var(--card-border-color);
+    border-radius: var(--radius-lg);
 
     &__label {
-        margin-bottom: var(--space-3);
+        flex: 0 0 auto;
+        font-size: 11px;
     }
 
-    @media (max-width: 720px) {
-        grid-template-columns: minmax(0, 1fr);
+    // the way into the vendors sits on the far end of the strip, quiet like everything else on it
+    &__more {
+        flex: 0 0 auto;
+        margin-left: auto;
+        padding: 0;
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-muted);
+        background: none;
+        border: 0;
+        border-bottom: 1px solid var(--line-strong);
+        cursor: pointer;
+        transition: color var(--transition);
+
+        &::after {
+            content: ' →';
+        }
+
+        &[aria-expanded='true']::after {
+            content: ' ↑';
+        }
+
+        &:hover {
+            color: var(--text-heading);
+        }
+
+        &:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    // opened, it is a row of its own under the strip rather than a column squeezed against its end
+    &__vendors {
+        flex: 1 0 100%;
+        margin-top: var(--space-1);
+        padding-top: var(--space-4);
+        border-top: var(--border-width) solid var(--line);
+
+        &[hidden] {
+            display: none;
+        }
     }
 }
 
 // --- Chart ------------------------------------------------------------------------------------
-.chart-title {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    margin-top: var(--space-2);
-    font-size: var(--text-h2);
-
-    &__link {
-        font-size: 13px;
-        color: var(--text-faint);
-    }
-}
-
 .chart-lead {
     margin-top: var(--space-3);
     font-size: var(--text-sm);
     color: var(--text-muted);
-}
-
-.chart-panel {
-    margin-top: var(--space-6);
 }
 
 // One alert per repository the chart is still waiting for.
@@ -117,24 +106,134 @@
     margin-top: var(--space-6);
 }
 
-// as wide as the chart below it - the chips in it are the series it is drawn from, in the same order
-.repository-picker {
-    margin-top: var(--space-5);
+// The chart and everything about it in one panel: what it is drawn from on the top edge, what it is
+// drawn as next to that, the chart itself, and what it is made of on the bottom edge. The panel pads
+// the chart and nothing else, so the two edges run to its full width.
+.chart-panel {
+    padding: 0;
 
-    &__hint {
-        margin-top: var(--space-3);
-        font-size: var(--text-sm);
+    &__head,
+    &__foot {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-4);
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    &__head {
+        padding: var(--space-4) var(--space-5);
+        border-bottom: var(--border-width) solid var(--line);
+    }
+
+    // the chips are the legend of the chart, so the box holding them is as wide as they need
+    &__picker {
+        flex: 1 1 320px;
+    }
+
+    &__foot {
+        padding: 10px var(--space-5);
+        font-size: var(--text-xs);
         color: var(--text-muted);
+        border-top: var(--border-width) solid var(--line);
+    }
+
+    &__count {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .chart-canvas {
+        margin: var(--space-5);
     }
 }
 
-// The release analysis reads eyebrow → the tabs that pick a line → the release being read. With a
-// single line there is nothing to pick, and the head moves up under the eyebrow.
-.tabs--series {
-    margin-top: var(--space-3);
+// In the panel head the field is not a field: the chips are what is in the chart, and what is left of
+// the box is the one dashed slot another line is added in. So the border moves off the control and
+// onto that slot, which is the only part of it that is an invitation.
+.chart-panel__picker.combobox {
+    .combobox__control {
+        padding: 0;
+        background: none;
+        border: 0;
+        border-radius: 0;
 
-    &:not([hidden]) + .release-head {
-        margin-top: var(--space-5);
+        &:focus-within {
+            box-shadow: none;
+        }
+    }
+
+    .combobox__input {
+        flex: 0 1 12rem;
+        padding: 4px var(--space-2);
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        border: var(--border-width) dashed var(--line-strong);
+        border-radius: var(--radius-sm);
+        transition:
+            border-color var(--transition),
+            box-shadow var(--transition);
+
+        &:focus {
+            border-style: solid;
+            border-color: var(--brand);
+            box-shadow: var(--focus-ring);
+        }
+    }
+}
+
+// The release analysis reads: the lines that can be read, the release picked out of one of them, and
+// then the release. The tabs and what picks a release share the rail, because both of them choose
+// what the figures below show.
+.release {
+    &__rail {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3) var(--space-5);
+        align-items: flex-end;
+        justify-content: space-between;
+        border-bottom: var(--border-width) solid var(--line);
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+        align-items: center;
+        padding-bottom: var(--space-2);
+
+        .fas {
+            font-size: 11px;
+            color: var(--text-faint);
+        }
+    }
+
+    // where the repository being read is read on github.com
+    &__link {
+        font-size: 13px;
+        color: var(--text-faint);
+
+        &:hover {
+            color: var(--text-heading);
+        }
+    }
+}
+
+// The tabs sit on the rail rather than under a heading - with a single line there is nothing to pick
+// and they are not rendered at all, which is what the rail is left holding.
+//
+// A chart of fifty lines is fifty tabs, and they scroll rather than wrap: the rail is one row, and the
+// controls sharing it belong on its right end whatever is to the left of them.
+.tabs--series {
+    flex: 1 1 auto;
+    gap: var(--space-4);
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    border-bottom: 0;
+
+    .tab {
+        flex: 0 0 auto;
     }
 }
 

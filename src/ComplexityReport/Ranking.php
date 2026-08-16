@@ -67,6 +67,46 @@ enum Ranking: string
     }
 
     /**
+     * The three measured columns of the ranking table, in the order this ranking prints them - whatever
+     * it sorts by comes first, so the order the rows are in is readable off the rows themselves.
+     *
+     * `key` is which figure a cell holds, `label` what its header says. A header cell is one column of a
+     * dense row and has room for a word, which is why the short ones are spelled out in
+     * {@see self::legend()} under the table rather than in the heading itself.
+     *
+     * @return list<array{key: string, label: string}>
+     */
+    public function columns(): array
+    {
+        $stars = ['key' => 'stars', 'label' => 'Stars'];
+        $complexity = ['key' => 'complexity', 'label' => 'Ø'];
+        $linesOfCode = ['key' => 'loc', 'label' => 'LOC'];
+        $evolution = ['key' => 'evolution', 'label' => 'Since'];
+
+        return match ($this) {
+            self::Stars => [$stars, $complexity, $evolution],
+            self::Complexity => [$complexity, $linesOfCode, $evolution],
+            self::Size => [$linesOfCode, ['key' => 'releases', 'label' => 'Releases'], $stars],
+            self::Growth => [['key' => 'growth', 'label' => '12M'], $complexity, $stars],
+        };
+    }
+
+    /**
+     * What those columns hold. A header cell has room for a word and no more, so `Ø`, `LOC` and `12M`
+     * are spelled out under the table rather than in a heading that would wrap - the caption says what
+     * the rows are ordered by, this says what is being read in them.
+     */
+    public function legend(): string
+    {
+        return match ($this) {
+            self::Stars => 'Ø is the average cyclomatic complexity of the latest analysed release; the last column is how it moved since the first one.',
+            self::Complexity => 'Ø is the average cyclomatic complexity of the latest analysed release and LOC its size; the last column is how the average moved since the first release.',
+            self::Size => 'LOC is the size of the latest analysed release as phploc counts it, next to how many releases were measured and how many stars the repository carries.',
+            self::Growth => '12M is how the average complexity moved within the last twelve months, Ø where it stands after that.',
+        };
+    }
+
+    /**
      * @param list<RankedRepository> $repositories
      *
      * @return list<RankedRepository>

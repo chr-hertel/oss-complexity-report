@@ -44,20 +44,9 @@ const METRICS = [
     { name: 'loc', key: 'loc', label: 'Lines of Code', short: count },
 ];
 const day = (value) => moment(value, 'YYYY-MM-DD').format('LL');
-const dot = () => element('span', 'release-head__dot', '·');
 
 // the star count of the rankings, shortened the way the `stars` twig filter shortens it
-function stars(total) {
-    const node = element('span', 'metric metric--star');
-
-    node.title = `${count(total)} stars on GitHub`;
-    node.append(
-        element('i', 'fas fa-star'),
-        element('span', null, total < 1000 ? String(total) : `${(total / 1000).toFixed(1).replace(/\.0$/, '')}k`),
-    );
-
-    return node;
-}
+const stars = (total) => (total < 1000 ? String(total) : `${(total / 1000).toFixed(1).replace(/\.0$/, '')}k`);
 
 // complexity going down is an improvement, going up is a regression
 const tone = (value) => (Math.abs(value) < 0.005 ? 'flat' : value < 0 ? 'good' : 'bad');
@@ -84,14 +73,22 @@ function trend(value, digits, label) {
  * long as the rule stays this small - four numbers and the band above the last of them.
  */
 const LEVELS = [
-    [10, 'simple'],
-    [20, 'moderate'],
-    [50, 'complex'],
+    [10, 'simple', '1–10'],
+    [20, 'moderate', '11–20'],
+    [50, 'complex', '21–50'],
 ];
-const level = (value) => LEVELS.find(([limit]) => value <= limit)?.[1] ?? 'untestable';
+const UNTESTABLE = ['untestable', '> 50'];
+const level = (value) => LEVELS.find(([limit]) => value <= limit)?.slice(1) ?? UNTESTABLE;
 
-// a measured complexity carrying the dot of its band, the way the cards of the start page carry it
-const complexity = (value) => element('span', `level level--${level(value)}`, decimal(value, 2));
+// a measured complexity carrying the dot of its band, the way the rows of the start page carry it
+const complexity = (value) => element('span', `level level--${level(value)[0]}`, decimal(value, 2));
+
+// where that complexity stands, said in words - the note under the figure it belongs to
+function band(value) {
+    const [name, range] = level(value);
+
+    return element('span', `level level--${name}`, `${name} · ${range}`);
+}
 
 function row(label, value, hint) {
     const node = element('div', 'analysis__row');
@@ -117,21 +114,43 @@ function group(title, rows) {
     return node;
 }
 
+/*
+ * One of the four figures a release comes down to, above the panel spelling it out. The note under a
+ * value is what makes it a reading rather than a number: where a complexity stands on the scale, which
+ * direction is the good one, what a size grew by, when the measuring started.
+ */
+function headline(label, value, note, tone) {
+    const node = element('div', 'headline-figures__cell');
+    const figure = element('div', `headline-figures__value${tone ? ` headline-figures__value--${tone}` : ''}`);
+
+    figure.append(value instanceof Node ? value : element('span', null, String(value)));
+    node.append(element('div', 'headline-figures__label', label), figure);
+
+    if (note) {
+        const caption = element('div', 'headline-figures__note');
+
+        caption.append(note instanceof Node ? note : element('span', null, String(note)));
+        node.append(caption);
+    }
+
+    return node;
+}
+
 export default class extends Controller {
     static targets = [
         'headline',
         'headlineLink',
         'canvas',
+        'count',
         'resetZoom',
         'select',
         'metric',
         'release',
         'releaseTabs',
         'releasePanel',
-        'releaseRepository',
-        'releaseName',
-        'releaseMeta',
+        'releaseLink',
         'releaseSelect',
+        'headlineFigures',
         'analysis',
         'raw',
         'rawTitle',
@@ -196,19 +215,13 @@ export default class extends Controller {
                     this.canvasTarget.style.cursor = elements.length > 0 ? 'pointer' : 'default';
                 },
                 plugins: {
-                    legend: {
-                        position: 'bottom',
-                        align: 'start',
-                        labels: {
-                            boxWidth: 8,
-                            boxHeight: 8,
-                            usePointStyle: true,
-                            pointStyle: 'rectRounded',
-                            color: TICK,
-                            font: { family: MONO, size: 11 },
-                            padding: 16,
-                        },
-                    },
+                    /*
+                     * The chips on the top edge of the panel are the legend: a line per chip, in the
+                     * colour it is drawn in, and they are there whether the chart holds five lines or
+                     * fifty. A second one under the chart would say the same thing twice and take the
+                     * height the chart is drawn in to do it.
+                     */
+                    legend: { display: false },
                     tooltip: {
                         backgroundColor: INK,
                         padding: 10,
@@ -358,15 +371,29 @@ export default class extends Controller {
             ...stroke(index),
         }));
 
-        // A legend of fifty entries is not a legend, it is the page - and it would take the height the
-        // chart is drawn in. The chips above the chart say the same thing in the same colours and stay
-        // one line per row, so past a palette they are the legend.
-        this.chart.options.plugins.legend.display = graphs.length <= SERIES_COLORS.length;
         this.chart.update();
         this.reflectZoom();
 
         this.renderHeadline(slugs);
+        this.renderCount(graphs);
         this.renderTabs(graphs);
+    }
+
+    /**
+     * What the chart is made of, on the strip under it - which is the one place the page counts what it
+     * drew rather than what it was opened with, since a line can be added and taken out without it.
+     */
+    renderCount(graphs) {
+        if (!this.hasCountTarget) {
+            return;
+        }
+
+        const releases = graphs.reduce((total, graph) => total + graph.tags.length, 0);
+
+        this.countTarget.textContent = [
+            `${count(graphs.length)} ${1 === graphs.length ? 'repository' : 'repositories'}`,
+            `${count(releases)} ${1 === releases ? 'release' : 'releases'}`,
+        ].join(' · ');
     }
 
     /**
@@ -500,6 +527,15 @@ export default class extends Controller {
         });
 
         this.release = graph;
+
+        // where the repository being read is read on github.com - the headline used to carry this link,
+        // and the release rail is where what is being read is now said
+        if (this.hasReleaseLinkTarget) {
+            this.releaseLinkTarget.href = graph.url;
+            this.releaseLinkTarget.title = graph.url.replace('https://', '');
+            this.releaseLinkTarget.setAttribute('aria-label', `${graph.name} on GitHub`);
+        }
+
         this.releaseSelectTarget.replaceChildren();
 
         graph.tags.forEach((tag, index) => {
@@ -525,64 +561,48 @@ export default class extends Controller {
         const first = tags[0];
 
         this.releaseSelectTarget.value = String(index);
-        this.releaseNameTarget.textContent = tag.name;
 
-        // where the release is read on github.com - the name of the repository is its address there
-        this.releaseRepositoryTarget.href = this.release.url;
-        this.releaseRepositoryTarget.title = this.release.url.replace('https://', '');
-        this.releaseRepositoryTarget.replaceChildren(
-            element('span', null, this.release.name),
-            element('i', 'fas fa-arrow-up-right-from-square'),
-        );
+        const lowest = tags.reduce((left, right) => (right.y < left.y ? right : left));
+        const highest = tags.reduce((left, right) => (right.y > left.y ? right : left));
+        const step = previous ? Math.round((tag.y - previous.y) * 100) / 100 : 0;
+        const grew = previous ? tag.loc - previous.loc : 0;
 
         /*
-         * The date a release carries is the day it was tagged, not the day the report measured it - the
-         * measurement happened whenever the repository was submitted or a nightly scan picked the release
-         * up, which is not what anyone reading a release is after.
+         * What the release comes down to, before the panel below spells it out. The date it carries is
+         * the day it was tagged, not the day the report measured it - the measurement happened whenever
+         * the repository was submitted or a nightly scan picked the release up, which is not what anyone
+         * reading a release is after.
          */
-        this.releaseMetaTarget.replaceChildren(element('span', null, `Released on ${day(tag.date)}`));
-
-        if (previous) {
-            this.releaseMetaTarget.append(
-                dot(),
-                element('span', null, 'Ø complexity'),
-                trend(Math.round((tag.y - previous.y) * 100) / 100, 2, `vs ${previous.name}`),
-            );
-        }
-
-        // what the repository behind the line is, next to the release being read from it
-        this.releaseMetaTarget.append(
-            dot(),
-            stars(this.release.stars),
-            dot(),
-            element('span', null, `First release ${day(first.date)}`),
+        this.headlineFiguresTarget.replaceChildren(
+            headline('Ø complexity', decimal(tag.y, 2), band(tag.y)),
+            previous
+                ? headline(`vs ${previous.name}`, signed(step, 2), 'down is an improvement', tone(step))
+                : headline('vs the release before', '–', 'nothing was measured before it'),
+            headline(
+                'Lines of code',
+                count(tag.loc),
+                previous ? `${signed(grew)} · ${share(grew, previous.loc) ?? '–'}` : 'as phploc counts them',
+            ),
+            headline('Analysed releases', count(tags.length), `first one ${day(first.date)}`),
         );
 
-        const complexities = tags.map((entry) => entry.y);
-
         const groups = [
-            group('Release', [
+            group('This release', [
                 row('Released', day(tag.date)),
-                row('Lines of code (LOC)', count(tag.loc)),
-                row('Ø cyclomatic complexity', complexity(tag.y)),
+                row('Lines of code', count(tag.loc)),
+                row('Ø complexity', complexity(tag.y)),
             ]),
-            previous
-                ? group(`Compared to ${previous.name}`, [
-                      row('Lines of code', signed(tag.loc - previous.loc), share(tag.loc - previous.loc, previous.loc)),
-                      row('Ø complexity', trend(Math.round((tag.y - previous.y) * 100) / 100, 2)),
-                  ])
-                : null,
             tag !== first
                 ? group(`Since ${first.name}`, [
                       row('Lines of code', signed(tag.loc - first.loc), share(tag.loc - first.loc, first.loc)),
                       row('Ø complexity', trend(Math.round((tag.y - first.y) * 100) / 100, 2)),
                   ])
                 : null,
-            // the first release is in the head, above every group - it says what the repository is
+            // where this release stands among the others, and what the repository behind them is
             group(`All ${tags.length} releases`, [
-                row('Analysed releases', count(tags.length)),
-                row('Lowest Ø complexity', complexity(Math.min(...complexities))),
-                row('Highest Ø complexity', complexity(Math.max(...complexities))),
+                row('Lowest Ø complexity', complexity(lowest.y), lowest.name),
+                row('Highest Ø complexity', complexity(highest.y), highest.name),
+                row('Stars on GitHub', stars(this.release.stars)),
             ]),
         ];
 

@@ -57,6 +57,19 @@ final readonly class ChartSelection
     }
 
     /**
+     * How many releases the chart is drawn from, across every line in it - what the strip under the
+     * chart says it is made of, next to how many lines that is. The browser recounts it whenever a line
+     * is added or taken out, so this is only what the page opens on.
+     */
+    public function getReleaseCount(): int
+    {
+        return array_sum(array_map(
+            static fn (Repository $repository) => $repository->getReleaseCount(),
+            $this->getSeries(),
+        ));
+    }
+
+    /**
      * Everything that can be picked, what is drawn first: the position of an option is the colour of its
      * line, so the repositories the page was opened with keep the order they were asked for.
      *
