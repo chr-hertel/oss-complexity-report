@@ -50,6 +50,20 @@ enum TrendWindow: string
     }
 
     /**
+     * The window said in passing rather than named: "PHP open source got slightly less branchy
+     * <phrase>", which is the sentence the hero opens with. {@see self::title()} is the label of it.
+     */
+    public function phrase(): string
+    {
+        return match ($this) {
+            self::YearToDate => 'this year',
+            self::TwelveMonths => 'in the last 12 months',
+            self::FiveYears => 'in the last five years',
+            self::AllTime => 'since the first release of every library',
+        };
+    }
+
+    /**
      * When the window opens - `null` for all time, which starts at the first release of every library
      * rather than at a date they all share.
      */

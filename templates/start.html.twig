@@ -1,175 +1,135 @@
 {% extends 'base.html.twig' %}
 
 {#
- # The metrics under a card follow the ranking it is shown in: whatever the tab sorts by comes first,
- # so the order the cards are in is readable off the cards themselves.
+ # One measured figure of a ranking row. Which three a table prints, and in which order, is
+ # `Ranking::columns()` - whatever the tab sorts by comes first, so the order the rows are in is
+ # readable off the rows themselves.
  #}
-{% macro metrics(ranked, ranking) %}
-    {% set stars %}
-        <span class="metric metric--star" title="{{ ranked.repository.stars }} stars on GitHub">
+{% macro figure(ranked, key) %}
+    {% if key == 'stars' %}
+        <span class="ranking-table__cell" title="{{ ranked.repository.stars|number_format }} stars on GitHub">
             <i class="fas fa-star"></i>{{ ranked.repository.stars|stars }}
         </span>
-    {% endset %}
-    {#
-     # The dot says which band of the footer scale this average falls into, and it stands where the Ø
-     # stood: a metric leads with one glyph, and on a card there is room for one - the title says in
-     # words what the dot means and that the number is an average.
-     #}
-    {% set complexity %}
+    {% elseif key == 'complexity' %}
+        {#
+         # The dot says which band of the scale below this average falls into, and it stands where the Ø
+         # of the column header stands: the header names the metric once, the dot places every number
+         # in it.
+         #}
         {% set level = ranked.complexity|complexity_level %}
-        <span class="metric level level--{{ level.value }}"
+        <span class="ranking-table__cell ranking-table__cell--strong level level--{{ level.value }}"
               title="Average cyclomatic complexity of the latest analysed release - {{ level.range }}: {{ level.risk|lower }}">
             {{- ranked.complexity|number_format(2) -}}
         </span>
-    {% endset %}
-    {% set linesOfCode %}
-        <span class="metric" title="{{ ranked.linesOfCode|number_format }} lines of code in the latest analysed release">
-            <span class="metric__label">LOC</span>{{ ranked.linesOfCode|compact_number }}
+    {% elseif key == 'loc' %}
+        <span class="ranking-table__cell" title="{{ ranked.linesOfCode|number_format }} lines of code in the latest analysed release">
+            {{ ranked.linesOfCode|compact_number }}
         </span>
-    {% endset %}
-    {% set releases %}
-        <span class="metric" title="Releases analysed so far">
-            <span class="metric__label">RELEASES</span>{{ ranked.releaseCount }}
+    {% elseif key == 'releases' %}
+        <span class="ranking-table__cell" title="Releases analysed so far">{{ ranked.releaseCount }}</span>
+    {% elseif key == 'evolution' %}
+        <span class="ranking-table__cell ranking-table__cell--{{ ranked.evolution|trend_tone }}"
+              title="Change in average complexity since {{ ranked.firstRelease }} ({{ ranked.firstReleased|date('F Y') }}) - down is an improvement">
+            {{ ranked.evolution|signed_percent(false) }}
         </span>
-    {% endset %}
-    {% set evolution %}
-        <span class="metric metric--{{ ranked.evolution|trend_tone }}"
-              title="Change in average complexity since {{ ranked.firstRelease }} - down is an improvement">
-            <span class="metric__label">since {{ ranked.firstReleased|date('Y') }}</span>{{ ranked.evolution|signed_percent }}
-        </span>
-    {% endset %}
-
-    {% set growth %}
-        <span class="metric metric--{{ ranked.recentEvolution|trend_tone }}"
-              title="Change in average complexity within the last 12 months - measured against the release it stood at back then">
-            <span class="metric__label">12M</span>{{ ranked.recentEvolution|signed_percent }}
-        </span>
-    {% endset %}
-
-    {% if ranking == 'stars' %}
-        {{ stars }}{{ complexity }}{{ evolution }}
-    {% elseif ranking == 'complexity' %}
-        {{ complexity }}{{ linesOfCode }}{{ evolution }}
-    {% elseif ranking == 'size' %}
-        {{ linesOfCode }}{{ releases }}{{ stars }}
     {% else %}
-        {{ growth }}{{ complexity }}{{ stars }}
+        <span class="ranking-table__cell ranking-table__cell--{{ ranked.recentEvolution|trend_tone }}"
+              title="Change in average complexity within the last 12 months - measured against the release it stood at back then">
+            {{ ranked.recentEvolution|signed_percent(false) }}
+        </span>
     {% endif %}
 {% endmacro %}
 
 {#
- # The tag the three lists closing the page are built from: a name and the one thing said about it,
- # joined into one pill. What the dark half carries is all that differs between them - a count, a
- # version, a state - so they are read the same way.
+ # A repository as one line of the ranking: where it stands, what it is called, what it says in
+ # numbers, and the way out to github.com. The cards this replaces gave every repository a box of its
+ # own, which read as nine things rather than as an order.
  #}
-{% macro pill(name, value, url, title, state = false) %}
-    <a class="pill" href="{{ url }}" title="{{ title }}">
-        <span class="pill__name">{{ name }}</span>
-        {% if value is not empty %}
-            <span class="pill__value{{ state ? ' pill__value--state' }}">{{ value }}</span>
-        {% endif %}
-    </a>
-{% endmacro %}
-
-{#
- # Owner above name on every card, the way github.com reads them - `symfony/symfony` saying its name
- # twice is what that repository is called, and dropping the line for it only left the head empty.
- #}
-{% macro card(ranked, ranking, rank) %}
+{% macro row(ranked, ranking, rank) %}
     {% set repository = ranked.repository %}
-    <div class="repo-card">
-        <div class="repo-card__body">
-            <div class="repo-card__head">
-                <span class="repo-card__rank">{{ rank < 10 ? '0' }}{{ rank }}</span>
-                <span class="repo-card__vendor">{{ repository.organization.login }}</span>
-            </div>
-            <h3 class="repo-card__title">
-                <a href="{{ path('chart', {'repositories': repository.name}) }}">
-                    {{ repository.shortName }}
-                </a>
-            </h3>
-            <p class="repo-card__text">{{ repository.description }}</p>
-        </div>
-        <div class="repo-card__meta">
-            {{ _self.metrics(ranked, ranking) }}
-            <a href="{{ repository.url }}" target="_blank" rel="noreferrer" class="repo-card__github"
-               title="{{ repository.name }} on GitHub">
-                <i class="fab fa-github"></i>
-            </a>
-        </div>
+    <div class="ranking-table__row">
+        <span class="ranking-table__rank">{{ rank < 10 ? '0' }}{{ rank }}</span>
+        <span class="ranking-table__repository">
+            <a class="ranking-table__name" href="{{ path('chart', {'repositories': repository.name}) }}">{{ repository.name }}</a>
+            <span class="ranking-table__description">{{ repository.description }}</span>
+        </span>
+        {% for column in ranking.columns %}
+            {{ _self.figure(ranked, column.key) }}
+        {% endfor %}
+        <a class="ranking-table__github" href="{{ repository.url }}" target="_blank" rel="noreferrer"
+           title="{{ repository.name }} on GitHub" aria-label="{{ repository.name }} on GitHub">
+            <i class="fab fa-github"></i>
+        </a>
     </div>
 {% endmacro %}
 
 {% block content %}
     <main class="page">
         {#
-         # The opening states what the report is and how much of it there is: the same figures that
-         # used to close the page, on the brand ground, next to the mark it is stamped with.
+         # The screen opens on the figure rather than on the wordmark - the mark and the name are in the
+         # band above, and saying them again is a screen introducing itself instead of saying something.
+         # Which leaves the page without a visible heading, so it carries one for everything that reads
+         # a document rather than looks at it.
          #}
+        <h1 class="visually-hidden">
+            Complexity Report - how the cyclomatic complexity of PHP open source software evolved over time
+        </h1>
+
         <header class="hero">
-            <div class="wrap hero__inner">
-                <div class="hero__intro">
-                    <div class="logo logo--hero">
-                        <div class="logo__kicker">Open Source PHP Software</div>
-                        <h1 class="logo__title">Complexity Report</h1>
-                    </div>
-                    <p class="hero__subline">
-                        How the cyclomatic complexity of PHP open source software evolved over time - one line
-                        per release, measured with
-                        <a href="https://github.com/sebastianbergmann/phploc" target="_blank" rel="noreferrer">phploc</a>.
-                    </p>
-                    <dl class="stats stats--hero">
-                        <div>
-                            <dt class="stats__label">Repositories</dt>
-                            <dd class="stats__value">{{ statistics.repositoryCount|number_format }}</dd>
-                        </div>
-                        <div>
-                            <dt class="stats__label">Releases</dt>
-                            <dd class="stats__value">{{ statistics.tagCount|number_format }}</dd>
-                        </div>
-                        <div>
-                            <dt class="stats__label">Lines of code</dt>
-                            <dd class="stats__value">{{ statistics.linesOfCode|number_format }}</dd>
-                        </div>
-                    </dl>
-                </div>
+            {% if hasData %}
                 {#
-                 # The report in one number: what the average complexity of everything it tracks did
-                 # within the chosen time frame. All four are rendered, so switching one on is a matter
-                 # of hiding the others - without javascript the year to date figure is the one that
-                 # stands. Nothing measured yet means nothing to roll up, and the mark closes the row
-                 # like it did before.
+                 # The whole report in one number, over the line it took to get there. All four time
+                 # frames are rendered, so picking one hides the others - without javascript the year to
+                 # date figure is the one that stands, and the line under it is the one it was measured
+                 # from.
                  #}
-                {% if hasData %}
-                    <div class="hero-trend" {{ stimulus_controller('trend') }}>
-                        <div class="hero-trend__label">Average complexity</div>
-                        {% for trend in trends %}
-                            <div class="hero-trend__figure" role="tabpanel" id="trend-{{ trend.window.value }}"
-                                 aria-labelledby="trend-tab-{{ trend.window.value }}"
-                                 data-trend-target="panel" {{ not loop.first ? 'hidden' }}>
-                                {% if trend.hasData %}
-                                    <div class="hero-trend__value hero-trend__value--{{ trend.change|trend_tone }}">
-                                        {{ trend.change|signed_percent }}
-                                    </div>
-                                    <p class="hero-trend__caption">
-                                        Ø {{ trend.from|number_format(2) }} → {{ trend.to|number_format(2) }}
-                                        across {{ trend.repositoryCount|number_format }}
-                                        {{ trend.repositoryCount == 1 ? 'library' : 'libraries' }}
-                                        <span class="hero-trend__since">
-                                            {{ trend.since ? 'since %s'|format(trend.since|date('F j, Y')) : 'since their own first release' }}
-                                        </span>
-                                    </p>
-                                {% else %}
-                                    <div class="hero-trend__value hero-trend__value--flat">–</div>
-                                    <p class="hero-trend__caption">
-                                        Nothing was measured before this time frame opened.
-                                    </p>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                        <div class="hero-trend__windows" role="tablist" aria-label="Time frame">
+                <div class="wrap hero__inner" {{ stimulus_controller('trend') }}
+                     data-trend-series-value="{{ trends|map(trend => {
+                         window: trend.window.value,
+                         points: trend.series|map(point => {x: point.at|date('Y-m-d'), y: point.complexity}),
+                     })|json_encode|e('html_attr') }}">
+                    <div class="hero__top">
+                        <div class="hero__reading">
                             {% for trend in trends %}
-                                <button type="button" class="hero-trend__window" role="tab"
+                                <div class="hero__panel" role="tabpanel" id="trend-{{ trend.window.value }}"
+                                     aria-labelledby="trend-tab-{{ trend.window.value }}"
+                                     data-trend-target="panel" {{ not loop.first ? 'hidden' }}>
+                                    <div class="hero__label">Average complexity · {{ trend.window.title|lower }}</div>
+                                    {% if trend.hasData %}
+                                        <div class="hero__numbers">
+                                            <div class="hero__value hero__value--{{ trend.change|trend_tone }}">
+                                                {{ trend.change|signed_percent(false) }}
+                                            </div>
+                                            <div class="hero__delta">
+                                                Ø {{ trend.from|number_format(2) }} → {{ trend.to|number_format(2) }}
+                                            </div>
+                                        </div>
+                                        {#
+                                         # The figure said as a sentence, which is what makes it a
+                                         # reading rather than a readout: what moved, over what, and out
+                                         # of how much.
+                                         #}
+                                        <p class="hero__subline">
+                                            PHP open source {{ trend.movement }} {{ trend.window.phrase }} -
+                                            across {{ trend.repositoryCount|number_format }}
+                                            {{ trend.repositoryCount == 1 ? 'library' : 'libraries' }} and
+                                            {{ statistics.tagCount|number_format }} analysed releases, measured with
+                                            <a href="https://github.com/sebastianbergmann/phploc" target="_blank" rel="noreferrer">phploc</a>.
+                                        </p>
+                                    {% else %}
+                                        <div class="hero__numbers">
+                                            <div class="hero__value hero__value--flat">–</div>
+                                        </div>
+                                        <p class="hero__subline">
+                                            Nothing was measured before this time frame opened.
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="hero__windows" role="tablist" aria-label="Time frame">
+                            {% for trend in trends %}
+                                <button type="button" class="hero__window" role="tab"
                                         id="trend-tab-{{ trend.window.value }}"
                                         aria-controls="trend-{{ trend.window.value }}"
                                         aria-selected="{{ loop.first ? 'true' : 'false' }}"
@@ -180,54 +140,46 @@
                             {% endfor %}
                         </div>
                     </div>
-                {% else %}
-                    {{ include('mark.html.twig', {size: 168, ground: false, class: 'hero__mark'}) }}
-                {% endif %}
-            </div>
-        </header>
-
-        <div class="band">
-            <div class="wrap submit-band">
-                {#
-                 # The label announces the box before it is reached, the hint keeps reading under it:
-                 # what may be typed in only matters once the box is there.
-                 #}
-                <div class="eyebrow submit-band__label">Find or add a repository</div>
-                {#
-                 # One box for both jobs. Picking a suggestion opens that repository, and anything the
-                 # report does not carry yet is posted to `submit`, which queues it and opens its page.
-                 # Without javascript the form still posts whatever was typed, which is what it did
-                 # before the suggestions existed.
-                 #}
-                <form action="{{ path('submit') }}" method="post" class="submit-form"
-                      {{ stimulus_controller('search', { url: path('search') }) }}>
-                    <input type="hidden" name="_token" value="{{ csrf_token('submit') }}"
-                           data-controller="csrf-protection">
-                    <div class="combobox">
-                        <input type="text" name="repository" class="field field--lg" required
-                               placeholder="Search the report, or paste owner/repository"
-                               aria-label="Search or add a GitHub repository"
-                               autocomplete="off" autocapitalize="off" spellcheck="false"
-                               role="combobox" aria-expanded="false" aria-autocomplete="list"
-                               aria-controls="search-suggestions"
-                               data-search-target="input"
-                               data-action="input->search#query keydown->search#navigate focus->search#query blur->search#close">
-                        <ul class="combobox__menu" id="search-suggestions" role="listbox"
-                            aria-label="Repositories" data-search-target="menu" hidden></ul>
+                    {#
+                     # The same figure between its two ends. It is decoration for anything that cannot
+                     # see it - the sentence above says what it does - so it is hidden from the reading
+                     # order rather than described twice.
+                     #}
+                    <div class="hero__chart" aria-hidden="true">
+                        <canvas data-trend-target="canvas"></canvas>
                     </div>
-                    <button type="submit" class="btn btn--lg">Add repository</button>
-                </form>
-                {% for label, messages in app.flashes(['success', 'danger']) %}
-                    {% for message in messages %}
-                        <div class="alert alert--{{ label }}">{{ message }}</div>
-                    {% endfor %}
-                {% endfor %}
-                <p class="submit-band__hint">
-                    Everything the report carries, plus every public repository on GitHub that is mostly
-                    written in PHP - a composer.json is not needed.
-                </p>
-            </div>
-        </div>
+                    <dl class="hero__stats">
+                        <div class="hero__stat">
+                            <dt class="hero__stat-label">Repositories</dt>
+                            <dd class="hero__stat-value">{{ statistics.repositoryCount|number_format }}</dd>
+                        </div>
+                        <div class="hero__stat">
+                            <dt class="hero__stat-label">Releases</dt>
+                            <dd class="hero__stat-value">{{ statistics.tagCount|number_format }}</dd>
+                        </div>
+                        <div class="hero__stat">
+                            <dt class="hero__stat-label">Lines of code</dt>
+                            <dd class="hero__stat-value">{{ statistics.linesOfCode|number_format }}</dd>
+                        </div>
+                        <div class="hero__stat">
+                            <dt class="hero__stat-label">Vendors</dt>
+                            <dd class="hero__stat-value">{{ statistics.organizationCount|number_format }}</dd>
+                        </div>
+                    </dl>
+                </div>
+            {% else %}
+                {# nothing measured yet is nothing to open on, so the mark stands in for the figure #}
+                <div class="wrap hero__inner hero__inner--empty">
+                    {{ include('mark.html.twig', {size: 120, ground: false, class: 'hero__mark'}) }}
+                    <p class="hero__subline">
+                        How the cyclomatic complexity of PHP open source software evolved over time - one
+                        line per release, measured with
+                        <a href="https://github.com/sebastianbergmann/phploc" target="_blank" rel="noreferrer">phploc</a>.
+                        Nothing is measured yet: the box above takes the first repository.
+                    </p>
+                </div>
+            {% endif %}
+        </header>
 
         <div class="wrap page__body">
             <section {{ stimulus_controller('rankings') }}>
@@ -236,6 +188,20 @@
                         <div class="eyebrow">Rankings</div>
                         <h2 data-rankings-target="title">{{ rankings|first.ranking.title }}</h2>
                     </div>
+                    {#
+                     # The chart opens on what is being read, so the link belongs to the ranking rather
+                     # than to the section: it is one button, and the tab it belongs to is what it draws.
+                     # A ranking that came out empty has nothing to draw, and the button says so by not
+                     # being there.
+                     #}
+                    {% if hasData and rankings|first.repositories is not empty %}
+                        <a class="btn" data-rankings-target="chart"
+                           href="{{ path('chart', {'repositories': rankings|first.repositories|map(ranked => ranked.repository.name)|join(',')}) }}">
+                            {{ rankings|first.repositories|length == 1
+                                ? 'Draw this one in the chart'
+                                : 'Draw these %d in the chart'|format(rankings|first.repositories|length) }}
+                        </a>
+                    {% endif %}
                 </div>
 
                 {% if hasData %}
@@ -245,6 +211,10 @@
                                     aria-controls="ranking-{{ entry.ranking.value }}"
                                     aria-selected="{{ loop.first ? 'true' : 'false' }}"
                                     data-rankings-target="tab" data-title="{{ entry.ranking.title }}"
+                                    data-chart-url="{{ entry.repositories is empty ? '' : path('chart', {'repositories': entry.repositories|map(ranked => ranked.repository.name)|join(',')}) }}"
+                                    data-chart-label="{{ entry.repositories|length == 1
+                                        ? 'Draw this one in the chart'
+                                        : 'Draw these %d in the chart'|format(entry.repositories|length) }}"
                                     data-action="rankings#select">
                                 {{ entry.ranking.label }}
                                 {% if entry.ranking.hint %}
@@ -259,135 +229,91 @@
                              aria-labelledby="tab-{{ entry.ranking.value }}"
                              data-rankings-target="panel" {{ not loop.first ? 'hidden' }}>
                             {#
-                             # The chart opens on what is being read, so the link belongs to the ranking
-                             # rather than to the section above it: every panel carries its own, drawn
-                             # with its own top repositories, and only the visible one can be clicked.
-                             #}
-                            <div class="ranking__intro">
-                                <p class="ranking__caption">{{ entry.ranking.caption }}</p>
-                                {% if entry.repositories is not empty %}
-                                    <a class="btn btn--secondary ranking__chart"
-                                       href="{{ path('chart', {'repositories': entry.repositories|map(ranked => ranked.repository.name)|join(',')}) }}">
-                                        Open the chart
-                                    </a>
-                                {% endif %}
-                            </div>
-                            {#
                              # A ranking can come out empty although the report has data - nothing
                              # increased within the last twelve months is a result, not a broken page.
                              #}
                             {% if entry.repositories is empty %}
                                 <p class="empty-state">Nothing the report carries got more complex within the last 12 months.</p>
                             {% else %}
-                                <div class="repo-grid">
+                                <div class="ranking-table ranking-table--{{ entry.ranking.value }}">
+                                    <div class="ranking-table__head">
+                                        <span>#</span>
+                                        <span>Repository</span>
+                                        {% for column in entry.ranking.columns %}
+                                            <span class="ranking-table__number">{{ column.label }}</span>
+                                        {% endfor %}
+                                        <span></span>
+                                    </div>
                                     {% for ranked in entry.repositories %}
-                                        {{ _self.card(ranked, entry.ranking.value, loop.index) }}
+                                        {{ _self.row(ranked, entry.ranking, loop.index) }}
                                     {% endfor %}
                                 </div>
+                                <p class="ranking__caption">
+                                    {{ entry.ranking.caption }} {{ entry.ranking.legend }}
+                                </p>
                             {% endif %}
                         </div>
                     {% endfor %}
                 {% else %}
-                    <p class="empty-state">Nothing analysed yet - submit the first repository above.</p>
+                    <p class="empty-state">Nothing analysed yet - the box above takes the first repository.</p>
                 {% endif %}
             </section>
-        </div>
-
-        {#
-         # What those numbers mean and where they come from, right after the first screen full of them
-         # and before the two quiet lists that close the page.
-         #}
-        {{ include('about.html.twig') }}
-
-        <div class="wrap page__body">
-            {#
-             # The GitHub accounts behind the repositories are a lens on the same list, not a place of
-             # their own: every one of them opens the chart with what was submitted for it. Which is
-             # why only accounts with more than one repository are listed - a single one is a link to
-             # that repository under another name.
-             #}
-            {% if vendors is not empty %}
-                <div class="vendors">
-                    <div class="eyebrow vendors__label">By vendor</div>
-                    {#
-                     # The dark half of a vendor pill is how much of the report it accounts for, which is
-                     # what they are ordered by - so the row reads as a ranking of its own.
-                     #}
-                    <div class="pill-row">
-                        {% for vendor in vendors %}
-                            {{ _self.pill(
-                                vendor.login,
-                                vendor.count,
-                                path('chart', {'repositories': vendor.repositories|join(',')}),
-                                '%d measured repositories of %s'|format(vendor.count, vendor.login)
-                            ) }}
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
 
             {#
              # What came in last, in the two ways something can: a repository somebody submitted, and a
-             # release a worker measured. The left column is the one place a repository shows up the day
-             # it was added, since the rankings only carry what has numbers - a pill says where its
-             # analysis stands as long as there is something to say about it. The right column is the
-             # other end of the same work: a repository is added once, its releases keep arriving, and a
-             # nightly scan adds them without anyone submitting anything.
+             # release a worker measured. They used to be two lists in a section of their own; read next
+             # to each other they are one line, and the accounts behind the repositories hang off its
+             # end - a lens on the same repositories, not a place of their own, so it is folded away
+             # until somebody wants it.
              #}
-            {% if latest is not empty or latestReleases is not empty %}
-                <section class="section">
-                    <div class="section-header">
-                        <div>
-                            <div class="eyebrow">Recently added</div>
-                            <h2>Latest additions</h2>
+            {% if activity is not empty or vendors is not empty %}
+                <div class="just-in" {{ stimulus_controller('disclosure') }}>
+                    {% if activity is not empty %}
+                        <span class="eyebrow just-in__label">Just in</span>
+                        <div class="pill-row">
+                            {% for entry in activity %}
+                                <a class="pill" href="{{ path('chart', {'repositories': entry.repository}) }}"
+                                   title="{{ entry.title }}">
+                                    <span class="pill__name">{{ entry.repository }}</span>
+                                    <span class="pill__value{{ entry.state ? ' pill__value--state' }}">{{ entry.value }}</span>
+                                </a>
+                            {% endfor %}
                         </div>
-                    </div>
-                    <div class="latest">
+                    {% endif %}
+                    {% if vendors is not empty %}
                         {#
-                         # The dark half of a library pill is where its analysis stands, so a pill
-                         # that is only its name is one that has its numbers - which is the majority,
-                         # and the reason the state is what gets marked rather than the other way round.
+                         # Rendered without the button and with the row open: folding it away is what
+                         # the controller does, so a browser that does not run it keeps the vendors.
                          #}
-                        {% if latest is not empty %}
-                            <div class="latest__column">
-                                <div class="eyebrow latest__label">Libraries</div>
-                                <div class="pill-row">
-                                    {% for repository in latest %}
-                                        {{ _self.pill(
-                                            repository.name,
-                                            repository.isAnalysed ? null : (repository.hasData ? 'analysing' : 'queued'),
-                                            path('chart', {'repositories': repository.name}),
-                                            repository.isAnalysed
-                                                ? '%s, submitted %s'|format(repository.name, repository.submitted|date('F j, Y'))
-                                                : '%s is waiting for a worker'|format(repository.name),
-                                            true
-                                        ) }}
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% endif %}
+                        <button type="button" class="just-in__more" aria-expanded="true" hidden
+                                aria-controls="vendor-list" data-disclosure-target="toggle"
+                                data-action="disclosure#toggle">
+                            {{ vendors|length }} {{ vendors|length == 1 ? 'vendor' : 'vendors' }}
+                        </button>
                         {#
-                         # A release pill is the repository and the version measured for it, and opens
-                         # the chart of that repository - which is where the release is a point.
+                         # The dark half of a vendor pill is how much of the report it accounts for,
+                         # which is what they are ordered by - so the row reads as a ranking of its own.
                          #}
-                        {% if latestReleases is not empty %}
-                            <div class="latest__column">
-                                <div class="eyebrow latest__label">Releases</div>
-                                <div class="pill-row">
-                                    {% for tag in latestReleases %}
-                                        {{ _self.pill(
-                                            tag.repository.name,
-                                            tag.name,
-                                            path('chart', {'repositories': tag.repository.name}),
-                                            '%s %s, tagged %s'|format(tag.repository.name, tag.name, tag.created|date('F j, Y'))
-                                        ) }}
-                                    {% endfor %}
-                                </div>
+                        <div class="just-in__vendors" id="vendor-list" data-disclosure-target="panel">
+                            <div class="pill-row">
+                                {% for vendor in vendors %}
+                                    <a class="pill" title="{{ '%d measured repositories of %s'|format(vendor.count, vendor.login) }}"
+                                       href="{{ path('chart', {'repositories': vendor.repositories|join(',')}) }}">
+                                        <span class="pill__name">{{ vendor.login }}</span>
+                                        <span class="pill__value">{{ vendor.count }}</span>
+                                    </a>
+                                {% endfor %}
                             </div>
-                        {% endif %}
-                    </div>
-                </section>
+                        </div>
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
     </main>
+
+    {#
+     # What those numbers mean closes the screen, directly above the credits - the two are read as one
+     # band. The chart does not carry it anymore: it is read once, where the report is read at a glance.
+     #}
+    {{ include('about.html.twig') }}
 {% endblock %}

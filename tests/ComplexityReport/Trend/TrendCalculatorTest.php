@@ -7,6 +7,7 @@ namespace App\Tests\ComplexityReport\Trend;
 use App\ComplexityReport\Trend\ReleasePoint;
 use App\ComplexityReport\Trend\Trend;
 use App\ComplexityReport\Trend\TrendCalculator;
+use App\ComplexityReport\Trend\TrendPoint;
 use App\ComplexityReport\Trend\TrendWindow;
 use PHPUnit\Framework\TestCase;
 
@@ -167,6 +168,71 @@ final class TrendCalculatorTest extends TestCase
         foreach ($trends as $trend) {
             self::assertFalse($trend->hasData());
         }
+    }
+
+    /**
+     * The line in the hero is the same statement as the figure over it, so it has to start and end
+     * where the figure does - anything else is a chart disagreeing with the number next to it.
+     *
+     * All time is the exception it is everywhere else: there a library is compared against its own
+     * first release rather than against a date they share, so the line opens on whichever of them was
+     * measured first instead of on the mean of all their first releases.
+     *
+     * @dataProvider windows
+     */
+    public function testTheSeriesRunsFromTheFigureToTheFigure(TrendWindow $window, float $from, float $to): void
+    {
+        $series = $this->calculate($window, self::report())->series;
+
+        self::assertNotEmpty($series);
+        self::assertSame($to, end($series)->complexity);
+
+        if (TrendWindow::AllTime !== $window) {
+            self::assertSame($from, $series[0]->complexity);
+        }
+    }
+
+    public function testTheSeriesSpansTheWindowAndEndsNow(): void
+    {
+        $series = $this->calculate(TrendWindow::FiveYears, self::report())->series;
+
+        self::assertNotEmpty($series);
+        self::assertSame('2021-07-31', $series[0]->at->format('Y-m-d'));
+        self::assertSame('2026-07-31', end($series)->at->format('Y-m-d'));
+    }
+
+    /**
+     * All time has no date the libraries share, so it opens where the oldest of them was first
+     * measured - which makes it the one window whose line is the dataset growing as much as it is the
+     * code changing. The others compare a set that does not change across the whole line.
+     */
+    public function testAllTimeStartsAtTheOldestReleaseTheReportCarries(): void
+    {
+        $series = $this->calculate(TrendWindow::AllTime, self::report())->series;
+
+        self::assertSame('2018-01-01', $series[0]->at->format('Y-m-d'));
+        // only `1` had been measured by then, at 10.0
+        self::assertSame(10.0, $series[0]->complexity);
+    }
+
+    public function testTheSeriesIsSampledInAscendingOrder(): void
+    {
+        $series = $this->calculate(TrendWindow::AllTime, self::report())->series;
+        $dates = array_map(static fn (TrendPoint $point) => $point->at->getTimestamp(), $series);
+        $sorted = $dates;
+
+        sort($sorted);
+
+        self::assertGreaterThan(2, \count($series));
+        self::assertSame($sorted, $dates);
+    }
+
+    public function testTheSeriesDoesNotCareInWhichOrderTheReleasesArrive(): void
+    {
+        self::assertEquals(
+            $this->calculate(TrendWindow::FiveYears, self::report())->series,
+            $this->calculate(TrendWindow::FiveYears, array_reverse(self::report()))->series
+        );
     }
 
     /**

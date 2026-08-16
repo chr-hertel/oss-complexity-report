@@ -116,8 +116,10 @@
     --space-8: 64px;
     --space-9: 96px;
 
-    --hero-pad-top: var(--space-9);
-    --hero-pad-bottom: var(--space-8);
+    // The hero used to be an introduction and is a reading now - it opens on the figure rather than on
+    // the wordmark, so it stands closer to the band above it than a title would have.
+    --hero-pad-top: 56px;
+    --hero-pad-bottom: 40px;
 
     --gutter: var(--space-6);
     --container: 1200px;

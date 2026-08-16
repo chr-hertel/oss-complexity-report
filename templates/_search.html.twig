@@ -1,0 +1,29 @@
+{#
+ # The one box the report is navigated by, in the top band of every screen. It does both jobs it always
+ # did - it finds what the report carries, and it takes anything that identifies a repository on
+ # github.com so it can be submitted - it just does them from where every screen can reach it rather
+ # than from a band of its own on the start page.
+ #
+ # Without javascript there are no suggestions and no shortcut, and the box is a form that posts what
+ # was typed to `submit`, which is what it was before the suggestions existed.
+ #}
+<form action="{{ path('submit') }}" method="post" class="site-search"
+      {{ stimulus_controller('search', { url: path('search') }) }}>
+    <input type="hidden" name="_token" value="{{ csrf_token('submit') }}" data-controller="csrf-protection">
+    <div class="combobox">
+        <div class="site-search__control">
+            {# what the key does is drawn on the key, so the shortcut is not something to be told about #}
+            <span class="site-search__key" aria-hidden="true">/</span>
+            <input type="text" name="repository" class="site-search__input" required
+                   placeholder="Search the report, or paste owner/repository"
+                   aria-label="Search or add a GitHub repository"
+                   autocomplete="off" autocapitalize="off" spellcheck="false"
+                   role="combobox" aria-expanded="false" aria-autocomplete="list"
+                   aria-controls="search-suggestions"
+                   data-search-target="input"
+                   data-action="input->search#query keydown->search#navigate focus->search#query blur->search#close">
+        </div>
+        <ul class="combobox__menu" id="search-suggestions" role="listbox"
+            aria-label="Repositories" data-search-target="menu" hidden></ul>
+    </div>
+</form>

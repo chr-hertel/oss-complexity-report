@@ -17,33 +17,61 @@
     </head>
     <body>
         {#
-         # The top band of every page: the mark next to the wordmark on the left, a mono nav on the
-         # right. Two screens, so two items - the report at a glance, and the chart it is read in. The
-         # first one is not called after what it lists: the chart lists repositories too, and only the
-         # start screen carries the trend, the search and the queue alongside them.
+         # The top band of every page: the mark next to the wordmark on the left, the box the report is
+         # searched and added to in the middle, a mono nav on the right. Two screens, so two items - the
+         # report at a glance, and the chart it is read in. The first one is not called after what it
+         # lists: the chart lists repositories too, and only the start screen carries the trend and the
+         # rankings alongside them.
+         #
+         # The box stands here rather than in a band of its own on the start page, because it is how
+         # every screen is left: a repository is looked up from wherever it was thought of.
          #}
         {% set route = app.request.attributes.get('_route') %}
         <header class="site-header">
             <div class="wrap site-header__inner">
                 <a class="site-header__brand" href="{{ path('start') }}">
-                    {{ include('mark.html.twig', {size: 30}) }}
+                    {{ include('mark.html.twig', {size: 28}) }}
                     <span class="logo">
                         <span class="logo__title">Complexity Report</span>
                         <span class="logo__kicker">Open Source PHP Software</span>
                     </span>
                 </a>
-                <div class="site-header__right">
-                    <nav class="site-header__nav">
-                        <a class="site-header__link {{ route == 'start' ? 'is-active' }}"
-                           href="{{ path('start') }}">Overview</a>
-                        <a class="site-header__link {{ route == 'chart' ? 'is-active' }}"
-                           href="{{ path('chart') }}">Chart</a>
-                        <a class="site-header__link" target="_blank" rel="noreferrer"
-                           href="https://github.com/chr-hertel/oss-complexity-report">GitHub</a>
-                    </nav>
-                </div>
+                {{ include('_search.html.twig') }}
+                <nav class="site-header__nav">
+                    <a class="site-header__link {{ route == 'start' ? 'is-active' }}"
+                       href="{{ path('start') }}">Overview</a>
+                    <a class="site-header__link {{ route == 'chart' ? 'is-active' }}"
+                       href="{{ path('chart') }}">Chart</a>
+                    <a class="site-header__link" target="_blank" rel="noreferrer"
+                       href="https://github.com/chr-hertel/oss-complexity-report">GitHub</a>
+                </nav>
             </div>
         </header>
+        {#
+         # What a submission was answered with. It used to stand in the band the box stood in; now that
+         # the box is in the header, its answers are directly under it - which is where someone who just
+         # pressed return is looking, on whichever screen they end up on.
+         #}
+        {#
+         # Asked for only when there can be one: reading the flash bag starts a session, and the report
+         # is read by people who never submitted anything. A cookie is what a redirect back from `submit`
+         # leaves behind, so it is what says there is something to read - and `app.flashes` answers with
+         # a key per type whether or not it holds anything, which is why the empty ones are dropped.
+         #}
+        {% set flashes = app.request.hasPreviousSession
+            ? app.flashes(['success', 'danger'])|filter(messages => messages is not empty)
+            : [] %}
+        {% if flashes is not empty %}
+            <div class="flash-band">
+                <div class="wrap">
+                    {% for label, messages in flashes %}
+                        {% for message in messages %}
+                            <div class="alert alert--{{ label }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
         {% block content %}{% endblock %}
         {#
          # The credits, and nothing else: what the report is and what its numbers are worth is

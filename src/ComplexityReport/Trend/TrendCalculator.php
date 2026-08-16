@@ -17,11 +17,22 @@ namespace App\ComplexityReport\Trend;
  *   release it stood at when the window opened. A library that has not released since simply carries
  *   its last measurement forward, which is what the chart shows for it as well.
  *
+ * The same two decisions carry {@see self::series()}, which is the figure between its two ends rather
+ * than at them - so the line the hero draws starts on `from`, ends on `to`, and is a statement about
+ * the same libraries all the way through.
+ *
  * The class is pure on purpose: it takes a list of points and the current time and returns value
  * objects, so everything about it can be tested without a database or a clock.
  */
 final readonly class TrendCalculator
 {
+    /**
+     * How many steps the line between the two ends of a window is sampled in. The hero draws it 180px
+     * tall and a few hundred wide, so this is what it can show rather than what could be computed - and
+     * a window carries one sample more than this, since both ends are on it.
+     */
+    private const int STEPS = 24;
+
     /**
      * One trend per window, in the order {@see TrendWindow::all()} declares them.
      *
@@ -96,6 +107,89 @@ final readonly class TrendCalculator
             round((($toMean - $fromMean) / $fromMean) * 100, 1),
             \count($from),
             $start,
+            $this->series($points, array_keys($baseline), $start ?? $this->earliest($baseline), $now),
         );
+    }
+
+    /**
+     * The figure of a window over time: at every sample, the mean over the libraries it compares, each
+     * of them standing at the last release it had by then.
+     *
+     * It is the same set the figure is computed over, so the line ends where the figure does. All time
+     * is the exception it is everywhere else: there a library starts at its own first release rather
+     * than at a date they share, so the line begins with the oldest of them and the rest joins it as
+     * they were first measured - which is the dataset growing as much as it is the code changing, and
+     * why the windows with a start are the ones a shape can be read off.
+     *
+     * @param list<ReleasePoint> $points
+     * @param list<int>          $participants
+     *
+     * @return list<TrendPoint>
+     */
+    private function series(array $points, array $participants, \DateTimeImmutable $start, \DateTimeImmutable $now): array
+    {
+        $taking = array_fill_keys($participants, true);
+
+        /** @var array<int, list<ReleasePoint>> $releases */
+        $releases = [];
+
+        foreach ($points as $point) {
+            if ($point->created > $now || !isset($taking[$point->repository])) {
+                continue;
+            }
+
+            $releases[$point->repository][] = $point;
+        }
+
+        foreach ($releases as $repository => $ordered) {
+            usort($ordered, static fn (ReleasePoint $left, ReleasePoint $right) => $left->created <=> $right->created);
+            $releases[$repository] = $ordered;
+        }
+
+        $span = $now->getTimestamp() - $start->getTimestamp();
+        // a window that opened today has no line to draw, only the day it is on
+        $steps = $span > 0 ? self::STEPS : 0;
+
+        // the samples ascend and so do the releases, so every library is walked once across all of them
+        // rather than once per sample - this runs on every start page the cache does not answer
+        $cursors = array_fill_keys(array_keys($releases), 0);
+        $standing = [];
+        $series = [];
+
+        for ($step = 0; $step <= $steps; ++$step) {
+            $at = $start->modify(sprintf('%+d seconds', intdiv($span * $step, max(1, $steps))));
+
+            foreach ($releases as $repository => $ordered) {
+                $cursor = $cursors[$repository];
+
+                while (isset($ordered[$cursor]) && $ordered[$cursor]->created <= $at) {
+                    $standing[$repository] = $ordered[$cursor]->averageComplexity;
+                    ++$cursor;
+                }
+
+                $cursors[$repository] = $cursor;
+            }
+
+            if ([] !== $standing) {
+                $series[] = new TrendPoint($at, round(array_sum($standing) / \count($standing), 2));
+            }
+        }
+
+        return $series;
+    }
+
+    /**
+     * Where all time starts: the first release of the library that was measured furthest back.
+     *
+     * It is only ever asked about a window that compares something - a report without a single library
+     * to compare left before this, as a trend that has no data.
+     *
+     * @param non-empty-array<int, ReleasePoint> $baseline
+     */
+    private function earliest(array $baseline): \DateTimeImmutable
+    {
+        $dates = array_map(static fn (ReleasePoint $point) => $point->created, $baseline);
+
+        return min($dates);
     }
 }

@@ -72,16 +72,23 @@ final class AppExtension extends AbstractExtension
 
     /**
      * A complexity change with its direction spelled out.
+     *
+     * The arrow is for a figure standing on its own. In a column of them every sign is already lined up
+     * under the sign above it and the colour says the direction as well, so the table drops it rather
+     * than saying the same thing three times per row.
      */
-    public function formatSignedPercent(float $value): string
+    public function formatSignedPercent(float $value, bool $arrow = true): string
     {
-        $sign = match ($this->trendTone($value)) {
-            'good' => '↓ −',
-            'bad' => '↑ +',
-            default => '→ ±',
+        $tone = $this->trendTone($value);
+        $sign = match ($tone) {
+            'good' => '−',
+            'bad' => '+',
+            default => '±',
         };
 
-        return $sign.number_format(abs($value), 1, '.', '').'%';
+        $arrows = ['good' => '↓ ', 'bad' => '↑ ', 'flat' => '→ '];
+
+        return ($arrow ? $arrows[$tone] : '').$sign.number_format(abs($value), 1, '.', '').'%';
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\ComplexityReport\Activity;
 use App\ComplexityReport\ChartSelection;
 use App\ComplexityReport\Exception\SubmissionFailed;
 use App\ComplexityReport\PhplocReport;
@@ -55,10 +56,22 @@ final class ReportController extends AbstractController
     private const int SEARCH_LIMIT = 8;
 
     /**
-     * Number of recently submitted repositories, and of recently measured releases, the start page
-     * closes with - the two lists stand next to each other, so they are the same length.
+     * How far back the strip closing the start page looks for submissions.
      */
     private const int LATEST_LIMIT = 12;
+
+    /**
+     * How far back it looks for measured releases, which is deeper than it shows on purpose: a worker
+     * measures a repository release by release, so the newest releases the report has are usually all
+     * of the same one - and the strip names a repository once.
+     */
+    private const int ACTIVITY_DEPTH = 64;
+
+    /**
+     * How many entries that strip is. It closes the page as one quiet line rather than as a section, so
+     * it is bounded by what fits on one.
+     */
+    private const int ACTIVITY_LIMIT = 8;
 
     #[Route('', name: 'start', methods: 'GET')]
     public function start(
@@ -80,8 +93,11 @@ final class ReportController extends AbstractController
             'rankings' => $rankings,
             'hasData' => [] !== $analysed,
             'vendors' => $organizationRepository->findVendors(),
-            'latest' => $repositoryRepository->findLatest(self::LATEST_LIMIT),
-            'latestReleases' => $tagRepository->findLatest(self::LATEST_LIMIT),
+            'activity' => Activity::feed(
+                $repositoryRepository->findLatest(self::LATEST_LIMIT),
+                $tagRepository->findLatest(self::ACTIVITY_DEPTH),
+                self::ACTIVITY_LIMIT,
+            ),
             'statistics' => $statisticsLoader->load(),
             'trends' => $trendLoader->load(),
         ]);

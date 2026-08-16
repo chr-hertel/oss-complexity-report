@@ -21,11 +21,35 @@ export default class extends Controller {
         this.options = [];
         this.combobox = new Combobox(this.inputTarget, this.menuTarget, (index) => this.pick(index));
         this.requests = 0;
+        // the box has the key that reaches it drawn on it, so the key has to reach it
+        this.shortcut = (event) => this.focusOnSlash(event);
+        document.addEventListener('keydown', this.shortcut);
     }
 
     disconnect() {
         clearTimeout(this.timer);
         this.combobox.close();
+        document.removeEventListener('keydown', this.shortcut);
+    }
+
+    /**
+     * `/` puts the cursor in the box - unless it is being typed into something, which is every field on
+     * the page and anything made editable. A shortcut that swallows a character somebody meant to write
+     * is worse than no shortcut.
+     */
+    focusOnSlash(event) {
+        const active = document.activeElement;
+
+        if ('/' !== event.key || event.metaKey || event.ctrlKey || event.altKey) {
+            return;
+        }
+
+        if (active?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(active?.tagName)) {
+            return;
+        }
+
+        event.preventDefault();
+        this.inputTarget.focus();
     }
 
     query() {
