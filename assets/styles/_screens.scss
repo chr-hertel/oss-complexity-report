@@ -106,41 +106,56 @@
     margin-top: var(--space-6);
 }
 
-// The chart and everything about it in one panel: what it is drawn from on the top edge, what it is
-// drawn as next to that, the chart itself, and what it is made of on the bottom edge. The panel pads
-// the chart and nothing else, so the two edges run to its full width.
+// The chart and everything about it in one panel: what it is drawn from on the top edge, what those
+// same lines are read as under it, the chart itself, and what it is made of on the bottom edge. The
+// panel pads the chart and nothing else, so the two edges run to its full width.
 .chart-panel {
     padding: 0;
 
-    &__head,
+    // Two rows, because they are two questions: which repositories, and in which number. The second one
+    // has no padding under it - the tabs end on the hairline closing the head, so whichever one is open
+    // underlines the frame it draws in rather than carrying a rail of its own.
+    &__head {
+        padding: var(--space-4) var(--space-5) 0;
+        border-bottom: var(--border-width) solid var(--line);
+    }
+
+    &__metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3) var(--space-5);
+        align-items: flex-end;
+        margin-top: var(--space-4);
+    }
+
+    // the box only ever adds, so it stands at the far end of the row whether there are tabs or not
+    &__adder {
+        flex: 0 1 220px;
+        margin-bottom: var(--space-3);
+        margin-left: auto;
+    }
+
     &__foot {
         display: flex;
         flex-wrap: wrap;
         gap: var(--space-4);
         align-items: center;
         justify-content: space-between;
-    }
-
-    &__head {
-        padding: var(--space-4) var(--space-5);
-        border-bottom: var(--border-width) solid var(--line);
-    }
-
-    // the chips are the legend of the chart, so the box holding them is as wide as they need
-    &__picker {
-        flex: 1 1 320px;
-    }
-
-    &__foot {
         padding: 10px var(--space-5);
         font-size: var(--text-xs);
         color: var(--text-muted);
         border-top: var(--border-width) solid var(--line);
     }
 
+    // what the open tab counts, which is the one thing a chart cannot say about itself
+    &__about {
+        color: var(--text-body);
+    }
+
     &__count {
         font-family: var(--font-mono);
         font-variant-numeric: tabular-nums;
+        white-space: nowrap;
     }
 
     .chart-canvas {
@@ -148,10 +163,11 @@
     }
 }
 
-// In the panel head the field is not a field: the chips are what is in the chart, and what is left of
-// the box is the one dashed slot another line is added in. So the border moves off the control and
-// onto that slot, which is the only part of it that is an invitation.
-.chart-panel__picker.combobox {
+// In the panel head a field is not a field: what is in the chart is said by the chips next to it and by
+// the tabs under it, and what is left of the box is the one dashed slot something is added in. So the
+// border moves off the control and onto that slot, which is the only part of it that is an invitation.
+.chart-panel__picker.combobox,
+.chart-panel__adder.combobox {
     .combobox__control {
         padding: 0;
         background: none;
@@ -179,6 +195,31 @@
             border-color: var(--brand);
             box-shadow: var(--focus-ring);
         }
+    }
+}
+
+// The metric box is that slot and nothing else - no chips ever land in it, so it is as tall as what is
+// typed into it. Its menu is not: a row of it carries a name, the section it is printed under and the
+// sentence saying what it counts, because nobody knows what `llocByNof` is before reading that.
+.chart-panel__adder.combobox {
+    .combobox__control {
+        min-height: 0;
+    }
+
+    .combobox__input {
+        flex: 1 1 auto;
+    }
+
+    // wide enough for the longest name the catalog holds next to the section it is printed under -
+    // and where it still is not, the name wraps rather than ending in an ellipsis, since the name is
+    // the one thing the menu is read for
+    .combobox__menu {
+        left: auto;
+        width: min(480px, calc(100vw - 2 * var(--space-5)));
+    }
+
+    .combobox__name {
+        white-space: normal;
     }
 }
 
@@ -219,8 +260,8 @@
     }
 }
 
-// The tabs sit on the rail rather than under a heading - with a single line there is nothing to pick
-// and they are not rendered at all, which is what the rail is left holding.
+// The tabs sit on the rail rather than under a heading, and a chart of one line still has one of them:
+// with nothing to switch to it is not a choice but the name of whose release is being read.
 //
 // A chart of fifty lines is fifty tabs, and they scroll rather than wrap: the rail is one row, and the
 // controls sharing it belong on its right end whatever is to the left of them.
@@ -234,6 +275,10 @@
 
     .tab {
         flex: 0 0 auto;
+        // the rail under this row is the one `.release__rail` draws, so a tab does not have to reach
+        // a pixel past its own row to sit on it - and a row that scrolls sideways scrolls in both
+        // directions, so that one pixel is a scrollbar
+        margin-bottom: 0;
     }
 }
 

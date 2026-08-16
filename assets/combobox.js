@@ -6,19 +6,7 @@
  * What a row says and what picking one means stays with the box that built it: this only knows that a
  * row was chosen and by which of the two ways.
  */
-export function element(tag, className, text) {
-    const node = document.createElement(tag);
-
-    if (className) {
-        node.className = className;
-    }
-
-    if (undefined !== text) {
-        node.textContent = text;
-    }
-
-    return node;
-}
+import { element } from './dom.js';
 
 export class Combobox {
     /**

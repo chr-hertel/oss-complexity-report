@@ -7,6 +7,10 @@ namespace App\Controller;
 use App\ComplexityReport\Activity;
 use App\ComplexityReport\ChartSelection;
 use App\ComplexityReport\Exception\SubmissionFailed;
+use App\ComplexityReport\Metric\Measurement;
+use App\ComplexityReport\Metric\Metric;
+use App\ComplexityReport\Metric\MetricCatalog;
+use App\ComplexityReport\Metric\MetricSelection;
 use App\ComplexityReport\PhplocReport;
 use App\ComplexityReport\Ranking;
 use App\ComplexityReport\RankingLoader;
@@ -182,6 +186,9 @@ final class ReportController extends AbstractController
             'selection' => [] === $selected
                 ? ChartSelection::mostStarred($analysed, self::CHART_DEFAULT)
                 : ChartSelection::of($selected, $analysed),
+            'metrics' => $this->selectedMetrics($request),
+            // what every number of the report is called and worth, rendered once into the page
+            'catalog' => new MetricCatalog(),
         ]);
     }
 
@@ -220,13 +227,54 @@ final class ReportController extends AbstractController
      * rendered with, so a line picked later reads the same as one the page opened on. A repository is
      * addressed the way github.com addresses it, and that slug is the whole route - so the select box
      * can request it relative to the page it is on, which keeps working under a deployed sub path.
+     *
+     * `?metrics=` says which numbers the line carries, the same way it says it on the chart: a line is
+     * asked for again when the chart is drawn as something the browser does not have yet.
      */
     #[Route('{name}', name: 'repository', requirements: ['name' => '[^/]+/[^/]+'], methods: 'GET', priority: -2)]
-    public function repository(string $name, RepositoryRepository $repositories): JsonResponse
+    public function repository(string $name, Request $request, RepositoryRepository $repositories): JsonResponse
     {
         $repository = $repositories->findBySlug($name) ?? throw $this->createNotFoundException();
 
-        return new JsonResponse($repository->asGraph());
+        return new JsonResponse($repository->asGraph($this->selectedMetrics($request)->getPicked()));
+    }
+
+    /**
+     * One release, interpreted: every number phploc counted for it, named and put in the section it
+     * belongs to, next to the release before it so each of them can be read as a change.
+     *
+     * It is the same measurement the route below prints as phploc prints it - this is the report's
+     * reading of it, and the reason the sixty-two numbers are worth storing at all. Like the raw
+     * output it hangs under the release and is fetched when somebody opens one, because that is how a
+     * measurement is read: one at a time, while the chart above it holds hundreds.
+     */
+    #[Route('{name}/{tag}/metrics', name: 'measurement', requirements: ['name' => '[^/]+/[^/]+', 'tag' => '.+'], methods: 'GET', priority: -2)]
+    public function measurement(
+        string $name,
+        string $tag,
+        RepositoryRepository $repositories,
+        TagRepository $tags,
+    ): JsonResponse {
+        $repository = $repositories->findBySlug($name) ?? throw $this->createNotFoundException();
+        $release = $tags->findOneBy(['repository' => $repository, 'name' => $tag])
+            ?? throw $this->createNotFoundException();
+        $previous = $tags->findPrevious($release);
+
+        $response = new JsonResponse([
+            'name' => $release->getName(),
+            'date' => $release->getCreated()->format('Y-m-d'),
+            ...(new Measurement($release->getMetrics()))->interpreted(),
+            'previous' => null === $previous ? null : [
+                'name' => $previous->getName(),
+                'values' => (new Measurement($previous->getMetrics()))->values(Metric::cases()),
+            ],
+        ]);
+
+        // what a tag measured as does not change again - but the release before it is one a backfill
+        // can still put in front of it, so this is not the day the raw output is cached for
+        $response->setPublic()->setMaxAge(3600);
+
+        return $response;
     }
 
     /**
@@ -284,6 +332,19 @@ final class ReportController extends AbstractController
             'chart',
             ['repositories' => $repository->getName()],
             Response::HTTP_SEE_OTHER,
+        );
+    }
+
+    /**
+     * What `?metrics=complexity,loc` asks the chart to be drawn as - one panel per metric, in the order
+     * they were named. `?metric=` is the switch between two numbers this grew out of, and the links
+     * that were handed out under it still say what they meant.
+     */
+    private function selectedMetrics(Request $request): MetricSelection
+    {
+        return MetricSelection::fromInput(
+            $request->query->getString('metrics'),
+            $request->query->getString('metric'),
         );
     }
 

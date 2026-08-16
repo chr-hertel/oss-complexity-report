@@ -1,5 +1,6 @@
 import { Controller } from '@hotwired/stimulus';
-import { Combobox, element } from '../combobox.js';
+import { Combobox } from '../combobox.js';
+import { element } from '../dom.js';
 
 /*
  * The search box on the start page. It asks the server what an input means - a repository the report
