@@ -53,8 +53,9 @@ yarn check-style    # prettier over assets/
 ```
 
 Tests live under `App\Tests\` (PSR-4 → `tests/`) and cover the pure domain logic (input parsing, API
-mapping, release detection, the rolled up trends, the raw output printed from a measurement) — everything
-else needs a booted kernel and is not covered yet.
+mapping, release detection, the rolled up trends, the raw output printed from a measurement, and the metric
+catalog — including that every metric still names a key phploc counts, checked against a measurement taken
+in the test) — everything else needs a booted kernel and is not covered yet.
 
 ## Rebuilding the dataset
 
@@ -118,7 +119,11 @@ refreshes): `Organization` (a GitHub account,
 e.g. `symfony`) → `Repository` (a GitHub repository, e.g. `symfony/console`, holds `stars` + `analysed`) →
 `Tag` (one analysed release, holds `linesOfCode` + `averageComplexity` + `created`, plus `metrics`: the
 whole phploc measurement those two are read out of, which every release carries — the column was nullable
-while the releases measured before it existed were being re-measured, and is not anymore).
+while the releases measured before it existed were being re-measured, and is not anymore). The two columns
+stay columns because the report is sorted, ranked and trended by them in SQL; the other sixty are read out
+of the json through `Metric/*` and never ordered by, which is why they are not columns and why nothing
+here is `jsonb` yet — the day a ranking wants "every repository by static method calls" is the day that
+changes.
 `Organization` is not
 a screen of its own anymore, only the account a repository is grouped under, and it holds nothing but the
 GitHub `login` it is addressed by plus an avatar: the display name and homepage it used to carry came from
@@ -191,6 +196,22 @@ with their phploc measurements.
 - `PhplocReport` — a stored measurement printed the way the phploc command line prints it, by handing it to
   phploc's own `Log\Text`. There is no second layout to keep in step with the tool, which is why the modal
   can be called raw output; the printer writes to standard output, so this catches it in a buffer.
+- `Metric/*` — the blob read out. `Metric` is the catalog: **54 of the 62 numbers** phploc counts, each
+  addressed by a slug (`?metrics=complexity,loc`) rather than by the phploc key behind it (`source()`,
+  `classCcnAvg`), since the query string is a link people read — plus its `label()`, one line of `about()`,
+  the `MetricGroup` phploc prints it under, the whole it is `partOf()` (which is what a percentage is read
+  against and what the interpreted measurement indents by), how many `decimals()` it is written and rounded
+  to, its `MetricDirection` (only the complexities have one: a library that grew by twenty thousand lines
+  did not thereby get worse, so only risk is coloured) and whether it `carriesLevel()` — the two *averages*,
+  since the `ComplexityLevel` bands are written for an average and a maximum would paint a library red for
+  one outlier. Left out are the five minimums (`classCcnMin` is 1 in 96% of the twenty thousand releases —
+  a straight line at 1), `testClasses`/`testMethods` (always 0, tests are never counted) and `ccnMethods`;
+  all of them are still in the measurement and still in the raw output. `Measurement` is the reading:
+  `value()` rounded to the metric, `share()` of its whole, `values()` for the numbers a chart line is drawn
+  as, `interpreted()` for the whole catalog at once. `MetricSelection` parses `?metrics=` by the rules the
+  repositories of a chart already follow (order kept, one per metric, unknown dropped, empty is the default)
+  and still reads the `?metric=` of the switch this grew out of. `MetricCatalog` is the whole thing handed
+  to the browser, so nothing about a metric is written down twice.
 - `Git` / `GitController` / `CodeAnalyser` — `Git` shells out via symfony/process and logs every call on the
   `git` monolog channel; it passes arguments as a list (never a shell line), pins `GIT_TERMINAL_PROMPT=0` so
   a repository that went private fails instead of blocking a worker on a credential prompt, and gives every
@@ -243,38 +264,56 @@ an unknown repository, a fork, too little PHP - stays a flash on the start page,
 303 turbo needs, because a human mistyping twice should not get an error page. Anything that gets through
 ends on the page of its repository, whether it was just queued or has been in the report for years.
 
-**Web** (`src/Controller/ReportController`) — two screens: `start` renders the trend in the hero, the
-submit form, the rankings, then the block explaining the report, and below it the two quiet lists that
-close the page - the GitHub vendors (only those grouping more than one measured repository - a single one
-is the repository the rankings already link to), ordered by how many measured repositories they account
-for, and the latest additions, which are two columns because something comes in in two ways:
-`LATEST_LIMIT` repositories newest submission first, measured or not - the rankings only carry what has
-numbers, so this is the one place a repository shows up the day it was added, marked while it is `queued`
-or being analysed - and next to them `LATEST_LIMIT` releases, ordered by `Tag` id, since when a release
-was measured is not stored and the id is the order the rows were written in; a repository is submitted
-once, its releases keep arriving from the nightly scan. All three lists are the same `.pill`: a name on
-light ground joined to the one thing said about it on dark - a count, a state, a version - so what
-differs between them is only what their dark half carries, and nothing surrounds the two halves (`.badge`
-is the single-ground count of the design system, which is a different thing). `chart` is everything
+**Web** (`src/Controller/ReportController`) — two screens: `start` opens on the trend as a figure, then
+the rankings as **one table** rather than nine cards (whatever a tab sorts by is the column right of the
+name, `Ranking::columns()`, and `Ranking::legend()` spells out what those columns hold), and closes on the
+"just in" strip - what came in last in the two ways something can, one entry per repository (`Activity`
+merges `LATEST_LIMIT` submissions with the newest of `ACTIVITY_DEPTH` releases down to `ACTIVITY_LIMIT`
+entries, since a worker measures release by release and the newest releases are otherwise all of the same
+repository). The GitHub vendors hang off the end of that strip, folded away by `disclosure_controller.js`
+- a lens on the same repositories, not a place of their own. Both are the same `.pill`: a name on light
+ground joined to the one thing said about it on dark - a count, a state, a version - so what differs
+between them is only what their dark half carries, and nothing surrounds the two halves (`.badge` is the
+single-ground count of the design system, which is a different thing). The submit box is not a band of
+the start page anymore: it is the **search box in the header**, reachable from every screen and answering
+`/`, and what a submission is answered with stands directly under it. `chart` is everything
 else. There is **one** chart page, not one per organization: `?repositories=symfony/console,nikic/iter`
 says which repositories it draws, in that order, and anything the report carries can be added to them.
 There is **no** cap on how many: a vendor of fifty measured repositories is a chart of fifty, and what
 bounds a query string is the report itself, since it cannot name more repositories than exist -
 `CHART_DEFAULT` is only where a chart *starts* when nobody picked anything, the eight most starred, one
 per colour of the palette. Past the eighth line the palette starts over, and each pass through it is
-stroked differently (`SERIES_DASHES`), so a ninth line shares its colour but not its look; past a full
-palette the chart legend is dropped, because the picker chips above say the same thing in the same
-colours without taking the height the chart is drawn in.
+stroked differently (`SERIES_DASHES`), so a ninth line shares its colour but not its look. There is no
+chart.js legend at all: the chips on the top edge of the panel are the legend - a line per chip in the
+colour it is drawn in, there whether the chart holds five lines or fifty - and a second one under the
+chart would say it twice and take the height the chart is drawn in to do it.
 Repositories are addressed by the slug they carry on github.com, never by a database id - the query string
 is a link people read, edit and share, so it says what it draws. The case does not matter, and slugs that
 are not repositories are dropped rather than answered with an error.
-`?metric=loc` says the lines are drawn as lines of code instead - the switch above the chart
-(`chart_controller.js`, `METRICS`), which is a redraw and not a fetch, since a release is two numbers and
-both are in every graph the page already has. Complexity is what the report is about, so it is what a
-chart opens on and it carries no `metric` at all; only the other one is written into the query string.
-Switching resets the zoom, because a window onto a complexity of four says nothing about a codebase of
-half a million lines. The metric is read in the browser and nowhere else: it decides how the same data is
-drawn, not which data the server has to render.
+`?metrics=complexity,loc` says what the same lines can be read as, by the same rules and in the order they
+were named, and `?metric=loc` says which of them is the one being looked at - the switch this grew out of,
+still meaning what it meant, so the links that were handed out under it still open what they named. A tab
+that is not one of the chart's own is dropped like a repository that is not in the report, and the chart
+opens where it would anyway. Complexity is what the report is about, so it is what a chart opens on and
+that chart carries neither parameter.
+A second metric is a **tab**, not a second axis and not a second chart: colour already says which
+repository a line belongs to and cannot also say which number it is - a chart of fifty repositories in two
+metrics would be a hundred lines - and two scales in one frame let a crossing look like a statement when
+what crossed was the scaling ([Datawrapper](https://www.datawrapper.de/blog/dual-axis-charts-guide),
+[Flourish](https://flourish.studio/blog/dual-axis-charts/) on why; SonarQube's activity page caps a graph
+at three measures for the same reason). Drawn one at a time **in the same frame** - same place, same
+width, same years - two metrics are compared by switching between them, which is a comparison a stack of
+panels below one another makes the reader scroll for. Switching keeps the years the reader is in and drops
+a zoom on the other axis, because that one belonged to the number being read.
+Every metric of a chart therefore travels with every release: switching a tab must be a redraw and never a
+request. Adding one is the fetch - the JSON route takes `?metrics=` too, and a line already on the page is
+asked only for the number it is missing.
+Those tabs live **inside the chart panel**, on the row under the repository chips, and they end on the
+hairline closing the panel head - so whichever one is open underlines the frame it draws in, and the head
+answers the two questions about a chart in the order they are asked: which repositories, and in which
+number. A single metric is still a tab there: with nothing to switch to it is not a choice but a label,
+and it is the only place the chart says what it is drawing. What that number is worth is the sentence on
+the panel foot, in front of the hint about zooming.
 `ChartSelection` is what the template reads: the series, the repositories still waiting for a worker, the
 options of the picker, and what the page is called. The screen is **not** named after the way it was
 reached - it is named after what is in it, by one rule that survives the chart being edited in place: the
@@ -286,10 +325,10 @@ right now - the one state the browser cannot rename, since nothing can be picked
 
 What the report does not say by itself is `templates/about.html.twig`: how a number gets into it, what
 that number is worth, and the scale it is read against. It is not the footer anymore - the footer is the
-credits - but a band each screen places itself, since where it belongs differs: on the start page it
-stands under the rankings and before the lists closing them, on the chart page it ends the screen,
-rendered outside `<main>` so it is the element right before the credits and `.about + .site-footer`
-closes the two into the one band they were.
+credits - but the band closing the **start page**, rendered outside `<main>` so it is the element right
+before them and `.about + .site-footer` closes the two into the one band they were. The chart does not
+carry it: it is read once, where the report is read at a glance. It says the short version, and every
+caveat is still there behind the sentence introducing it (`disclosure_controller.js` again).
 
 The **scale** (`templates/complexity_scale.html.twig`) opens that block, across both columns that explain
 the report rather than inside the one about the metric - it is what every number of the report is read
@@ -298,24 +337,29 @@ It is the four bands of `ComplexityLevel` over the ramp they run through,
 the bands washed white so their ranges stay readable and only the hairlines between them and the strip
 below them carry the colour at full strength. On a phone the ramp turns and the bands stack on it,
 which is the same reading in the direction there is room for. Every complexity elsewhere is marked with a
-dot in the colour of its band - on a card it stands where the `Ø` stood, since a metric leads with one
-glyph and the row has no width to spare, and in the release analysis it leads the numbers that are
-complexities rather than changes to one.
+dot in the colour of its band - in the ranking table it is the complexity column, and in the release
+analysis it leads the numbers that are complexities rather than changes to one. Only the two *averages*
+of the catalog carry it (`Metric::carriesLevel()`): the bands are written for an average, and a maximum
+would paint a library red for one outlier.
 
 Routes are distinguished by `priority`, since `{organization}` and the slug of a repository both match
 whatever is left — and every one of them is **negative**, because routing sorts the whole collection and
 not the controller: a positive priority puts a catch-all in front of what the framework registers, and
 `/_wdt/{token}` and `/_profiler/{token}` are two segments like every repository slug, so the profiler
 answered 404 as a repository nobody submitted. Below zero the report is what is left over, which is what it
-is: `chart`/`search`/`submit` (-1) > `repository` (-2, `owner/repository`, returns one line of
-the chart as JSON - the slug is the whole route, so the select box can request it relative to the page it
-is on) and `raw` (-2, `owner/repository/<tag>/raw`, one release as phploc printed it, `text/plain` and
+is: `chart`/`search`/`submit` (-1) > `repository` (-2, `owner/repository?metrics=…`, returns one line of
+the chart as JSON in the numbers it was asked for - the slug is the whole route, so the select box can
+request it relative to the page it is on), `measurement` (-2, `owner/repository/<tag>/metrics`, one release
+interpreted: every number of the catalog with its share of its whole, plus the release before it so each
+can be read as a change; cacheable for an hour, since a backfill can still put another release in front of
+it) and `raw` (-2, `owner/repository/<tag>/raw`, the same release as phploc printed it, `text/plain` and
 cacheable for a day since a released tag does not get measured differently again; a release the report does
 not carry answers 404) > `organization` (-3). The last one is the page GitHub accounts used to have, kept as a permanent
 redirect into the chart - `?repository=<id>` included, since that is how the links that were handed out
-address a repository. `Repository::asGraph()` returns a `GraphData` value object that JSON-serializes into
-what the chart expects: the releases it draws plus the github.com url and the stars of the repository they
-belong to, so a line picked later carries the same facts as one the page was rendered with.
+address a repository. `Repository::asGraph(metrics)` returns a `GraphData` value object that
+JSON-serializes into what the chart expects: the releases it draws, each with the `values` of the metrics
+asked for, plus the github.com url and the stars of the repository they belong to, so a line picked later
+carries the same facts as one the page was rendered with.
 
 **Frontend** — Vite + symfony/reprise + StimulusBundle. `assets/controllers/chart_controller.js` reads the
 preselected repositories from a `data-repositories` attribute rendered by `templates/chart.html.twig`, and
@@ -324,23 +368,41 @@ picked is written back into the query string, so a chart someone put together is
 analysis below the chart is one tab per line, built from the same graphs: every repository in the chart can
 be read release by release, and a tab carries the colour of its series - and since a point in the chart
 *is* a release, clicking one opens it there: the line it belongs to becomes the tab being read and the
-point the release, scrolled to only when the section is off screen. Its head says what a release is read
-against: the repository it belongs to, linking to github.com and carrying its stars and its first measured
-release, and the day the release was tagged - which is the only date the report has, since when a release
-was measured is whenever it was submitted or a nightly scan found it and says nothing about the code.
-Next to the box that picks the release stands what the report does *not* say about it: phploc counts sixty
-numbers and the report plots two, and the rest is shown as phploc printed it - on the dark ground it was
-printed on (`--terminal-*`, the one dark surface that is not the brand), in a `<dialog>` the panel behind
-it keeps its release through. It is fetched when it is opened rather than carried by the page - a chart
-holds hundreds of releases and this is read one at a time - and kept afterwards, since a measurement does
-not change. Every release carries a measurement, so the button is simply there and `GraphData` says nothing
-about it - it used to carry a `raw` flag per release, for the ones measured before the output was kept.
+point the release, scrolled to only when the section is off screen. Those tabs share one **rail** with
+what is done to the release being read - the way out to github.com, the box picking a release, the raw
+output - because all of them choose what is below.
+Under that rail stand the four figures a release comes down to, and the first three of them are read in
+**whichever metric the chart is open on**: the number itself (carrying the dot of its risk band where the
+metric has one, and named by the band underneath), what it did against the release before it, and what it
+did since the first measured one - so switching a tab above re-reads the release, and the other tabs
+answer the same three questions by being switched to. The fourth is how much of the repository has been
+measured. The date a release carries is the day it was tagged, which is the only date the report has:
+when it was *measured* is whenever it was submitted or a nightly scan found it, and says nothing about the
+code.
+The panel under those figures is the release in the numbers the chart draws - all of the picked metrics,
+not only the one that is drawn, each against the first release - and folded under it stands the rest of
+the measurement: **every number of the catalog**, in phploc's four sections, indented under the whole it
+is a part of, with its share and its change since the previous release, and each name a button that adds
+that metric to the chart and opens its tab, since picking a number out of the measurement means wanting to
+see it. That is the interpreted half; the raw half is on the rail that picks the release,
+the same measurement as phploc printed it - on the dark ground it was printed on (`--terminal-*`, the one
+dark surface that is not the brand), in a `<dialog>` the panel behind it keeps its release through. Both
+are fetched when they are opened rather than carried by the page - a chart holds hundreds of releases and
+this is read one at a time - and kept afterwards, since a measurement does not change. Every release carries
+one, so the buttons are simply there and `GraphData` says nothing about them - it used to carry a `raw` flag
+per release, for the ones measured before the output was kept.
 Turbo caches the page as it is left, so the dialog is closed on
 `turbo:before-cache` - one that came back open would come back not modal, since only `showModal()` puts a
 dialog in the top layer.
 The chart zooms and pans
 (chartjs-plugin-zoom), which the address bar knows nothing about, so the way back is the `.chart-reset`
 button floating over it - rendered `hidden` and shown by the controller only while `isZoomedOrPanned()`.
+Switching a metric goes through `resetZoom()` and then puts the years back with `zoomScale('x', …)`, which
+is also what tells the plugin the chart is still zoomed. What a metric is called, how far its numbers are rounded and
+whether a change in it is worth a colour comes from the catalog rendered into `data-catalog` - `metrics.js`
+only turns a number, or the difference between two, into the element it is read as; the risk bands are the
+one thing it still mirrors from PHP. Chart.js measures an axis before the webfont arrives, so a scale of
+hundreds of thousands comes back too narrow for its own labels: `document.fonts.ready` redraws once.
 `trend_controller.js` switches the time frame of the hero figure, which is rendered for all four windows
 at once, so nothing is fetched when one is picked.
 `refresh_controller.js` reloads the page every 30s while the status above the chart says a repository is
@@ -354,15 +416,34 @@ what is there: a page that comes back open comes back the same, not doubled. `vi
 public path from `ASSET_BASE` (set by the build task in `deploy.php`) rather than the build mode, so local
 production builds keep working.
 
-Both boxes people type in are the **same** control: `assets/combobox.js` is the menu under a field - the
+All three boxes people type in are the **same** control: `assets/combobox.js` is the menu under a field - the
 rows, opening and closing it, and the keyboard that walks it, with what a row says and what picking one
 means left to the box that built it. `search_controller.js` is the one on the start page, which asks the
-server what an input means; `repository_picker_controller.js` is the one above the chart, which has more
+server what an input means and lives in the header band now, where every screen can reach it and `/`
+focuses it; `repository_picker_controller.js` is the one on the top edge of the chart panel, which has more
 than one answer - a chip per line, coloured by its position, which is why a pick moves its option to the
 end of the `<select>` behind it. That select is the state, not a widget: the picker writes to it and
 dispatches its `change`, so the chart is redrawn by one event however a repository got in or out. Only the
 keyboard highlights a row (`.is-active`) - hovering is the pointer's own business, and picking happens on
-`mousedown`, before the blur that closes the menu can race it.
+`mousedown`, before the blur that closes the menu can race it. `assets/dom.js` holds the one line all of
+this is built with (`element()`), which used to live in `combobox.js` and is not about comboboxes.
+
+`metric_picker_controller.js` is the third: the box on the tab row of the chart panel that adds a metric
+to the chart. It is the
+repository box over a list that is already in the page - fifty-four names need typing into, but nothing
+needs to be asked of the server - so it filters the options it was rendered with, over their name, their
+section **and** the sentence the catalog explains them with, since nobody knows what `llocByNof` was called
+before reading what it counts; a row shows all three. Its select is the state for the same reason the
+repositories' is, and the order of the tabs is the order of the selected options - which works because a
+pick is moved to the end of the select, and because the server renders the picked ones first, in the order
+`?metrics=` named them (`MetricSelection::getOptions()`).
+Unlike the repository box it carries **no chips**: what is picked shows up as a tab next to it, and the tab
+row is where a metric is switched to and taken out again - two lists of the same names on the same row
+would be the same statement twice. So the box only ever adds, which is why it is nothing but the dashed
+slot the repository box ends in (`.chart-panel__adder`), and why its menu is the wide one: a row of it
+carries all three parts. The select is written to from three places - the box, a tab's `×`, and the
+measurement table under the chart - so the box listens for its own `change` to keep its menu (what is
+*not* in the chart) true.
 
 **Error reporting** (`config/packages/sentry.yaml`) — sentry/sentry-symfony, registered by hand since
 `allow-contrib` is false and its recipe therefore never ran. `SENTRY_DSN` is empty in the committed `.env`

@@ -119,6 +119,29 @@ final class TagRepository extends ServiceEntityRepository
         return $tags;
     }
 
+    /**
+     * The release before this one, in the order the report reads releases: by the day they were tagged,
+     * and by name where a repository tagged two on the same day - the same order a chart draws them in,
+     * so "compared to the previous release" means the point to the left of it.
+     */
+    public function findPrevious(Tag $tag): ?Tag
+    {
+        /** @var ?Tag $previous */
+        $previous = $this->createQueryBuilder('t')
+            ->andWhere('t.repository = :repository')
+            ->andWhere('t.created < :created OR (t.created = :created AND t.name < :name)')
+            ->setParameter('repository', $tag->getRepository())
+            ->setParameter('created', $tag->getCreated())
+            ->setParameter('name', $tag->getName())
+            ->orderBy('t.created', 'DESC')
+            ->addOrderBy('t.name', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $previous;
+    }
+
     public function getLinesOfCodeSum(): int
     {
         $query = $this->createQueryBuilder('t')

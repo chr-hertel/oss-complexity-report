@@ -3,7 +3,8 @@ import Chart from 'chart.js/auto';
 import 'chartjs-adapter-moment';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import moment from 'moment';
-import { element } from '../combobox.js';
+import { element } from '../dom.js';
+import { band, catalogFrom, change, direction, format, group, list, percent, row, share, value } from '../metrics.js';
 
 // The eight series colours of the design system, assigned by position. The swatch in front of every
 // chip in the picker is coloured by the same rule, see _components.scss - which only holds as long as
@@ -25,105 +26,22 @@ const INK = '#101720';
 const MONO = 'IBM Plex Mono';
 const SANS = 'IBM Plex Sans';
 
-const ARROWS = { good: '↓', bad: '↑', flat: '→' };
-
 const count = (value) => value.toLocaleString('en-US');
-const decimal = (value, digits) =>
-    value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
-
-/*
- * What the same lines can be drawn as. A release is stored as two numbers and both are in every graph
- * the page already has, so switching between them fetches nothing - `key` is which of them the chart
- * reads out of a release, and the rest is how that number is written wherever it is written out.
- *
- * The report is about complexity, so complexity is what a chart opens on; `name` is what the other one
- * is called in the query string, and the default carries none.
- */
-const METRICS = [
-    { name: 'complexity', key: 'y', label: 'Ø Complexity', short: (value) => `Ø ${decimal(value, 2)}` },
-    { name: 'loc', key: 'loc', label: 'Lines of Code', short: count },
-];
 const day = (value) => moment(value, 'YYYY-MM-DD').format('LL');
 
 // the star count of the rankings, shortened the way the `stars` twig filter shortens it
 const stars = (total) => (total < 1000 ? String(total) : `${(total / 1000).toFixed(1).replace(/\.0$/, '')}k`);
-
-// complexity going down is an improvement, going up is a regression
-const tone = (value) => (Math.abs(value) < 0.005 ? 'flat' : value < 0 ? 'good' : 'bad');
-const sign = (value) => (value > 0 ? '+' : value < 0 ? '−' : '±');
-const signed = (value, digits = 0) => sign(value) + decimal(Math.abs(value), digits);
-const share = (part, total) => (total ? `${decimal((Math.abs(part) / total) * 100, 1)}%` : undefined);
-
-function trend(value, digits, label) {
-    const direction = tone(value);
-    const node = element('span', `trend trend--chip trend--${direction}`);
-
-    node.append(element('span', null, ARROWS[direction]), element('span', null, signed(value, digits)));
-
-    if (label) {
-        node.append(element('span', 'trend__label', label));
-    }
-
-    return node;
-}
-
-/*
- * The risk bands the footer prints, mirrored from `ComplexityLevel` because the release analysis is
- * built here in the browser rather than rendered. Like the naming rule above, the mirror only holds as
- * long as the rule stays this small - four numbers and the band above the last of them.
- */
-const LEVELS = [
-    [10, 'simple', '1–10'],
-    [20, 'moderate', '11–20'],
-    [50, 'complex', '21–50'],
-];
-const UNTESTABLE = ['untestable', '> 50'];
-const level = (value) => LEVELS.find(([limit]) => value <= limit)?.slice(1) ?? UNTESTABLE;
-
-// a measured complexity carrying the dot of its band, the way the rows of the start page carry it
-const complexity = (value) => element('span', `level level--${level(value)[0]}`, decimal(value, 2));
-
-// where that complexity stands, said in words - the note under the figure it belongs to
-function band(value) {
-    const [name, range] = level(value);
-
-    return element('span', `level level--${name}`, `${name} · ${range}`);
-}
-
-function row(label, value, hint) {
-    const node = element('div', 'analysis__row');
-    const definition = element('dd', 'analysis__value');
-
-    if (hint) {
-        definition.append(element('span', 'analysis__share', hint));
-    }
-
-    definition.append(value instanceof Node ? value : element('span', null, String(value)));
-    node.append(element('dt', 'analysis__label', label), definition);
-
-    return node;
-}
-
-function group(title, rows) {
-    const node = element('div');
-    const list = element('dl', 'analysis__list');
-
-    rows.filter(Boolean).forEach((entry) => list.append(entry));
-    node.append(element('div', 'analysis__title', title), list);
-
-    return node;
-}
 
 /*
  * One of the four figures a release comes down to, above the panel spelling it out. The note under a
  * value is what makes it a reading rather than a number: where a complexity stands on the scale, which
  * direction is the good one, what a size grew by, when the measuring started.
  */
-function headline(label, value, note, tone) {
+function headline(label, measured, note, tone) {
     const node = element('div', 'headline-figures__cell');
     const figure = element('div', `headline-figures__value${tone ? ` headline-figures__value--${tone}` : ''}`);
 
-    figure.append(value instanceof Node ? value : element('span', null, String(value)));
+    figure.append(measured instanceof Node ? measured : element('span', null, String(measured)));
     node.append(element('div', 'headline-figures__label', label), figure);
 
     if (note) {
@@ -144,7 +62,9 @@ export default class extends Controller {
         'count',
         'resetZoom',
         'select',
-        'metric',
+        'metrics',
+        'metricTabs',
+        'metricAbout',
         'release',
         'releaseTabs',
         'releasePanel',
@@ -152,6 +72,8 @@ export default class extends Controller {
         'releaseSelect',
         'headlineFigures',
         'analysis',
+        'measurement',
+        'measurementToggle',
         'raw',
         'rawTitle',
         'rawOutput',
@@ -164,10 +86,19 @@ export default class extends Controller {
             return;
         }
 
+        // what every number of the report is called, formatted and worth - rendered into the page by
+        // `MetricCatalog`, so nothing about a metric is written down twice
+        this.catalog = catalogFrom(this.element.dataset.catalog);
+        this.defaultMetric = [...this.catalog.values()].find((metric) => metric.default).slug;
+        // what the chart can be read in, in the order it tabs them, and which of those tabs is open
+        this.metrics = this.picked();
+        this.active = this.metricsTarget.dataset.active;
         // what the page was rendered with; everything picked later is fetched from the JSON route once
         this.graphs = new Map();
-        // and the raw phploc output of every release that was opened, which never changes once measured
+        // the raw phploc output of every release that was opened, which never changes once measured
         this.raws = new Map();
+        // and the same for the measurement behind it, read out through the catalog
+        this.measurements = new Map();
         // Turbo keeps the page as it looks when it is left, and an open dialog would come back open -
         // and then not modal, since only showModal() puts one in the top layer
         this.closeRawBeforeCache = () => this.closeRaw();
@@ -179,15 +110,23 @@ export default class extends Controller {
         // `<site> - <headline>`, so what is in front of the last dash is the part that stays
         this.site = document.title.split(' - ').slice(0, -1).join(' - ');
         this.renders = 0;
-        // a link says what it draws as well as what it draws it from, so the switch reads the address
-        // bar the way the repositories were read from it
-        this.metric = this.metricFrom(new URLSearchParams(window.location.search).get('metric'));
-        this.reflectMetric();
         // the lines that can be read release by release, and which one of them is being read
         this.series = [];
         this.repository = null;
+        this.releaseIndex = null;
+        this.measurementOpen = false;
+        // the lines the chart was last drawn from, so switching a tab is a redraw of what is already here
+        this.drawn = [];
         this.initChart();
         this.render();
+
+        /*
+         * A chart measures its own axis out of the width of its widest tick, and it draws before the
+         * webfont it will be set in has arrived - so a scale of hundreds of thousands is laid out in the
+         * fallback and comes back too narrow for its own numbers. Redrawing once the font is there is the
+         * whole fix; it costs one update and only ever happens once.
+         */
+        document.fonts?.ready.then(() => this.chart?.update('none'));
     }
 
     disconnect() {
@@ -207,6 +146,14 @@ export default class extends Controller {
             data: { datasets: [] },
             options: {
                 maintainAspectRatio: false,
+                /*
+                 * No animation. A line rising out of the floor is a thing the chart does, not a thing the
+                 * data does - fifteen years of releases were not on their way up, they were there when
+                 * the page was. It is the same statement the tabs above it make: switching one is a
+                 * redraw of numbers the page already has, and a chart catching up with itself reads as
+                 * if it were fetching something.
+                 */
+                animation: false,
                 interaction: { mode: 'nearest', intersect: false },
                 // whatever the tooltip is pointing at is what a click reads below the chart, so the
                 // point that answers the click is the one the pointer already named
@@ -231,8 +178,9 @@ export default class extends Controller {
                         bodyFont: { family: MONO, size: 12 },
                         callbacks: {
                             title: (items) => `${items[0].dataset.label} ${items[0].raw.name}`,
-                            // whichever number the lines are drawn as, named the way the switch names it
-                            label: (item) => `${this.metric.label}: ${item.formattedValue}`,
+                            // whichever number the lines are drawn as, named the way its tab names it
+                            label: (item) =>
+                                `${this.primary().label}: ${format(this.primary(), item.raw.values[this.active])}`,
                         },
                     },
                     zoom: {
@@ -257,7 +205,14 @@ export default class extends Controller {
                         beginAtZero: true,
                         border: { display: false },
                         grid: { color: GRID },
-                        ticks: { color: TICK, font: { family: MONO, size: 11 }, padding: 8 },
+                        ticks: {
+                            color: TICK,
+                            font: { family: MONO, size: 11 },
+                            padding: 8,
+                            // the axis is written the way its metric is written - three decimals for a
+                            // complexity per line, none for a count of half a million
+                            callback: (tick) => format(this.primary(), tick),
+                        },
                     },
                 },
             },
@@ -306,45 +261,119 @@ export default class extends Controller {
     }
 
     /**
-     * The picker above the chart is a box of its own and says what it holds by changing the select it
-     * is a widget for - which is also what the chart was rendered with, so adding a line and opening
-     * the page on it are the same thing to everything below.
+     * The picker on the top edge of the panel is a box of its own and says what it holds by changing the
+     * select it is a widget for - which is also what the chart was rendered with, so adding a line and
+     * opening the page on it are the same thing to everything below.
      */
     repick() {
         this.render(true);
     }
 
     /**
-     * The other number every release was measured in. Both are in the graphs the page already has, so
-     * this redraws rather than fetches - and it resets the zoom, because a window onto a complexity of
-     * four says nothing about a codebase of half a million lines.
+     * The same for the row under it: however a metric got into the chart or out of it - typed into the
+     * box, dropped from its tab, picked out of the measurement table under the chart - it is one event.
      */
-    selectMetric(event) {
-        const metric = this.metricFrom(event.currentTarget.dataset.metric);
-
-        if (metric === this.metric) {
-            return;
-        }
-
-        this.metric = metric;
-        this.reflectMetric();
-        this.chart?.resetZoom();
+    remetric() {
         this.render(true);
     }
 
-    metricFrom(name) {
-        return METRICS.find((metric) => metric.name === name) ?? METRICS[0];
+    /**
+     * What the select behind the tab row says the chart can be read in, in the order it tabs them.
+     */
+    picked() {
+        return this.hasMetricsTarget
+            ? [...this.metricsTarget.selectedOptions]
+                  .map((option) => option.value)
+                  .filter((slug) => this.catalog.has(slug))
+            : [];
     }
 
-    reflectMetric() {
-        this.metricTargets.forEach((button) => {
-            button.setAttribute('aria-selected', button.dataset.metric === this.metric.name ? 'true' : 'false');
-        });
+    metricOf(slug) {
+        return this.catalog.get(slug);
+    }
+
+    /**
+     * The metric the chart is open on: what its lines are drawn as, what a release is listed under in
+     * the select below it, and what the figures over the release analysis are read in.
+     */
+    primary() {
+        return this.metricOf(this.active);
+    }
+
+    /**
+     * Drawing a metric that is not drawn yet, from somewhere other than the box - the measurement table
+     * under the chart. It writes to the same select, so the box and the chart both hear about it.
+     */
+    drawMetric(slug) {
+        const option = [...this.metricsTarget.options].find((entry) => entry.value === slug);
+
+        if (!option || option.selected) {
+            return;
+        }
+
+        option.selected = true;
+        option.setAttribute('selected', 'selected');
+        // a pick goes to the end, which is where its tab goes - and the tab that was just added is the
+        // one the chart opens on, see render()
+        this.metricsTarget.append(option);
+        this.metricsTarget.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    /**
+     * Switching a tab. The years stay where the reader left them - that is the whole reason every metric
+     * is drawn in the same frame - while a zoom on the other axis goes, because it belonged to the number
+     * that was being read and says nothing about the next one.
+     */
+    selectMetric(slug) {
+        if (slug === this.active || !this.metrics.includes(slug)) {
+            return;
+        }
+
+        this.active = slug;
+        this.years = this.chart.isZoomedOrPanned()
+            ? { min: this.chart.scales.x.min, max: this.chart.scales.x.max }
+            : null;
+        this.chart.resetZoom('none');
+        this.syncUrl(this.drawn.map((graph) => graph.name));
+        this.draw();
+        this.renderMetricTabs();
+        // the release analysis is read in what the chart shows, so it follows the tab
+        this.showRepository(this.repository, this.releaseIndex);
+    }
+
+    /**
+     * Taking a metric out of the chart - from its tab, which is where it is switched to as well. A chart
+     * is always drawn as something, so the last tab carries no button at all.
+     */
+    dropMetric(slug) {
+        const option = [...this.metricsTarget.options].find((entry) => entry.value === slug);
+
+        if (!option || this.metrics.length < 2) {
+            return;
+        }
+
+        option.selected = false;
+        option.removeAttribute('selected');
+        this.metricsTarget.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
     async render(picked = false) {
         const run = ++this.renders;
         const slugs = this.hasSelectTarget ? [...this.selectTarget.selectedOptions].map((option) => option.value) : [];
+        const before = this.metrics;
+
+        this.metrics = this.picked();
+
+        /*
+         * Adding a metric is asking to see it - whether it was typed into the box or clicked in the
+         * measurement table, what was just added is what the chart opens on. It is the same rule as
+         * further down for a metric that was taken out: a tab row answers for the tab that is open.
+         */
+        const added = this.metrics.filter((slug) => !before.includes(slug));
+
+        if (added.length > 0) {
+            this.active = added[added.length - 1];
+        }
 
         if (picked) {
             this.syncUrl(slugs);
@@ -357,12 +386,32 @@ export default class extends Controller {
             return;
         }
 
-        this.chart.data.datasets = graphs.map((graph, index) => ({
+        // a metric can be taken out of the chart while its tab is the one open
+        if (!this.metrics.includes(this.active)) {
+            this.active = this.metrics[0];
+        }
+
+        this.drawn = graphs;
+        this.draw();
+        this.renderMetricTabs();
+        this.renderHeadline(slugs);
+        this.renderCount(graphs);
+        this.renderTabs(graphs);
+    }
+
+    /**
+     * The lines, drawn as whatever the open tab reads them in. Every metric of the chart travels with
+     * every release, so this is the whole of switching one: no request, and the same points.
+     */
+    draw() {
+        this.metricAboutTarget.textContent = this.primary().about;
+
+        this.chart.data.datasets = this.drawn.map((graph, index) => ({
             label: graph.name,
             // the releases themselves, whichever of their numbers is being drawn - so a point stays the
             // release it is, and clicking one still opens it in the analysis below
             data: graph.tags,
-            parsing: { xAxisKey: 'x', yAxisKey: this.metric.key },
+            parsing: { xAxisKey: 'x', yAxisKey: `values.${this.active}` },
             fill: false,
             borderWidth: 1.75,
             pointRadius: 2.5,
@@ -372,11 +421,60 @@ export default class extends Controller {
         }));
 
         this.chart.update();
-        this.reflectZoom();
 
-        this.renderHeadline(slugs);
-        this.renderCount(graphs);
-        this.renderTabs(graphs);
+        // a tab switch keeps the years it was left on - see selectMetric()
+        if (this.years) {
+            this.chart.zoomScale('x', this.years, 'none');
+            this.years = null;
+        }
+
+        this.reflectZoom();
+    }
+
+    /**
+     * The metrics of this chart, as the tabs they are read through - the same underline tabs the release
+     * analysis picks a repository with, since it is the same act: one thing at a time, in one place. They
+     * stand on the hairline the chart hangs under, so the tab that is open underlines the frame it draws
+     * in.
+     *
+     * Unlike the repositories below, a single one of them is still a tab: with nothing to switch to it
+     * is not a choice but a label, and it is the only place the chart says which number it is drawing.
+     */
+    renderMetricTabs() {
+        if (!this.hasMetricTabsTarget) {
+            return;
+        }
+
+        this.metricTabsTarget.replaceChildren(
+            ...this.metrics.map((slug) => {
+                const metric = this.metricOf(slug);
+                const tab = element('button', 'tab');
+
+                tab.type = 'button';
+                tab.title = metric.about;
+                tab.setAttribute('role', 'tab');
+                tab.setAttribute('aria-controls', 'chart-canvas');
+                tab.setAttribute('aria-selected', slug === this.active ? 'true' : 'false');
+                tab.append(element('span', null, metric.label));
+                tab.addEventListener('click', () => this.selectMetric(slug));
+
+                // a chart is always drawn as something, so the last tab is not one that can be closed
+                if (this.metrics.length > 1) {
+                    const drop = element('button', 'tab__drop', '×');
+
+                    drop.type = 'button';
+                    drop.setAttribute('aria-label', `Take ${metric.label} out of this chart`);
+                    drop.addEventListener('mousedown', (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        this.dropMetric(slug);
+                    });
+                    tab.append(drop);
+                }
+
+                return tab;
+            }),
+        );
     }
 
     /**
@@ -419,7 +517,8 @@ export default class extends Controller {
 
     /**
      * A chart is worth sharing, so what is in it belongs in the address bar - the same query string the
-     * page reads on load. Only after a pick: opening the default chart leaves its url alone.
+     * page reads on load, repositories and metrics alike. Only after a pick: opening the default chart
+     * leaves its url alone.
      */
     syncUrl(slugs) {
         const params = new URLSearchParams(window.location.search);
@@ -430,11 +529,18 @@ export default class extends Controller {
             params.delete('repositories');
         }
 
-        // the metric the chart opens on is the one the report is about, so it is the absence of one
-        if (this.metric === METRICS[0]) {
+        // the chart the report is about carries no metric at all
+        if (1 === this.metrics.length && this.defaultMetric === this.metrics[0]) {
+            params.delete('metrics');
+        } else {
+            params.set('metrics', this.metrics.join(','));
+        }
+
+        // and which tab is open is only worth writing down when it is not the one a link opens on
+        if (this.active === this.metrics[0]) {
             params.delete('metric');
         } else {
-            params.set('metric', this.metric.name);
+            params.set('metric', this.active);
         }
 
         // `symfony/console,laravel/framework` is what this was typed as, and what it should stay
@@ -443,22 +549,46 @@ export default class extends Controller {
         window.history.replaceState({}, '', query ? `?${query}` : window.location.pathname);
     }
 
+    /**
+     * A line of the chart, in the numbers the chart is currently drawn as. A repository that was never
+     * picked before is fetched whole; one that is already drawn is asked only for the metric that was
+     * just added, and what it already carries is kept.
+     */
     async load(slug) {
-        if (!this.graphs.has(slug)) {
-            // the slug is the whole route, so a relative request keeps working under a deployed sub path
-            const response = await fetch(slug, { headers: { Accept: 'application/json' } });
+        const known = this.graphs.get(slug);
+        const missing = this.metrics.filter((metric) => !known || !known.metrics.includes(metric));
 
-            // the route answers with the line itself, the same shape the page was rendered with
-            this.graphs.set(slug, await response.json());
+        if (known && 0 === missing.length) {
+            return known;
         }
 
-        return this.graphs.get(slug);
+        // the slug is the whole route, so a relative request keeps working under a deployed sub path
+        const response = await fetch(`${slug}?metrics=${(known ? missing : this.metrics).join(',')}`, {
+            headers: { Accept: 'application/json' },
+        });
+        // the route answers with the line itself, the same shape the page was rendered with
+        const graph = await response.json();
+
+        if (known) {
+            const carried = new Map(known.tags.map((tag) => [tag.name, tag.values]));
+
+            // the answer is the newest release list, so it leads and what was already read joins it
+            graph.tags.forEach((tag) => Object.assign(tag.values, carried.get(tag.name)));
+            graph.metrics = [...new Set([...known.metrics, ...graph.metrics])];
+        }
+
+        this.graphs.set(slug, graph);
+
+        return graph;
     }
 
     /**
      * The measurement below the chart is one tab per line: every repository in the chart can be read
      * release by release, not only the one the page was opened with. The tab carries the colour its
      * series is drawn in, so a line and its numbers are found by the same swatch.
+     *
+     * A single line is still a tab, the way a single metric is: with nothing to switch to it is not a
+     * choice but a label, and the rail would otherwise say nothing about whose release is being read.
      */
     renderTabs(graphs) {
         if (!this.hasReleaseTarget) {
@@ -488,15 +618,12 @@ export default class extends Controller {
             }),
         );
 
-        // one line is not a choice
-        this.releaseTabsTarget.hidden = this.series.length < 2;
-
         // whoever was being read stays it, as long as its line is still in the chart
         const read = this.series.some((graph) => graph.name === this.repository)
             ? this.repository
             : this.series[0].name;
 
-        this.showRepository(read);
+        this.showRepository(read, this.releaseIndex);
     }
 
     selectRepository(event) {
@@ -505,7 +632,7 @@ export default class extends Controller {
 
     /**
      * Reading a repository starts at its newest release, unless the reader said which one - clicking a
-     * point in the chart does.
+     * point in the chart does, and so does a redraw of the release that was already open.
      */
     showRepository(name, index = null) {
         const graph = this.series.find((entry) => entry.name === name);
@@ -513,6 +640,8 @@ export default class extends Controller {
         if (!graph) {
             return;
         }
+
+        const metric = this.primary();
 
         this.repository = name;
 
@@ -538,16 +667,16 @@ export default class extends Controller {
 
         this.releaseSelectTarget.replaceChildren();
 
-        graph.tags.forEach((tag, index) => {
-            // the release, and what it stands at in whatever the chart is drawing
-            const option = element('option', null, `${tag.name}  ·  ${this.metric.short(tag[this.metric.key])}`);
+        graph.tags.forEach((tag, position) => {
+            // the release, and what it stands at in whatever the chart is open on
+            const option = element('option', null, `${tag.name}  ·  ${format(metric, tag.values[metric.slug])}`);
 
-            option.value = String(index);
+            option.value = String(position);
             // newest first, the way the report is read
             this.releaseSelectTarget.prepend(option);
         });
 
-        this.showRelease(null === index ? graph.tags.length - 1 : index);
+        this.showRelease(null === index || index >= graph.tags.length ? graph.tags.length - 1 : index);
     }
 
     selectRelease(event) {
@@ -559,57 +688,288 @@ export default class extends Controller {
         const tag = tags[index];
         const previous = index > 0 ? tags[index - 1] : undefined;
         const first = tags[0];
+        const metric = this.primary();
 
+        // what a redraw comes back to, so switching a tab does not jump the reader to the newest release
+        this.releaseIndex = index;
         this.releaseSelectTarget.value = String(index);
 
-        const lowest = tags.reduce((left, right) => (right.y < left.y ? right : left));
-        const highest = tags.reduce((left, right) => (right.y > left.y ? right : left));
-        const step = previous ? Math.round((tag.y - previous.y) * 100) / 100 : 0;
-        const grew = previous ? tag.loc - previous.loc : 0;
+        this.renderFigures(tag, previous, first, tags);
 
-        /*
-         * What the release comes down to, before the panel below spells it out. The date it carries is
-         * the day it was tagged, not the day the report measured it - the measurement happened whenever
-         * the repository was submitted or a nightly scan picked the release up, which is not what anyone
-         * reading a release is after.
-         */
-        this.headlineFiguresTarget.replaceChildren(
-            headline('Ø complexity', decimal(tag.y, 2), band(tag.y)),
-            previous
-                ? headline(`vs ${previous.name}`, signed(step, 2), 'down is an improvement', tone(step))
-                : headline('vs the release before', '–', 'nothing was measured before it'),
-            headline(
-                'Lines of code',
-                count(tag.loc),
-                previous ? `${signed(grew)} · ${share(grew, previous.loc) ?? '–'}` : 'as phploc counts them',
-            ),
-            headline('Analysed releases', count(tags.length), `first one ${day(first.date)}`),
+        this.analysisTarget.replaceChildren(
+            ...[
+                group('This release', [
+                    row('Released', day(tag.date)),
+                    ...this.metrics.map((slug) => {
+                        const drawn = this.metricOf(slug);
+
+                        return row(drawn.label, value(drawn, tag.values[slug]));
+                    }),
+                ]),
+                tag !== first ? this.comparison(`Since ${first.name}`, tag, first) : null,
+                // where this release stands among the others, and what the repository behind them is
+                group(`All ${tags.length} releases`, [
+                    ...this.extremes(metric, tags),
+                    row('Stars on GitHub', stars(this.release.stars)),
+                ]),
+            ].filter(Boolean),
         );
 
-        const groups = [
-            group('This release', [
-                row('Released', day(tag.date)),
-                row('Lines of code', count(tag.loc)),
-                row('Ø complexity', complexity(tag.y)),
-            ]),
-            tag !== first
-                ? group(`Since ${first.name}`, [
-                      row('Lines of code', signed(tag.loc - first.loc), share(tag.loc - first.loc, first.loc)),
-                      row('Ø complexity', trend(Math.round((tag.y - first.y) * 100) / 100, 2)),
-                  ])
-                : null,
-            // where this release stands among the others, and what the repository behind them is
-            group(`All ${tags.length} releases`, [
-                row('Lowest Ø complexity', complexity(lowest.y), lowest.name),
-                row('Highest Ø complexity', complexity(highest.y), highest.name),
-                row('Stars on GitHub', stars(this.release.stars)),
-            ]),
-        ];
-
-        this.analysisTarget.replaceChildren(...groups.filter(Boolean));
-
-        // the release the modal would show
+        // the release the measurement and the raw output are read for
         this.tag = tag;
+        this.reflectMeasurement();
+    }
+
+    /**
+     * What the release comes down to, before the panel below spells it out - the first three of them read
+     * in whichever metric the chart is open on, since that is the one being looked at. The other tabs
+     * answer the same three questions by being switched to.
+     *
+     * The date a release carries is the day it was tagged, not the day the report measured it - that
+     * happened whenever the repository was submitted or a nightly scan picked the release up, which is
+     * not what anyone reading a release is after.
+     */
+    renderFigures(tag, previous, first, tags) {
+        const metric = this.primary();
+        const measured = tag.values[metric.slug];
+        const step = previous ? this.delta(metric, tag, previous) : null;
+        const since = tag === first ? null : this.delta(metric, tag, first);
+
+        this.headlineFiguresTarget.replaceChildren(
+            headline(
+                metric.label,
+                value(metric, measured),
+                // the dot in front of a complexity carries its band as a colour, so the note names it;
+                // every other number is a count, and what it is read against is when it was counted
+                metric.level && null !== measured && undefined !== measured ? band(measured) : day(tag.date),
+            ),
+            null === step
+                ? headline('vs the release before', '–', 'nothing was measured before it')
+                : headline(
+                      `vs ${previous.name}`,
+                      this.movement(metric, step),
+                      // only where the report has an opinion about a direction is a colour worth
+                      // explaining; everywhere else the reading is how much of the number moved
+                      'lower' === metric.direction
+                          ? 'down is an improvement'
+                          : (this.portion(step, previous.values[metric.slug]) ?? 'as phploc counts it'),
+                      direction(metric, step),
+                  ),
+            null === since
+                ? headline('Since the first release', '–', 'this is the first one')
+                : headline(
+                      `Since ${first.name}`,
+                      this.movement(metric, since),
+                      this.portion(since, first.values[metric.slug]) ?? day(first.date),
+                      direction(metric, since),
+                  ),
+            headline('Analysed releases', count(tags.length), `first one ${day(first.date)}`),
+        );
+    }
+
+    /**
+     * A change as a plain figure. The arrow and the chip belong to a row of the panel below, where a
+     * number is one line of a list; up here the figure is the whole cell and its colour says as much.
+     */
+    movement(metric, delta) {
+        return `${delta > 0 ? '+' : delta < 0 ? '−' : '±'}${format(metric, Math.abs(delta))}`;
+    }
+
+    /**
+     * How much of the number that change was. A share is written as a magnitude wherever it stands next
+     * to what it is a share of - here it stands under a figure that is itself a change, so it carries
+     * the same sign, or it would read as a rise under a fall.
+     */
+    portion(delta, whole) {
+        const measured = share(delta, whole);
+
+        return undefined === measured ? undefined : `${delta < 0 ? '−' : '+'}${measured}`;
+    }
+
+    /**
+     * Where this release stands among the others, in the metric the chart is open on - with the release
+     * that holds the record next to it, since that is what makes it a place rather than a number.
+     */
+    extremes(metric, tags) {
+        const measured = tags
+            .map((tag) => tag.values[metric.slug])
+            .filter((entry) => null !== entry && undefined !== entry);
+
+        if (0 === measured.length) {
+            return [];
+        }
+
+        const lowest = Math.min(...measured);
+        const highest = Math.max(...measured);
+        // only the first letter, so `Lines of code (LOC)` keeps the acronym it carries
+        const named = metric.label.charAt(0).toLowerCase() + metric.label.slice(1);
+        const held = (by) => tags.find((tag) => tag.values[metric.slug] === by)?.name;
+
+        return [
+            row(`Lowest ${named}`, value(metric, lowest), held(lowest)),
+            row(`Highest ${named}`, value(metric, highest), held(highest)),
+        ];
+    }
+
+    /**
+     * The release against another one, in every number the chart is drawn as - a percentage next to it
+     * wherever there is something to be a percentage of.
+     */
+    comparison(title, tag, other) {
+        return group(
+            title,
+            this.metrics.map((slug) => {
+                const metric = this.metricOf(slug);
+                const delta = this.delta(metric, tag, other);
+
+                return null === delta
+                    ? row(metric.label, '—')
+                    : row(metric.label, change(metric, delta), share(delta, other.values[slug]));
+            }),
+        );
+    }
+
+    delta(metric, tag, other) {
+        const measured = tag.values[metric.slug];
+        const before = other.values[metric.slug];
+
+        if (null === measured || undefined === measured || null === before || undefined === before) {
+            return null;
+        }
+
+        return Number((measured - before).toFixed(metric.decimals));
+    }
+
+    /**
+     * Everything phploc counted for this release, which is sixty-two numbers of which the chart draws a
+     * handful. It is fetched for the release that is open rather than carried by the page, and kept
+     * afterwards - a measurement does not change once it was taken.
+     */
+    toggleMeasurement() {
+        this.measurementOpen = !this.measurementOpen;
+        this.reflectMeasurement();
+    }
+
+    reflectMeasurement() {
+        if (!this.hasMeasurementTarget) {
+            return;
+        }
+
+        this.measurementToggleTarget.setAttribute('aria-expanded', this.measurementOpen ? 'true' : 'false');
+        this.measurementTarget.hidden = !this.measurementOpen;
+
+        if (this.measurementOpen) {
+            this.renderMeasurement();
+        }
+    }
+
+    async renderMeasurement() {
+        const release = this.release;
+        const tag = this.tag;
+        // the metrics are part of it: what the chart already draws is marked in the table, so picking
+        // one out of the table is a row of it changing
+        const key = `${release.name}@${tag.name}|${this.metrics.join(',')}`;
+
+        if (this.measurementKey === key) {
+            return;
+        }
+
+        this.measurementKey = key;
+        this.measurementTarget.replaceChildren(element('p', 'measurement__note', 'Reading the measurement…'));
+
+        const measurement = await this.loadMeasurement(release.name, tag.name);
+
+        // reading is not instant, and another release can be opened meanwhile
+        if (this.tag !== tag || !this.measurementOpen) {
+            return;
+        }
+
+        if (!measurement) {
+            this.measurementKey = null;
+            this.measurementTarget.replaceChildren(
+                element('p', 'measurement__note', 'The measurement of this release could not be read.'),
+            );
+
+            return;
+        }
+
+        this.measurementTarget.replaceChildren(...this.measurementGroups(measurement));
+    }
+
+    /**
+     * The measurement in the sections phploc prints it in, every number under the one it is a part of,
+     * and against the release before it - which is the whole difference between this and the raw
+     * output next to it: the same numbers, read rather than reprinted.
+     */
+    measurementGroups(measurement) {
+        const sections = new Map();
+
+        this.catalog.forEach((metric) => {
+            if (!sections.has(metric.group)) {
+                sections.set(metric.group, { label: metric.groupLabel, about: metric.groupAbout, rows: [] });
+            }
+
+            sections.get(metric.group).rows.push(this.measurementRow(metric, measurement));
+        });
+
+        return [...sections.values()].map((section) => {
+            const node = element('div', 'measurement__group');
+
+            node.append(
+                element('div', 'analysis__title', section.label),
+                element('p', 'measurement__about', section.about),
+                list(section.rows),
+            );
+
+            return node;
+        });
+    }
+
+    measurementRow(metric, measurement) {
+        const measured = measurement.values[metric.slug] ?? null;
+        const before = measurement.previous?.values[metric.slug] ?? null;
+        const label = element('dt', 'analysis__label');
+        const pick = element('button', 'measurement__pick', metric.label);
+        const definition = element('span', 'measurement__numbers');
+
+        pick.type = 'button';
+        pick.title = `${metric.about} - click to draw it`;
+        pick.disabled = this.metrics.includes(metric.slug);
+        pick.addEventListener('click', () => this.drawMetric(metric.slug));
+        label.style.paddingLeft = `calc(var(--space-4) * ${metric.depth})`;
+        label.append(pick);
+
+        if (null !== measured && null !== before) {
+            definition.append(change(metric, Number((measured - before).toFixed(metric.decimals))));
+        }
+
+        definition.prepend(value(metric, measured));
+
+        return row(label, definition, percent(measurement.shares[metric.slug]));
+    }
+
+    async loadMeasurement(name, tag) {
+        const key = `${name}@${tag}`;
+
+        if (!this.measurements.has(key)) {
+            // relative, like the routes above, so it keeps working under a deployed sub path
+            const path = `${name}/${encodeURIComponent(tag)}/metrics`;
+
+            try {
+                const response = await fetch(path, { headers: { Accept: 'application/json' } });
+
+                if (!response.ok) {
+                    throw new Error(String(response.status));
+                }
+
+                this.measurements.set(key, await response.json());
+            } catch {
+                // not cached: a failure is worth trying again, unlike a measurement
+                return null;
+            }
+        }
+
+        return this.measurements.get(key);
     }
 
     /**

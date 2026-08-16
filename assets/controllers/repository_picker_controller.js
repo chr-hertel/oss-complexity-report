@@ -1,5 +1,6 @@
 import { Controller } from '@hotwired/stimulus';
-import { Combobox, element } from '../combobox.js';
+import { Combobox } from '../combobox.js';
+import { element } from '../dom.js';
 
 /*
  * The box above the chart: which repositories it draws. It is the start page's combobox with more than

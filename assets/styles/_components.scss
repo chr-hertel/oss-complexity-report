@@ -185,10 +185,6 @@
 // Tabs that stand for the lines of a chart: each one carries the colour of its series, by the same
 // rule the chips in the repository box follow - the position of a tab is the colour of its line.
 .tabs--series {
-    &[hidden] {
-        display: none;
-    }
-
     .tab {
         font-family: var(--font-mono);
     }
@@ -206,6 +202,38 @@
         .tab:nth-child(8n + #{$index}) .tab__swatch {
             background: var(--chart-#{$index});
         }
+    }
+}
+
+// Tabs that stand for what the chart is read as: a second metric is a tab and not a second axis, since
+// colour already says which repository a line belongs to and cannot also say which number it is. They
+// sit on the hairline closing the panel head, so the head carries the rail and this row does not.
+.tabs--metrics {
+    flex: 1 1 auto;
+    gap: var(--space-4);
+    border-bottom: 0;
+
+    .tab {
+        font-family: var(--font-mono);
+        gap: var(--space-2);
+    }
+}
+
+// Taking the metric out of the chart, on the tab that reads it - it is not on the last one, since a
+// chart is always drawn as something, and it is a hair quieter than the name it stands behind.
+.tab__drop {
+    padding: 0 0 0 2px;
+    font-size: 13px;
+    line-height: 1;
+    color: var(--text-faint);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color var(--transition);
+
+    &:hover,
+    &:focus-visible {
+        color: var(--trend-regressing);
     }
 }
 
@@ -415,6 +443,13 @@
         font-size: var(--text-xs);
         color: var(--text-faint);
     }
+}
+
+// The figures and the panel spelling them out are two readings of the same release, not one box - so
+// the panel follows them at the distance they follow the rail at, rather than sitting flush against
+// them and reading as the bottom half of the same grid.
+.headline-figures + .panel {
+    margin-top: var(--space-5);
 }
 
 @media (max-width: 900px) {
@@ -759,55 +794,6 @@ a.pill:hover .pill__value--state {
     height: 440px;
 }
 
-// What the chart draws, on the top edge of the panel it draws it in - the two numbers a release is
-// measured in, side by side rather than in a select, because there are two of them and both are worth
-// naming.
-//
-// It is a segmented control rather than two quiet words: the sunken track is what says that both of
-// them are options and one of them is taken, which a label on its own cannot say. So the track carries
-// the affordance and the raised half carries the state, the way a switch is read everywhere else.
-.chart-metrics {
-    display: flex;
-    flex: 0 0 auto;
-    gap: 2px;
-    width: fit-content;
-    padding: 2px;
-    background: var(--surface-muted);
-    border: var(--border-width) solid var(--line);
-    border-radius: var(--radius);
-}
-
-.metric-switch {
-    padding: 4px var(--space-3);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--text-muted);
-    background: transparent;
-    border: 0;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition:
-        color var(--transition),
-        background-color var(--transition);
-
-    &:hover {
-        color: var(--text-heading);
-        background: rgba(255, 255, 255, 0.6);
-    }
-
-    // the one that is taken is lifted out of the track, which is the whole statement of the control
-    &[aria-selected='true'] {
-        color: var(--text-heading);
-        background: var(--surface-card);
-        box-shadow: var(--shadow-xs);
-    }
-
-    &:focus-visible {
-        outline: none;
-        box-shadow: var(--focus-ring);
-    }
-}
-
 // The way out of a zoom, floating over the top right corner of the chart - only there while the chart
 // is zoomed or panned, so an untouched chart carries nothing.
 .chart-reset {
@@ -941,6 +927,115 @@ a.pill:hover .pill__value--state {
         font-family: var(--font-mono);
         font-size: var(--text-xs);
         color: var(--text-faint);
+    }
+}
+
+// --- Measurement ------------------------------------------------------------------------------
+// The rest of the release: every number phploc counted, under the heading it was printed under and
+// against the release before it. It stands folded under the panel above, because that panel is the
+// release read in what the chart draws and this is the answer to "and what else was measured".
+.measurement {
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: var(--border-width) solid var(--line);
+
+    &__toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: 0;
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        letter-spacing: var(--tracking-eyebrow);
+        text-transform: uppercase;
+        color: var(--text-muted);
+        background: none;
+        border: 0;
+        cursor: pointer;
+        transition: color var(--transition);
+
+        &:hover {
+            color: var(--text-heading);
+        }
+
+        &:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        // the chevron turns down as the block opens, which is the whole animation of the control
+        .fas {
+            font-size: 10px;
+            color: var(--text-faint);
+            transition: transform var(--transition);
+        }
+
+        &[aria-expanded='true'] .fas {
+            transform: rotate(90deg);
+        }
+    }
+
+    // The four sections are of very different lengths - phploc counts six complexities and twenty-two
+    // structural numbers - so they are poured into columns rather than laid into a grid: a grid gives
+    // every section the height of the longest one standing next to it, which is half a screen of
+    // nothing under the short ones.
+    &__body {
+        columns: 320px 3;
+        column-gap: var(--space-7);
+        margin-top: var(--space-5);
+    }
+
+    &__group {
+        // a section is read as one thing, so it moves to the next column whole where it fits in one
+        break-inside: avoid-column;
+        margin-bottom: var(--space-6);
+    }
+
+    &__about {
+        margin: var(--space-2) 0 var(--space-3);
+        font-size: var(--text-xs);
+        color: var(--text-faint);
+    }
+
+    &__note {
+        margin: var(--space-4) 0 0;
+        font-size: var(--text-sm);
+        color: var(--text-muted);
+    }
+
+    // every number of the catalog can be drawn, so its name is the way into the chart
+    &__pick {
+        padding: 0;
+        font-family: inherit;
+        font-size: inherit;
+        text-align: left;
+        color: var(--text-body);
+        background: none;
+        border: 0;
+        cursor: pointer;
+
+        &:hover:not(:disabled) {
+            color: var(--text-heading);
+            text-decoration: underline;
+        }
+
+        // what the chart already draws is not something to add to it
+        &:disabled {
+            color: var(--text-heading);
+            font-weight: var(--weight-medium);
+            cursor: default;
+        }
+
+        &:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+    }
+
+    &__numbers {
+        display: inline-flex;
+        align-items: baseline;
+        gap: var(--space-3);
     }
 }
 

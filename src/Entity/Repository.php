@@ -8,6 +8,7 @@ use App\ComplexityReport\Analysis;
 use App\ComplexityReport\GitHub\RepositoryData;
 use App\ComplexityReport\GitTag;
 use App\ComplexityReport\GraphData;
+use App\ComplexityReport\Metric\Metric;
 use App\Repository\RepositoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -182,8 +183,13 @@ class Repository
         $this->analysed = new \DateTimeImmutable();
     }
 
-    public function asGraph(): GraphData
+    /**
+     * The repository as a line of the chart, drawn in the numbers it was asked for.
+     *
+     * @param list<Metric> $metrics
+     */
+    public function asGraph(array $metrics): GraphData
     {
-        return new GraphData($this);
+        return new GraphData($this, $metrics);
     }
 }
