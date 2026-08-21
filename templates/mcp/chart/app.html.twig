@@ -1,0 +1,35 @@
+{% extends '@Mcp/app/base.html.twig' %}
+
+{% block title 'Complexity Chart' %}
+{% block head_script source('mcp/chart/chartjs.js')|raw %}
+{% block app_script source('mcp/chart/app.js')|raw %}
+{% block style source('mcp/chart/app.css')|raw %}
+
+{% block body %}
+    <div class="chart-panel">
+        <div class="chart-panel__head">
+            <div class="picker" id="repo-picker">
+                <ul class="chips" id="chips"></ul>
+                <input type="text" class="picker__input" id="repo-input" placeholder="+ add a line"
+                       autocomplete="off" autocapitalize="off" spellcheck="false">
+                <ul class="menu" id="repo-menu" hidden></ul>
+            </div>
+            <div class="metrics-row">
+                <div id="metric-tabs" role="tablist" aria-label="What the chart draws"></div>
+                <div class="adder">
+                    <input type="text" class="adder__input" id="metric-input" placeholder="+ add a metric"
+                           autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
+                <ul class="menu" id="metric-menu" hidden></ul>
+            </div>
+        </div>
+        <div class="chart-canvas">
+            <canvas id="canvas"></canvas>
+            <div class="chart-canvas__empty" id="empty" hidden></div>
+        </div>
+        <div class="chart-panel__foot">
+            <span id="about"></span>
+            <span class="chart-panel__count" id="count"></span>
+        </div>
+    </div>
+{% endblock %}

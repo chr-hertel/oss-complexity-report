@@ -3,7 +3,8 @@
     "description": "Complexity Analysis of open source software projects",
     "type": "project",
     "license": "MIT",
-    "minimum-stability": "beta",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "require": {
         "php": "^8.4",
         "ext-ctype": "*",
@@ -12,6 +13,7 @@
         "doctrine/doctrine-fixtures-bundle": "^4.3",
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.5",
+        "mcp/sdk": "dev-main as 0.7.99",
         "phploc/phploc": "^7.0",
         "sentry/sentry-symfony": "^5.11",
         "symfony/console": "^8.1",
@@ -24,6 +26,7 @@
         "symfony/framework-bundle": "^8.1",
         "symfony/http-client": "^8.1",
         "symfony/lock": "^8.1",
+        "symfony/mcp-bundle": "*",
         "symfony/messenger": "^8.1",
         "symfony/monolog-bundle": "^4.0",
         "symfony/options-resolver": "^8.1",
@@ -51,14 +54,15 @@
     },
     "config": {
         "optimize-autoloader": true,
-	    "platform": {
+        "platform": {
             "php": "8.4.23"
-	    },
+        },
         "preferred-install": {
             "*": "dist"
         },
         "sort-packages": true,
         "allow-plugins": {
+            "php-http/discovery": true,
             "symfony/flex": true,
             "symfony/runtime": true
         }
@@ -108,5 +112,15 @@
             "allow-contrib": false,
             "require": "8.1.*"
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../SymfonyAI/cody/src/mcp-bundle"
+        },
+        {
+            "type": "path",
+            "url": "../../MCP/mcp-sdk"
+        }
+    ]
 }

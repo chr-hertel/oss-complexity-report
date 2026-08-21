@@ -1,0 +1,16 @@
+mcp:
+    servers:
+        complexity-report:
+            name: 'OSS Complexity Report'
+            version: '1.0'
+            icons:
+                - { src: 'https://christopher-hertel.de/oss-complexity-report/favicon-mono.svg', sizes: ['any'], mime_type: 'image/svg+xml' }
+            website_url: 'https://christopher-hertel.de/oss-complexity-report/'
+            transports:
+                stdio: true
+                http: true
+            http: { path: /mcp }
+            resources: ['App\Mcp\']
+            resource_templates: ['App\Mcp\']
+            tools: ['App\Mcp\']
+            apps: ['App\Mcp\']
