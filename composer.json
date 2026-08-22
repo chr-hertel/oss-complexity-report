@@ -26,7 +26,7 @@
         "symfony/framework-bundle": "^8.1",
         "symfony/http-client": "^8.1",
         "symfony/lock": "^8.1",
-        "symfony/mcp-bundle": "*",
+        "symfony/mcp-bundle": "dev-main",
         "symfony/messenger": "^8.1",
         "symfony/monolog-bundle": "^4.0",
         "symfony/options-resolver": "^8.1",
@@ -112,15 +112,5 @@
             "allow-contrib": false,
             "require": "8.1.*"
         }
-    },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../../SymfonyAI/cody/src/mcp-bundle"
-        },
-        {
-            "type": "path",
-            "url": "../../MCP/mcp-sdk"
-        }
-    ]
+    }
 }

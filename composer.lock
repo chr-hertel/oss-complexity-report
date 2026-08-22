@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2d64e2ccad8edc14bf8a1296207da055",
+    "content-hash": "72c864d91dd596df9ac360d520651c73",
     "packages": [
         {
             "name": "doctrine/collections",
@@ -1477,10 +1477,16 @@
         {
             "name": "mcp/sdk",
             "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/modelcontextprotocol/php-sdk.git",
+                "reference": "b1c7272761622c9248247ac850801177efcb1109"
+            },
             "dist": {
-                "type": "path",
-                "url": "../../MCP/mcp-sdk",
-                "reference": "e0b9c1a26f7973e349531b1616f1e306d5327471"
+                "type": "zip",
+                "url": "https://api.github.com/repos/modelcontextprotocol/php-sdk/zipball/b1c7272761622c9248247ac850801177efcb1109",
+                "reference": "b1c7272761622c9248247ac850801177efcb1109",
+                "shasum": ""
             },
             "require": {
                 "ext-fileinfo": "*",
@@ -1522,37 +1528,14 @@
             "suggest": {
                 "symfony/finder": "Required for file-based discovery."
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
                     "Mcp\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Mcp\\Example\\Server\\CachedDiscovery\\": "examples/server/cached-discovery/",
-                    "Mcp\\Example\\Server\\ClientCommunication\\": "examples/server/client-communication/",
-                    "Mcp\\Example\\Server\\ClientLogging\\": "examples/server/client-logging/",
-                    "Mcp\\Example\\Server\\CombinedRegistration\\": "examples/server/combined-registration/",
-                    "Mcp\\Example\\Server\\Elicitation\\": "examples/server/elicitation/",
-                    "Mcp\\Example\\Server\\ComplexToolSchema\\": "examples/server/complex-tool-schema/",
-                    "Mcp\\Example\\Server\\Conformance\\": "examples/server/conformance/",
-                    "Mcp\\Example\\Server\\CustomDependencies\\": "examples/server/custom-dependencies/",
-                    "Mcp\\Example\\Server\\CustomMethodHandlers\\": "examples/server/custom-method-handlers/",
-                    "Mcp\\Example\\Server\\DiscoveryCalculator\\": "examples/server/discovery-calculator/",
-                    "Mcp\\Example\\Server\\DiscoveryUserProfile\\": "examples/server/discovery-userprofile/",
-                    "Mcp\\Example\\Server\\EnvVariables\\": "examples/server/env-variables/",
-                    "Mcp\\Example\\Server\\ExplicitRegistration\\": "examples/server/explicit-registration/",
-                    "Mcp\\Example\\Server\\McpApps\\": "examples/server/mcp-apps/",
-                    "Mcp\\Example\\Server\\OAuthKeycloak\\": "examples/server/oauth-keycloak/",
-                    "Mcp\\Example\\Server\\OAuthMicrosoft\\": "examples/server/oauth-microsoft/",
-                    "Mcp\\Example\\Server\\SchemaShowcase\\": "examples/server/schema-showcase/",
-                    "Mcp\\Tests\\": "tests/"
-                },
-                "classmap": [
-                    "tests/Unit/Capability/Discovery/Fixtures/AlternativeFileNameToolHandler.class.inc"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "Apache-2.0"
             ],
@@ -1571,9 +1554,11 @@
                 }
             ],
             "description": "Model Context Protocol SDK for Client and Server applications in PHP",
-            "transport-options": {
-                "relative": true
-            }
+            "support": {
+                "issues": "https://github.com/modelcontextprotocol/php-sdk/issues",
+                "source": "https://github.com/modelcontextprotocol/php-sdk/tree/main"
+            },
+            "time": "2026-08-21T23:46:29+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -5090,11 +5075,17 @@
         },
         {
             "name": "symfony/mcp-bundle",
-            "version": "dev-mcp-bundle-servers-and-clients",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/mcp-bundle.git",
+                "reference": "296812842f9d7140b1aa720c485c7d9913516cbf"
+            },
             "dist": {
-                "type": "path",
-                "url": "../../SymfonyAI/cody/src/mcp-bundle",
-                "reference": "70d43f2b0a0ea53a19db1dbe12688fd7e07002b5"
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/mcp-bundle/zipball/296812842f9d7140b1aa720c485c7d9913516cbf",
+                "reference": "296812842f9d7140b1aa720c485c7d9913516cbf",
+                "shasum": ""
             },
             "require": {
                 "mcp/sdk": "^0.7",
@@ -5119,11 +5110,12 @@
                 "symfony/monolog-bundle": "^3.10 || ^4.0",
                 "symfony/twig-bundle": "^7.3|^8.0"
             },
+            "default-branch": true,
             "type": "symfony-bundle",
             "extra": {
                 "thanks": {
-                    "name": "symfony/ai",
-                    "url": "https://github.com/symfony/ai"
+                    "url": "https://github.com/symfony/ai",
+                    "name": "symfony/ai"
                 }
             },
             "autoload": {
@@ -5131,12 +5123,7 @@
                     "Symfony\\AI\\McpBundle\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Symfony\\AI\\McpBundle\\Tests\\": "tests/",
-                    "Symfony\\AI\\PHPStan\\": "../../.phpstan"
-                }
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -5151,9 +5138,28 @@
                 }
             ],
             "description": "Symfony integration bundle for Model Context Protocol (via official mcp/sdk)",
-            "transport-options": {
-                "relative": true
-            }
+            "support": {
+                "source": "https://github.com/symfony/mcp-bundle/tree/main"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-08-22T10:57:27+00:00"
         },
         {
             "name": "symfony/messenger",
@@ -8679,11 +8685,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.2.8",
+            "version": "2.2.9",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/e285254e60f33c21902efef4a926ca0987c06804",
-                "reference": "e285254e60f33c21902efef4a926ca0987c06804",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/13d6b4f347bad222da436580c8304fa6f83e6bd0",
+                "reference": "13d6b4f347bad222da436580c8304fa6f83e6bd0",
                 "shasum": ""
             },
             "require": {
@@ -8739,7 +8745,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-08-04T22:21:45+00:00"
+            "time": "2026-08-22T07:38:16+00:00"
         },
         {
             "name": "phpstan/phpstan-phpunit",
@@ -10802,7 +10808,8 @@
     ],
     "minimum-stability": "dev",
     "stability-flags": {
-        "mcp/sdk": 20
+        "mcp/sdk": 20,
+        "symfony/mcp-bundle": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
