@@ -21,6 +21,38 @@ final class TagRepository extends ServiceEntityRepository
         parent::__construct($registry, Tag::class);
     }
 
+    public function findByRepositoryAndTag(string $repository, string $tag): ?Tag
+    {
+        /** @var ?Tag $result */
+        $result = $this->createQueryBuilder('t')
+            ->innerJoin('t.repository', 'r')
+            ->andWhere('LOWER(r.name) = :slug')
+            ->andWhere('t.name IN (:tags)')
+            ->setParameter('slug', mb_strtolower($repository))
+            ->setParameter('tags', [$tag, 'v'.$tag])
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $result;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function findNamesByStartsWith(string $prefix): array
+    {
+        $qb = $this->createQueryBuilder('t')
+            ->select('t.name')
+            ->distinct()
+            ->where('t.name LIKE :prefix')
+            ->setParameter('prefix', $prefix.'%')
+            ->orderBy('t.name', 'ASC')
+            ->setMaxResults(10);
+
+        return array_column($qb->getQuery()->getArrayResult(), 'name');
+    }
+
     /**
      * Every measured release reduced to the three values a trend is computed from - the whole report as
      * one query, without hydrating a single entity.

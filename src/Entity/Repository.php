@@ -192,4 +192,17 @@ class Repository
     {
         return new GraphData($this, $metrics);
     }
+
+    /**
+     * @return array<string, array<string, int|float>>
+     */
+    public function getMetrics(): array
+    {
+        $tags = [];
+        foreach ($this->tags as $tag) {
+            $tags[$tag->getName()] = $tag->getMetrics();
+        }
+
+        return $tags;
+    }
 }

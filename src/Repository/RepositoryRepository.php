@@ -145,6 +145,37 @@ final class RepositoryRepository extends ServiceEntityRepository
     }
 
     /**
+     * @return string[]
+     */
+    public function findNamesByStartsWith(string $prefix): array
+    {
+        $qb = $this->createQueryBuilder('r')
+            ->select('r.name')
+            ->where('LOWER(r.name) LIKE :prefix')
+            ->setParameter('prefix', mb_strtolower($prefix).'%')
+            ->orderBy('r.name', 'ASC')
+            ->setMaxResults(10);
+
+        return array_column($qb->getQuery()->getArrayResult(), 'name');
+    }
+
+    /**
+     * @return string[]
+     */
+    public function search(string $searchTerm): array
+    {
+        $qb = $this->createQueryBuilder('r')
+            ->select('r.name')
+            ->where('LOWER(r.name) LIKE :searchTerm')
+            ->setParameter('searchTerm', '%'.mb_strtolower($searchTerm).'%')
+            ->orderBy('r.stars', 'DESC')
+            ->addOrderBy('r.name', 'ASC')
+            ->setMaxResults(10);
+
+        return array_column($qb->getQuery()->getArrayResult(), 'name');
+    }
+
+    /**
      * @return list<int>
      */
     private function idsOf(QueryBuilder $queryBuilder): array
