@@ -9,5 +9,7 @@ mcp:
             transports:
                 stdio: true
                 http: true
-            http: { path: /mcp }
+            http:
+                path: /mcp
+                allowed_hosts: ['christopher-hertel.de', 'localhost', '127.0.0.1', '[::1]']
             registry: 'App\Mcp\'
