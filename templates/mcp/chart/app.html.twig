@@ -8,6 +8,11 @@
 {% block body %}
     <div class="chart-panel">
         <div class="chart-panel__head">
+            {# the way out to the report itself, on the corner every chart has - href and data-open carry
+               the same url, and the bridge turns the click into ui/open-link, since the sandbox cannot
+               open a link on its own #}
+            <a class="chart-panel__site" id="site" href="#" data-open="" hidden
+               title="Open this chart on the website, with the release analysis and the measurement of every release">Open on the website ↗</a>
             <div class="picker" id="repo-picker">
                 <ul class="chips" id="chips"></ul>
                 <input type="text" class="picker__input" id="repo-input" placeholder="+ add a line"

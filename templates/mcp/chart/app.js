@@ -7,7 +7,9 @@ const seriesDash = (index) => SERIES_DASHES[Math.floor(index / SERIES_COLORS.len
 const GRID = '#e3e7ec';
 const TICK = '#5a6675';
 
-const state = { series: [], metrics: [], active: null, catalog: [] };
+const state = { series: [], metrics: [], active: null, catalog: [], website: null };
+// the chart the report is about, which a link to it does not need to spell out
+const DEFAULT_METRIC = 'complexity';
 let chart = null;
 
 const el = (id) => document.getElementById(id);
@@ -24,6 +26,7 @@ function render(model) {
     state.series = model.series;
     state.metrics = model.metrics && model.metrics.length ? model.metrics : ['complexity'];
     if (Array.isArray(model.catalog) && model.catalog.length) state.catalog = model.catalog;
+    if (typeof model.website === 'string' && model.website) state.website = model.website;
     if (!state.metrics.includes(state.active)) state.active = state.metrics[0];
     redraw();
 }
@@ -33,6 +36,28 @@ function redraw() {
     drawTabs();
     drawChart();
     drawFoot();
+    drawSite();
+}
+
+// --- The link to the report: the chart page, addressed the way its own address bar writes it ------
+// The same rules as chart_controller.js#syncUrl: the repositories in their order, the metrics only when
+// they are more than the default one, and the open tab only when it is not the first.
+function siteUrl() {
+    const params = new URLSearchParams();
+    if (state.series.length) params.set('repositories', state.series.map((graph) => graph.name).join(','));
+    if (!(state.metrics.length === 1 && state.metrics[0] === DEFAULT_METRIC)) params.set('metrics', state.metrics.join(','));
+    if (state.active !== state.metrics[0]) params.set('metric', state.active);
+    // `symfony/console,laravel/framework` is what this was typed as, and what it should stay
+    const query = params.toString().replace(/%2C/g, ',').replace(/%2F/g, '/');
+    return state.website + (query ? '?' + query : '');
+}
+
+function drawSite() {
+    const site = el('site');
+    site.hidden = !state.website;
+    if (!state.website) return;
+    site.href = siteUrl();
+    site.setAttribute('data-open', site.href);
 }
 
 // --- The chips are the legend: a line per chip in the colour it is drawn in -------------------
@@ -77,6 +102,7 @@ function drawTabs() {
             drawTabs();
             drawChart();
             drawFoot();
+            drawSite();
         });
         if (state.metrics.length > 1) {
             const drop = document.createElement('span');
@@ -190,6 +216,18 @@ function openMenu(menu, rows, onPick) {
     menu.hidden = rows.length === 0;
 }
 
+// One line under the field that is not a row: nothing to pick, only something to know.
+function noteInMenu(menu, text) {
+    menu.innerHTML = '';
+    menu._active = -1;
+    menu._onPick = () => {};
+    const note = document.createElement('li');
+    note.className = 'menu__note';
+    note.textContent = text;
+    menu.append(note);
+    menu.hidden = false;
+}
+
 // Only the keyboard highlights a row - hovering is the pointer's own business.
 function highlight(menu, index) {
     const items = [...menu.children];
@@ -228,10 +266,16 @@ repoInput.addEventListener('input', () => {
     searchTimer = setTimeout(async () => {
         try {
             const result = await callTool('chart_repository_search', { query });
-            const names = extractModel(result) || [];
+            // an object, never a bare list - see ChartApp::searchRepositories() for why
+            const names = ((extractModel(result) || {}).repositories) || [];
+            if (!Array.isArray(names)) throw new Error('unexpected search result');
             const drawn = state.series.map((graph) => graph.name.toLowerCase());
             openMenu(repoMenu, names.filter((name) => !drawn.includes(name.toLowerCase())), addRepository);
-        } catch { repoMenu.hidden = true; }
+        } catch (error) {
+            // a search that did not answer is said so, not hidden - it used to close the menu silently,
+            // which left nothing to tell a dead database connection from a host that mangled the result
+            noteInMenu(repoMenu, 'The search did not answer' + (error && error.message ? ': ' + error.message : '.'));
+        }
     }, 200);
 });
 repoInput.addEventListener('blur', () => { repoMenu.hidden = true; });

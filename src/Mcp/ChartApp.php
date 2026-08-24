@@ -10,6 +10,7 @@ use App\Repository\RepositoryRepository;
 use Mcp\Exception\ToolCallException;
 use Symfony\AI\McpBundle\Attribute\AsMcpApp;
 use Symfony\AI\McpBundle\Attribute\AsMcpAppTool;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 #[AsMcpApp(
     uri: 'ui://complexity-chart',
@@ -27,6 +28,7 @@ final readonly class ChartApp
 
     public function __construct(
         private RepositoryRepository $repositories,
+        private UrlGeneratorInterface $urlGenerator,
     ) {
     }
 
@@ -54,13 +56,15 @@ final readonly class ChartApp
             ),
             'metrics' => $selection->getSlugs(),
             'catalog' => (new MetricCatalog())->jsonSerialize(),
+            // the chart page, which the app links to with what it draws as the query string
+            'website' => $this->urlGenerator->generate('chart', [], UrlGeneratorInterface::ABSOLUTE_URL),
         ];
     }
 
     /**
      * @param string $query what was typed into the picker - matched against the repository slugs the report carries
      *
-     * @return string[]
+     * @return array{repositories: list<string>}
      */
     #[AsMcpAppTool(
         name: 'chart_repository_search',
@@ -70,7 +74,7 @@ final readonly class ChartApp
     )]
     public function searchRepositories(string $query): array
     {
-        return $this->repositories->search($query);
+        return ['repositories' => array_values($this->repositories->search($query))];
     }
 
     /**
