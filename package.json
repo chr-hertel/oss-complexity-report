@@ -7,9 +7,9 @@
         "chart.js": "^4.5",
         "chartjs-adapter-moment": "^1.0.0",
         "chartjs-plugin-zoom": "^2.2",
-        "moment": "^2.29.4",
+        "moment": "^2.31.0",
         "prettier": "^3.9",
-        "sass": "^1.53.0",
+        "sass": "^1.105.1",
         "vite": "^7.0.0"
     },
     "license": "MIT",
