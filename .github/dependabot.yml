@@ -1,0 +1,50 @@
+# Dependabot version updates.
+#
+# Security updates are separate: they come from Dependabot alerts, which are a
+# repository setting rather than something this file controls.
+#
+# Minor and patch updates are grouped into one pull request per ecosystem and
+# dependency type, majors still come one by one since each of them is a
+# migration of its own. The cooldown keeps a release out until it survived a
+# week, so a broken or compromised one is usually pulled before it gets here.
+version: 2
+
+updates:
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      php-dependencies:
+        dependency-type: production
+        update-types: [minor, patch]
+      php-dev-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+
+  # every package of package.json is a dev dependency, the browser gets the build
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      js-dependencies:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns: ['*']
