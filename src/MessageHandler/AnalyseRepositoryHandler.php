@@ -6,11 +6,16 @@ namespace App\MessageHandler;
 
 use App\ComplexityReport\RepositoryAnalyser;
 use App\ComplexityReport\WorkingCopyLock;
+use App\Entity\Repository;
 use App\Message\AnalyseRepository;
 use App\Repository\RepositoryRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
+use Sentry\State\HubInterface;
+use Sentry\State\Scope;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
+use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
 #[AsMessageHandler]
 final readonly class AnalyseRepositoryHandler
@@ -24,6 +29,8 @@ final readonly class AnalyseRepositoryHandler
         private RepositoryRepository $repositoryRepository,
         private RepositoryAnalyser $repositoryAnalyser,
         private WorkingCopyLock $workingCopyLock,
+        private EntityManagerInterface $entityManager,
+        private HubInterface $sentry,
         private LoggerInterface $logger,
     ) {
     }
@@ -49,8 +56,24 @@ final readonly class AnalyseRepositoryHandler
         }
 
         try {
+            if ($repository->isStuck()) {
+                // the failure transport is where this ends up, reported once instead of on every delivery
+                throw new UnrecoverableMessageHandlingException(sprintf('Repository %s did not finish its last %d analyses - measure it with app:repository:analyse', $repository->getName(), Repository::MAX_UNFINISHED_ANALYSES));
+            }
+
+            $repository->startAnalysis();
+            $this->entityManager->flush();
+
+            // a worker that runs out of memory leaves nothing but phploc frames - this says what it was measuring
+            $this->sentry->configureScope(static function (Scope $scope) use ($repository): void {
+                $scope->setTag('repository', $repository->getName());
+            });
+
             $measured = $this->repositoryAnalyser->analyse($repository);
         } finally {
+            $this->sentry->configureScope(static function (Scope $scope): void {
+                $scope->removeTag('repository');
+            });
             $lock->release();
         }
 

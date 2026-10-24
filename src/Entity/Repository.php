@@ -20,11 +20,24 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: RepositoryRepository::class)]
 class Repository
 {
+    /**
+     * How many analyses may start without one of them finishing before a worker stops trying.
+     */
+    public const int MAX_UNFINISHED_ANALYSES = 3;
+
     #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
     private int $id;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $analysed = null;
+
+    /**
+     * Analyses that were started since the last one that finished. A worker that runs out of memory
+     * dies before messenger learns anything, so the retry strategy never counts it and the transport
+     * hands the same message back forever - this is the count that survives the process.
+     */
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $unfinishedAnalyses = 0;
 
     /**
      * `EXTRA_LAZY` so asking whether a repository has releases, or how many, is a count rather than a
@@ -181,6 +194,32 @@ class Repository
     public function markAnalysed(): void
     {
         $this->analysed = new \DateTimeImmutable();
+        $this->unfinishedAnalyses = 0;
+    }
+
+    /**
+     * Written down before the analysis runs, so an analysis that kills its process still counts.
+     */
+    public function startAnalysis(): void
+    {
+        ++$this->unfinishedAnalyses;
+    }
+
+    /**
+     * Whether analyses of this repository keep dying - a worker gives up on it then, and measuring it is
+     * left to `app:repository:analyse`, where it can be watched.
+     */
+    public function isStuck(): bool
+    {
+        return $this->unfinishedAnalyses >= self::MAX_UNFINISHED_ANALYSES;
+    }
+
+    /**
+     * Gives a stuck repository to the workers again, for when whatever killed them was dealt with.
+     */
+    public function retryAnalysis(): void
+    {
+        $this->unfinishedAnalyses = 0;
     }
 
     /**

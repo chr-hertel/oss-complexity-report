@@ -11,6 +11,7 @@ use App\ComplexityReport\WorkingCopyLock;
 use App\Entity\Repository;
 use App\Message\AnalyseRepository;
 use App\Repository\RepositoryRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\Argument;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Attribute\Option;
@@ -34,6 +35,7 @@ final readonly class RepositoryAnalyseCommand
         private RepositoryAnalyser $repositoryAnalyser,
         private WorkingCopyLock $workingCopyLock,
         private MessageBusInterface $messageBus,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -61,6 +63,10 @@ final readonly class RepositoryAnalyseCommand
             }
 
             if ($queue) {
+                // queueing by hand is the decision to try again, so a worker must not refuse it as stuck
+                $repository->retryAnalysis();
+                $this->entityManager->flush();
+
                 $this->messageBus->dispatch(new AnalyseRepository($repository->getId()));
                 $io->text(sprintf(' * <options=bold>%s</> queued for analysis', $repository->getName()));
 

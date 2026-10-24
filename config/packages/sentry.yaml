@@ -21,3 +21,5 @@ sentry:
             # and an unknown organization is a 404 just as much as /wp-login.php is.
             - Symfony\Component\HttpKernel\Exception\NotFoundHttpException
             - Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException
+            # Fatal errors are already reported by the SDK's own error handler, this is Symfony's duplicate.
+            - Symfony\Component\ErrorHandler\Error\FatalError
