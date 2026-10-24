@@ -82,12 +82,15 @@ data.
 **in the console process** rather than dispatching, which is the only way to watch a repository that does
 not get through the queue. A worker measures where nobody looks, and an analysis that dies without
 throwing — a memory limit, an OOM kill — is never acked, so the transport hands the same message back and
-it dies again on the next delivery, forever, while the repository stays `analysed IS NULL` and the report
-keeps calling it queued. Run on the console it can be given `php -d memory_limit=…`, watched release by
-release and stopped. It takes the same `WorkingCopyLock` a worker takes, so it refuses rather than
+it dies again on the next delivery, while the repository stays `analysed IS NULL` and the report keeps
+calling it queued. The retry strategy cannot count what never returned to it, so `Repository` does:
+`startAnalysis()` is flushed before the analysis runs and only `markAnalysed()` clears it, and once
+`MAX_UNFINISHED_ANALYSES` started without one finishing the repository `isStuck()` — the handler sends its
+message to `failed` (one Sentry event instead of two an hour) and the nightly scan skips it. Run on the
+console it can be given `php -d memory_limit=…`, watched release by release and stopped. It takes the same `WorkingCopyLock` a worker takes, so it refuses rather than
 measuring against a checkout somebody else is rewriting, and prints the peak memory of the run since that
 is usually what is being chased. `--queue` dispatches instead, for the one repository the nightly scan
-would skip.
+would skip, and clears the count of a stuck one first — queueing by hand is the decision to try again.
 
 Filling a fresh instance with more than the fixtures is `app:repository:submit --file --wait`, pointed at
 `data/top-php-repositories.txt` (an operator list, not part of the dataset definition — nothing reads it on
@@ -451,8 +454,10 @@ and an empty DSN makes the SDK collect and send nothing, so the bundle is a no-o
 the DSN lives in the shared `.env.local`. Two exclusions are deliberate: 404/405 are `ignore_exceptions`
 (what bots produce, and monolog excludes the same codes), and `messenger.capture_soft_fails: false` keeps
 retried messages out - `AnalyseRepositoryHandler` throws `RecoverableMessageHandlingException` for a busy
-repository by design, so only what reaches the `failed` transport is reported. Tracing is disabled: this is
-error reporting, not performance monitoring. The `build` task in `deploy.php` writes the deployed revision
+repository by design, so only what reaches the `failed` transport is reported. A fatal error arrives
+twice - as the SDK's `FatalErrorException` and as Symfony's `FatalError` - so the latter is ignored too, and
+the handler tags the scope with the `repository` it is measuring, since an out-of-memory error carries
+nothing but phploc frames. Tracing is disabled: this is error reporting, not performance monitoring. The `build` task in `deploy.php` writes the deployed revision
 to `SENTRY_RELEASE` in a per release `.env.prod.local` before `dotenv:dump` picks it up.
 
 ## Conventions

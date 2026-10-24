@@ -34,6 +34,13 @@ final readonly class ScanRepositoryHandler
             return;
         }
 
+        if ($repository->isStuck()) {
+            // a worker would only refuse it again - it is in the failure transport already
+            $this->logger->warning(sprintf('Not queueing %s, its analyses keep dying - run app:repository:analyse', $repository->getName()));
+
+            return;
+        }
+
         $releases = $this->releaseScanner->scanRemote($repository);
 
         if ([] === $releases) {
