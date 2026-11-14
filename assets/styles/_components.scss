@@ -1361,25 +1361,30 @@ a.pill:hover .pill__value--state {
 }
 
 // --- McpTeaser --------------------------------------------------------------------------------
-// The way an agent reads the report, said on every page by a pill pinned to the bottom left - the
-// corner nothing of the report is read in - and explained in the dialog the raw output is shown in.
+// The way an agent reads the report, said on every page by a tab sticking out of the right edge - set
+// on its side, so it takes a hand's width of the margin rather than a row of the page - and explained
+// in the dialog the raw output is shown in. It is the pill turned upright: flush with the edge, so only
+// the corners facing the page are rounded.
 .mcp-teaser__badge {
     position: fixed;
-    bottom: var(--space-4);
-    left: var(--space-4);
+    top: 50%;
+    right: 0;
     z-index: 20;
     padding: 0;
+    writing-mode: vertical-rl;
     border: 0;
+    border-radius: var(--radius) 0 0 var(--radius);
     box-shadow: var(--shadow-overlay);
+    transform: translateY(-50%);
     cursor: pointer;
 
     .pill__name,
     .pill__value {
-        padding: 7px var(--space-3);
+        padding: var(--space-3) 7px;
     }
 
     .pill__name i {
-        margin-right: 4px;
+        margin-bottom: 6px;
         color: var(--brand);
     }
 
@@ -1398,7 +1403,7 @@ a.pill:hover .pill__value--state {
 }
 
 .mcp {
-    width: min(640px, calc(100vw - 2 * var(--space-4)));
+    width: min(760px, calc(100vw - 2 * var(--space-4)));
 
     &__body {
         display: grid;
@@ -1432,6 +1437,7 @@ a.pill:hover .pill__value--state {
     &__step {
         display: grid;
         gap: var(--space-2);
+        min-width: 0;
 
         .eyebrow {
             margin: 0;
@@ -1454,7 +1460,9 @@ a.pill:hover .pill__value--state {
             font-family: var(--font-mono);
             font-size: var(--text-xs);
             line-height: 1.55;
-            white-space: pre;
+            // a command is pasted as one line however it is shown, so it wraps rather than scrolls
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
             color: var(--terminal-fg);
             background: var(--terminal-bg);
             border-radius: var(--radius);
@@ -1463,6 +1471,12 @@ a.pill:hover .pill__value--state {
 
     &__copy--block {
         align-items: flex-start;
+
+        // the config is indented, and indentation that wraps is no indentation
+        pre {
+            white-space: pre;
+            overflow-wrap: normal;
+        }
     }
 
     &__copy-button {
