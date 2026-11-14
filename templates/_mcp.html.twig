@@ -8,7 +8,8 @@
  # said about it on dark, and the dialog is the one the raw output is shown in.
  #}
 {% set endpoint = url('_mcp_endpoint_complexity_report') %}
-<div class="mcp-teaser" data-controller="mcp">
+{# permanent, so turbo carries it from page to page and it slides in once per visit rather than per click #}
+<div class="mcp-teaser" id="mcp-teaser" data-turbo-permanent data-controller="mcp">
     <button type="button" class="pill mcp-teaser__badge" aria-haspopup="dialog"
             data-action="mcp#open">
         <span class="pill__name"><i class="fas fa-plug"></i> MCP server</span>
