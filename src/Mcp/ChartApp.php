@@ -7,7 +7,7 @@ namespace App\Mcp;
 use App\ComplexityReport\Metric\MetricCatalog;
 use App\ComplexityReport\Metric\MetricSelection;
 use App\Repository\RepositoryRepository;
-use Mcp\Exception\ToolCallException;
+use Mcp\Server\Exception\ToolCallException;
 use Symfony\AI\McpBundle\Attribute\AsMcpApp;
 use Symfony\AI\McpBundle\Attribute\AsMcpAppTool;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
