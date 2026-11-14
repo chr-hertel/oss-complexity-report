@@ -9,10 +9,10 @@ use App\Mcp\CompletionProvider\RepositoryCompletionProvider;
 use App\Mcp\CompletionProvider\TagCompletionProvider;
 use App\Repository\RepositoryRepository;
 use App\Repository\TagRepository;
-use Mcp\Capability\Attribute\CompletionProvider;
-use Mcp\Capability\Attribute\McpResource;
-use Mcp\Capability\Attribute\McpResourceTemplate;
-use Mcp\Exception\ResourceNotFoundException;
+use Mcp\Server\Capability\Attribute\CompletionProvider;
+use Mcp\Server\Capability\Attribute\McpResource;
+use Mcp\Server\Capability\Attribute\McpResourceTemplate;
+use Mcp\Server\Exception\ResourceNotFoundException;
 
 final readonly class Metrics
 {

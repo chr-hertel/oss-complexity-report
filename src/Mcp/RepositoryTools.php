@@ -7,8 +7,8 @@ namespace App\Mcp;
 use App\ComplexityReport\Exception\SubmissionFailed;
 use App\ComplexityReport\RepositorySubmitter;
 use App\Repository\RepositoryRepository;
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Exception\ToolCallException;
+use Mcp\Server\Capability\Attribute\McpTool;
+use Mcp\Server\Exception\ToolCallException;
 
 final readonly class RepositoryTools
 {
