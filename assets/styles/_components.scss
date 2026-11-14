@@ -1359,3 +1359,115 @@ a.pill:hover .pill__value--state {
         gap: var(--space-6);
     }
 }
+
+// --- McpTeaser --------------------------------------------------------------------------------
+// The way an agent reads the report, said on every page by a pill pinned to the bottom left - the
+// corner nothing of the report is read in - and explained in the dialog the raw output is shown in.
+.mcp-teaser__badge {
+    position: fixed;
+    bottom: var(--space-4);
+    left: var(--space-4);
+    z-index: 20;
+    padding: 0;
+    border: 0;
+    box-shadow: var(--shadow-overlay);
+    cursor: pointer;
+
+    .pill__name,
+    .pill__value {
+        padding: 7px var(--space-3);
+    }
+
+    .pill__name i {
+        margin-right: 4px;
+        color: var(--brand);
+    }
+
+    &:hover .pill__name {
+        background: var(--line-strong);
+    }
+
+    &:hover .pill__value--state {
+        background: var(--brand-strong);
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring), var(--shadow-overlay);
+    }
+}
+
+.mcp {
+    width: min(640px, calc(100vw - 2 * var(--space-4)));
+
+    &__body {
+        display: grid;
+        gap: var(--space-5);
+        padding: var(--space-5);
+        overflow-y: auto;
+        font-size: var(--text-sm);
+
+        p {
+            margin: 0;
+        }
+    }
+
+    &__lead {
+        color: var(--text-body);
+    }
+
+    &__tools {
+        display: grid;
+        gap: var(--space-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+
+        code {
+            margin-right: var(--space-1);
+            color: var(--text-heading);
+        }
+    }
+
+    &__step {
+        display: grid;
+        gap: var(--space-2);
+
+        .eyebrow {
+            margin: 0;
+        }
+    }
+
+    // a snippet on the ground it is pasted into, with the button copying it beside it
+    &__copy {
+        display: flex;
+        gap: var(--space-2);
+        align-items: center;
+
+        code,
+        pre {
+            flex: 1 1 auto;
+            min-width: 0;
+            margin: 0;
+            padding: var(--space-2) var(--space-3);
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            line-height: 1.55;
+            white-space: pre;
+            color: var(--terminal-fg);
+            background: var(--terminal-bg);
+            border-radius: var(--radius);
+        }
+    }
+
+    &__copy--block {
+        align-items: flex-start;
+    }
+
+    &__copy-button {
+        flex: 0 0 auto;
+        min-width: 72px;
+        justify-content: center;
+    }
+}

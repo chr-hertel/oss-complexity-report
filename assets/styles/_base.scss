@@ -507,7 +507,8 @@ canvas {
         justify-content: space-between;
         max-width: var(--container);
         margin: 0 auto;
-        padding: var(--space-5) var(--gutter);
+        // the bottom leaves room for the MCP pill pinned to that corner, so the credits are not under it
+        padding: var(--space-5) var(--gutter) calc(var(--space-5) + 42px);
         font-size: var(--text-sm);
         color: var(--text-muted);
     }

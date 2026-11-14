@@ -448,6 +448,13 @@ carries all three parts. The select is written to from three places - the box, a
 measurement table under the chart - so the box listens for its own `change` to keep its menu (what is
 *not* in the chart) true.
 
+The MCP server (`config/packages/mcp.yaml`, `src/Mcp`, served at `/mcp`) is said on every page by a pill
+pinned to the bottom left (`templates/_mcp.html.twig`, included at the end of `base.html.twig`), which
+opens the install instructions in the same `.raw` dialog the phploc output uses - `mcp_controller.js`
+opens, dismisses and copies, and closes it on `turbo:before-cache` for the same reason the raw one is.
+The URL in it is generated from the route, so it is right on every host. The footer leaves room at the
+bottom for the pill.
+
 **Error reporting** (`config/packages/sentry.yaml`) — sentry/sentry-symfony, registered by hand since
 `allow-contrib` is false and its recipe therefore never ran. `SENTRY_DSN` is empty in the committed `.env`
 and an empty DSN makes the SDK collect and send nothing, so the bundle is a no-op outside production, where
