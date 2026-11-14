@@ -1,14 +1,15 @@
 {#
  # The report can be read by an agent too: the same search, the same submission and the same chart,
- # served over MCP at /mcp. Nothing on a screen would say so, so a pill pinned to the bottom left edge
- # of every page does - out of the way of what is read, since it is a side door and not the report -
- # and opens the one thing someone who wants to use it needs: how to add it to their client.
+ # served over MCP at /mcp. Nothing on a screen would say so, so a tab sticking out of the right edge of
+ # every page does - set on its side, out of the way of what is read, since it is a side door and not
+ # the report - and opens the one thing someone who wants to use it needs: how to add it to a client.
  #
  # It is the same `.pill` as everything closing the start page, a name on light ground and what is
  # said about it on dark, and the dialog is the one the raw output is shown in.
  #}
 {% set endpoint = url('_mcp_endpoint_complexity_report') %}
-<div class="mcp-teaser" data-controller="mcp">
+{# permanent, so turbo carries it from page to page and it slides in once per visit rather than per click #}
+<div class="mcp-teaser" id="mcp-teaser" data-turbo-permanent data-controller="mcp">
     <button type="button" class="pill mcp-teaser__badge" aria-haspopup="dialog"
             data-action="mcp#open">
         <span class="pill__name"><i class="fas fa-plug"></i> MCP server</span>
@@ -48,18 +49,26 @@
             </section>
 
             <section class="mcp__step">
+                <h3 class="eyebrow">Claude.ai &amp; Claude Desktop</h3>
+                <p>
+                    <em>Settings → Connectors → Add custom connector</em>, then paste the server URL above.
+                </p>
+            </section>
+
+            <section class="mcp__step">
+                <h3 class="eyebrow">ChatGPT</h3>
+                <p>
+                    <em>Settings → Apps &amp; Connectors → Advanced settings</em>, turn on developer mode, then
+                    <em>Create</em> a connector with the server URL above and no authentication.
+                </p>
+            </section>
+
+            <section class="mcp__step">
                 <h3 class="eyebrow">Claude Code</h3>
                 <div class="mcp__copy">
                     <code data-mcp-target="source">claude mcp add --transport http complexity-report {{ endpoint }}</code>
                     <button type="button" class="btn btn--secondary mcp__copy-button" data-action="mcp#copy">Copy</button>
                 </div>
-            </section>
-
-            <section class="mcp__step">
-                <h3 class="eyebrow">Claude.ai &amp; Claude Desktop</h3>
-                <p>
-                    <em>Settings → Connectors → Add custom connector</em>, then paste the server URL above.
-                </p>
             </section>
 
             <section class="mcp__step">
