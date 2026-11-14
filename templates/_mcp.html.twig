@@ -1,0 +1,75 @@
+{#
+ # The report can be read by an agent too: the same search, the same submission and the same chart,
+ # served over MCP at /mcp. Nothing on a screen would say so, so a pill pinned to the bottom left edge
+ # of every page does - out of the way of what is read, since it is a side door and not the report -
+ # and opens the one thing someone who wants to use it needs: how to add it to their client.
+ #
+ # It is the same `.pill` as everything closing the start page, a name on light ground and what is
+ # said about it on dark, and the dialog is the one the raw output is shown in.
+ #}
+{% set endpoint = url('_mcp_endpoint_complexity_report') %}
+<div class="mcp-teaser" data-controller="mcp">
+    <button type="button" class="pill mcp-teaser__badge" aria-haspopup="dialog"
+            data-action="mcp#open">
+        <span class="pill__name"><i class="fas fa-plug"></i> MCP server</span>
+        <span class="pill__value pill__value--state">Connect</span>
+    </button>
+
+    <dialog class="raw mcp" aria-labelledby="mcp-title"
+            data-mcp-target="dialog" data-action="click->mcp#dismiss">
+        <div class="raw__head">
+            <div>
+                <div class="eyebrow">Model Context Protocol</div>
+                <h2 class="raw__title" id="mcp-title">Ask your agent about complexity</h2>
+            </div>
+            <button type="button" class="raw__close" aria-label="Close" data-action="mcp#close">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+        <div class="mcp__body">
+            <p class="mcp__lead">
+                Everything the report carries is also an MCP server: an agent can look repositories up,
+                submit new ones and draw the same chart, right in the conversation. No account and no key
+                are needed.
+            </p>
+
+            <ul class="mcp__tools">
+                <li><code>repository_search</code> finds the repositories the report carries</li>
+                <li><code>repository_submit</code> queues a GitHub repository for analysis</li>
+                <li><code>complexity_chart</code> draws the interactive chart, in clients that show MCP apps</li>
+            </ul>
+
+            <section class="mcp__step">
+                <h3 class="eyebrow">Server URL</h3>
+                <div class="mcp__copy">
+                    <code data-mcp-target="source">{{ endpoint }}</code>
+                    <button type="button" class="btn btn--secondary mcp__copy-button" data-action="mcp#copy">Copy</button>
+                </div>
+            </section>
+
+            <section class="mcp__step">
+                <h3 class="eyebrow">Claude Code</h3>
+                <div class="mcp__copy">
+                    <code data-mcp-target="source">claude mcp add --transport http complexity-report {{ endpoint }}</code>
+                    <button type="button" class="btn btn--secondary mcp__copy-button" data-action="mcp#copy">Copy</button>
+                </div>
+            </section>
+
+            <section class="mcp__step">
+                <h3 class="eyebrow">Claude.ai &amp; Claude Desktop</h3>
+                <p>
+                    <em>Settings → Connectors → Add custom connector</em>, then paste the server URL above.
+                </p>
+            </section>
+
+            <section class="mcp__step">
+                <h3 class="eyebrow">Cursor, VS Code &amp; others</h3>
+                <p>Most clients read a JSON config like this (VS Code names the key <code>servers</code>):</p>
+                <div class="mcp__copy mcp__copy--block">
+                    <pre data-mcp-target="source">{{ {mcpServers: {'complexity-report': {url: endpoint}}}|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_SLASHES')) }}</pre>
+                    <button type="button" class="btn btn--secondary mcp__copy-button" data-action="mcp#copy">Copy</button>
+                </div>
+            </section>
+        </div>
+    </dialog>
+</div>
